@@ -1,5 +1,7 @@
 # React + TypeScript + Vite
 
+# Creating a simpler ai chatbot at affordable price
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:
