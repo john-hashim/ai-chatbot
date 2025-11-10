@@ -10,6 +10,25 @@
   --text-primary: #1a1a1a;
   --text-secondary: #2d2d2d;
 
+  --color-text: #1e1f21;
+  --color-text-weak: #6d6e6f;
+
+  --color-icon: #6d6e6f;
+
+  --color-border-strong: #cfcbcb;
+
+  --color-background-dark-accent: #f9f8f8;
+
+  --color-border: #edeae9;
+
+  --color-navigation-topbar-background: #f9f8f8;
+
+  --color-icon-weak: #f3f1f1;
+
+  --color-icon-hover: #1e1f21;
+
+  --color-icon-bg-hover: #e9e7e7;
+
   /* Common Border Radius */
   --border-radius: 0.5rem;
 
