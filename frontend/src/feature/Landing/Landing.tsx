@@ -3,11 +3,13 @@ import { Button } from '@/components/ui/button'
 import { useUserStore } from '@/store/userStore'
 import { format, getHours } from 'date-fns'
 import { Plus, TrendingUp } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 
 export const Landing: React.FC = () => {
   const day = format(new Date(), 'eeee')
   const date = format(new Date(), 'MMMM dd')
   const userStore = useUserStore()
+  const navigate = useNavigate()
 
   const firstName = userStore.user?.name.split(' ')[0]
   const formattedFirstName = firstName
@@ -46,7 +48,7 @@ export const Landing: React.FC = () => {
         <div className="border h-full flex-1 border-border mt-4 lg:mt-0 rounded-2xl flex items-center justify-center flex-col">
           <TrendingUp size={50} className="mb-1" />
           <p className="text-s">Let’s get started! Create your first AI chatbot</p>
-          <Button className="cursor-pointer mt-2">
+          <Button className="cursor-pointer mt-2" onClick={() => navigate('/new')}>
             <Plus size={18} />
             Add New Chatbot
           </Button>
