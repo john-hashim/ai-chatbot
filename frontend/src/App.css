@@ -56,6 +56,9 @@
   --color-icon-weak: var(--color-icon-weak);
   --color-icon-hover: var(--color-icon-hover);
   --color-icon-bg-hover: var(--color-icon-bg-hover);
+  --color-purple-week: #fcf6fd;
+  --color-purple-strong: #f8e3fd;
+  --color-purple-glow: #f5ccfe;
 }
 
 :root {
