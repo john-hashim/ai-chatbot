@@ -16,20 +16,20 @@ export const Logo: React.FC<LogoProps> = ({
       width={width}
       height={height}
       className={className}
-      viewBox="0 0 60 60"
-      fill="none"
+      viewBox="0 0 44 40"
       xmlns="http://www.w3.org/2000/svg"
     >
       <path
-        d="M5 10C5 7.23858 7.23858 5 10 5H50C52.7614 5 55 7.23858 55 10V35C55 37.7614 52.7614 40 50 40H30L15 55V40H10C7.23858 40 5 37.7614 5 35V10Z"
+        d="M2 6C2 3.5 3.5 2 6 2H38C40.5 2 42 3.5 42 6V20C42 22.5 40.5 24 38 24H24L10 38V24H6C3.5 24 2 22.5 2 20V6Z"
         stroke="#FF584A"
-        strokeWidth="3"
+        strokeWidth="5"
         fill="none"
         strokeLinejoin="round"
+        strokeLinecap="round"
       />
-      <circle cx="23" cy="23" r="3" fill="#FF584A" />
-      <circle cx="30" cy="23" r="3" fill="#FF584A" />
-      <circle cx="37" cy="23" r="3" fill="#FF584A" />
+      <circle cx="15" cy="13" r="2" fill="#FF584A" />
+      <circle cx="22" cy="13" r="2" fill="#FF584A" />
+      <circle cx="29" cy="13" r="2" fill="#FF584A" />
     </svg>
   )
 }

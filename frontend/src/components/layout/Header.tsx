@@ -13,7 +13,7 @@ export const Header: React.FC = () => {
         <Menu className="h-5 w-5 text-text-weak hover:text-icon-hover" />
       </div>
       <div className="flex items-center lg:ml-10 ml-3">
-        <Logo height={20} width={20} />
+        <Logo height={23} width={23} />
         <span className="text-xl font-semibold mb-1 ml-1">Lua</span>
       </div>
       <div className="flex-1"></div>
