@@ -5,6 +5,7 @@ interface LogoProps {
   width?: number
   height?: number
   logoIcon?: boolean
+  fontSize?: number
 }
 
 export const Logo: React.FC<LogoProps> = ({
@@ -12,6 +13,7 @@ export const Logo: React.FC<LogoProps> = ({
   width = 80,
   height = 80,
   logoIcon = true,
+  fontSize = 20,
 }) => {
   return logoIcon ? (
     <div className="mb-2">
@@ -71,7 +73,9 @@ export const Logo: React.FC<LogoProps> = ({
           <circle cx="140" cy="100" r="8" fill="#FF584A" />
         </svg>
       </div>
-      <span className="text-xl font-semibold">Pulsechat</span>
+      <span className="font-semibold" style={{ fontSize: `${fontSize}px` }}>
+        Pulsechat
+      </span>
     </div>
   )
 }
