@@ -1,0 +1,46 @@
+/* Button styles */
+.buttonRoot {
+  border: 1px solid var(--color-border-week) !important;
+}
+
+.buttonRoot:hover {
+  border: 1px solid var(--color-border-strong) !important;
+}
+
+.buttonLabel {
+  font-size: 13px !important;
+  color: var(--color-text-weak) !important;
+}
+
+.buttonSection {
+  font-size: 11px !important;
+  color: var(--color-text-weak) !important;
+  margin-inline-end: 2px !important;
+}
+
+/* Input styles */
+.input {
+  border: 1px solid var(--color-border-week) !important;
+}
+
+.input:hover {
+  border: 1px solid var(--color-border-strong) !important;
+}
+
+.input:focus {
+  border: 1px solid var(--color-border-strong) !important;
+}
+
+/* ColorInput styles */
+.colorInput {
+  border: 1px solid var(--color-border-week) !important;
+  background-color: var(--color-background-dark-week);
+}
+
+.colorInput:hover {
+  border: 1px solid var(--color-border-strong) !important;
+}
+
+.colorInput:focus {
+  border: 1px solid var(--color-border-strong) !important;
+}

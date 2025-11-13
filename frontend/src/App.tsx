@@ -2,10 +2,11 @@ import './App.css'
 import 'react-tooltip/dist/react-tooltip.css'
 import './styles/tooltip.css'
 import '@mantine/core/styles.css'
+import classes from './theme.module.css'
 import Login from '@/feature/auth/Login'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { GoogleOAuthProvider } from '@react-oauth/google'
-import { MantineProvider } from '@mantine/core'
+import { createTheme, MantineProvider, Button, TextInput, ColorInput } from '@mantine/core'
 import { ProtectedRoute } from '@/routes/ProtectedRoute'
 import { MainLayout } from '@/components/layout/MainLayout'
 import { useUserStore } from '@/store/userStore'
@@ -13,13 +14,39 @@ import { Tooltip } from 'react-tooltip'
 import { Landing } from '@/feature/Landing/Landing'
 import { ChatbotBasicSetup } from './feature/create-chatbot/ChatbotBasicSetup'
 
+const theme = createTheme({
+  fontFamily: 'Inter, sans-serif',
+  defaultRadius: 'md',
+
+  components: {
+    Button: Button.extend({
+      classNames: {
+        root: classes.buttonRoot,
+        label: classes.buttonLabel,
+        section: classes.buttonSection,
+      },
+    }),
+    TextInput: TextInput.extend({
+      classNames: {
+        input: classes.input,
+      },
+    }),
+    ColorInput: ColorInput.extend({
+      classNames: {
+        wrapper: classes.colorInputWrapper,
+        input: classes.colorInput,
+      },
+    }),
+  },
+})
+
 function App() {
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
   if (!googleClientId) {
     console.error('Google Client ID is not set in environment variables')
   }
   return (
-    <MantineProvider>
+    <MantineProvider theme={theme}>
       <GoogleOAuthProvider clientId={googleClientId || ''}>
         <AppRoutes />
         <Tooltip id="global-tooltip" place="bottom" offset={10} delayShow={200} />

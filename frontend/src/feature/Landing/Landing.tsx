@@ -45,13 +45,14 @@ export const Landing: React.FC = () => {
           </p>
         </div>
 
-        <div className="border h-full flex-1 border-border mt-4 lg:mt-0 rounded-2xl flex items-center justify-center flex-col">
+        <div className="border h-full flex-1 border-border-week mt-4 lg:mt-0 rounded-2xl flex items-center justify-center flex-col">
           <TrendingUp size={50} className="mb-1" />
           <p className="text-s">Let’s get started! Create your first AI chatbot</p>
           <Button
             className="cursor-pointer mt-2"
             onClick={() => navigate('/new')}
             leftSection={<Plus size={18} />}
+            variant="default"
           >
             Add New Chatbot
           </Button>

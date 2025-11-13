@@ -1,5 +1,5 @@
 import { Logo } from '@/components/common/logo'
-import { Popover, ColorPicker, TextInput, SegmentedControl, Center } from '@mantine/core'
+import { TextInput, SegmentedControl, Center, ColorInput } from '@mantine/core'
 import { ArrowLeft, X, Sun, Moon } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -32,8 +32,8 @@ export const ChatbotBasicSetup: React.FC = () => {
         />
       </div>
       <div className="lg:px-32 px-6 flex-1 pt-1 pb-15 flex flex-wrap">
-        <div className="border flex-1 border-border lg:mt-0 rounded-2xl flex overflow-hidden">
-          <div className="lg:w-1/2 w-full h-full border-r border-border lg:p-20 px-5 py-12">
+        <div className="border flex-1 border-border-week lg:mt-0 rounded-2xl flex overflow-hidden">
+          <div className="lg:w-1/2 w-full h-full border-r border-border-week lg:p-20 px-5 py-12">
             <p className="text-3xl font-semibold text-center sm:text-left">
               Let's Build Your Chatbot
             </p>
@@ -49,7 +49,7 @@ export const ChatbotBasicSetup: React.FC = () => {
               <p className="text-text-weak text-sm">Appearance</p>
               <SegmentedControl
                 value={theme}
-                onChange={(value) => setTheme(value as 'light' | 'dark')}
+                onChange={value => setTheme(value as 'light' | 'dark')}
                 data={[
                   {
                     value: 'light',
@@ -72,37 +72,15 @@ export const ChatbotBasicSetup: React.FC = () => {
             </div>
             <div className="flex justify-between items-center mt-6">
               <p className="text-text-weak text-sm">Choose your brand color</p>
-              <div className="bg-background-dark-week py-2 px-3 flex items-center rounded">
-                <div className="mr-2">
-                  <p className="text-sm text-text-weak">{selectedColor.toUpperCase()}</p>
-                </div>
-                <div>
-                  <Popover width={200} position="bottom" withArrow shadow="md">
-                    <Popover.Target>
-                      <div
-                        className="w-5 h-5 rounded-full border-2 border-white cursor-pointer"
-                        style={{ backgroundColor: selectedColor }}
-                      ></div>
-                    </Popover.Target>
-                    <Popover.Dropdown>
-                      <ColorPicker
-                        format="hex"
-                        value={selectedColor}
-                        onChange={setSelectedColor}
-                        swatches={[
-                          '#2563eb',
-                          '#f43f5e',
-                          '#10b981',
-                          '#f59e0b',
-                          '#8b5cf6',
-                          '#ec4899',
-                          '#14b8a6',
-                          '#f97316',
-                        ]}
-                      />
-                    </Popover.Dropdown>
-                  </Popover>
-                </div>
+              <div className="w-1/3">
+                <ColorInput
+                  defaultValue={selectedColor}
+                  onChangeEnd={setSelectedColor}
+                  swatchesPerRow={5}
+                  closeOnColorSwatchClick
+                  withEyeDropper={false}
+                  swatches={['#2563eb', '#7c3aed', '#10b981', '#f59e0b', '#ef4444']}
+                />
               </div>
             </div>
           </div>
