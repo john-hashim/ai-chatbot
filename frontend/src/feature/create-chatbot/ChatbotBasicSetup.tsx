@@ -1,15 +1,6 @@
 import { Logo } from '@/components/common/logo'
-import { Input } from '@/components/ui/input'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import {
-  ColorPicker,
-  ColorPickerEyeDropper,
-  ColorPickerFormat,
-  ColorPickerHue,
-  ColorPickerSelection,
-} from '@/components/ui/shadcn-io/color-picker'
-import { ThemeSwitcher } from '@/components/ui/shadcn-io/theme-switcher'
-import { ArrowLeft, X } from 'lucide-react'
+import { Popover, ColorPicker, TextInput, SegmentedControl, Center } from '@mantine/core'
+import { ArrowLeft, X, Sun, Moon } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
@@ -17,7 +8,7 @@ export const ChatbotBasicSetup: React.FC = () => {
   const navigate = useNavigate()
 
   const [theme, setTheme] = useState<'light' | 'dark'>('light')
-  const [selectedColor] = useState('#2563eb')
+  const [selectedColor, setSelectedColor] = useState('#2563eb')
 
   return (
     <div className="flex flex-col h-screen">
@@ -51,12 +42,33 @@ export const ChatbotBasicSetup: React.FC = () => {
             </p>
             <div className="mt-10">
               <p className="text-text-weak text-sm">Chatbot Name</p>
-              <Input className="mt-1" type="text" id="chatbotname" placeholder="Luna AI" />
+              <TextInput className="mt-1" type="text" id="chatbotname" placeholder="Luna AI" />
             </div>
             <div className="h-0.5 mt-6 border-t border-gray-100"></div>
             <div className="flex justify-between items-center mt-6">
               <p className="text-text-weak text-sm">Appearance</p>
-              <ThemeSwitcher defaultValue="light" onChange={setTheme} value={theme} />
+              <SegmentedControl
+                value={theme}
+                onChange={(value) => setTheme(value as 'light' | 'dark')}
+                data={[
+                  {
+                    value: 'light',
+                    label: (
+                      <Center style={{ gap: 10 }}>
+                        <Sun size={16} />
+                      </Center>
+                    ),
+                  },
+                  {
+                    value: 'dark',
+                    label: (
+                      <Center style={{ gap: 10 }}>
+                        <Moon size={16} />
+                      </Center>
+                    ),
+                  },
+                ]}
+              />
             </div>
             <div className="flex justify-between items-center mt-6">
               <p className="text-text-weak text-sm">Choose your brand color</p>
@@ -65,27 +77,30 @@ export const ChatbotBasicSetup: React.FC = () => {
                   <p className="text-sm text-text-weak">{selectedColor.toUpperCase()}</p>
                 </div>
                 <div>
-                  <Popover>
-                    <PopoverTrigger asChild>
+                  <Popover width={200} position="bottom" withArrow shadow="md">
+                    <Popover.Target>
                       <div
                         className="w-5 h-5 rounded-full border-2 border-white cursor-pointer"
                         style={{ backgroundColor: selectedColor }}
                       ></div>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-80 p-0">
-                      <ColorPicker className="max-w-sm rounded-md bg-background p-4">
-                        <ColorPickerSelection className="h-32" />
-                        <div className="flex items-center gap-4">
-                          <ColorPickerEyeDropper />
-                          <div className="grid w-full gap-1">
-                            <ColorPickerHue />
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <ColorPickerFormat />
-                        </div>
-                      </ColorPicker>
-                    </PopoverContent>
+                    </Popover.Target>
+                    <Popover.Dropdown>
+                      <ColorPicker
+                        format="hex"
+                        value={selectedColor}
+                        onChange={setSelectedColor}
+                        swatches={[
+                          '#2563eb',
+                          '#f43f5e',
+                          '#10b981',
+                          '#f59e0b',
+                          '#8b5cf6',
+                          '#ec4899',
+                          '#14b8a6',
+                          '#f97316',
+                        ]}
+                      />
+                    </Popover.Dropdown>
                   </Popover>
                 </div>
               </div>

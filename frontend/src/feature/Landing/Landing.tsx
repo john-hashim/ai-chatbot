@@ -1,5 +1,5 @@
 import { ChatbotSkeleton } from '@/components/common/ChatbotSkeleton'
-import { Button } from '@/components/ui/button'
+import { Button } from '@mantine/core'
 import { useUserStore } from '@/store/userStore'
 import { format, getHours } from 'date-fns'
 import { Plus, TrendingUp } from 'lucide-react'
@@ -48,8 +48,11 @@ export const Landing: React.FC = () => {
         <div className="border h-full flex-1 border-border mt-4 lg:mt-0 rounded-2xl flex items-center justify-center flex-col">
           <TrendingUp size={50} className="mb-1" />
           <p className="text-s">Let’s get started! Create your first AI chatbot</p>
-          <Button className="cursor-pointer mt-2" onClick={() => navigate('/new')}>
-            <Plus size={18} />
+          <Button
+            className="cursor-pointer mt-2"
+            onClick={() => navigate('/new')}
+            leftSection={<Plus size={18} />}
+          >
             Add New Chatbot
           </Button>
         </div>

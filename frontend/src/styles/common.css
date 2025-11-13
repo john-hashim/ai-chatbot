@@ -1,44 +1,3 @@
-:root {
-  /* Custom Color Palette */
-  --primary-blue: #2563eb;
-  --primary-purple: #7c3aed;
-  --success-green: #10b981;
-  --warning-orange: #f59e0b;
-  --error-red: #ef4444;
-
-  /* Text Colors */
-  --text-primary: #1a1a1a;
-  --text-secondary: #2d2d2d;
-
-  --color-text: #1e1f21;
-  --color-text-weak: #6d6e6f;
-
-  --color-icon: #6d6e6f;
-
-  --color-border-strong: #cfcbcb;
-
-  --color-background-dark-accent: #f9f8f8;
-
-  --color-border: #edeae9;
-
-  --color-navigation-topbar-background: #f9f8f8;
-
-  --color-icon-weak: #f3f1f1;
-
-  --color-icon-hover: #1e1f21;
-
-  --color-icon-bg-hover: #e9e7e7;
-
-  /* Common Border Radius */
-  --border-radius: 0.5rem;
-
-  /* Common Border */
-  --border-common: 1px solid #e5e5e5;
-
-  /* Common Box Shadow */
-  --box-shadow-common: 0 1px 3px rgba(0, 0, 0, 0.05);
-}
-
 /* Global text element animations */
 p,
 h1,
@@ -59,13 +18,7 @@ main,
 label,
 li,
 td,
-th {
-  @apply animate-in fade-in duration-300;
-}
-
-/* Apply to divs but exclude popover content and its children */
-div:not([data-radix-popper-content-wrapper]):not([data-radix-popper-content-wrapper] *):not(
-    .no-global-animation
-  ):not(.no-global-animation *) {
+th,
+div {
   @apply animate-in fade-in duration-300;
 }

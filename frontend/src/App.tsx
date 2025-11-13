@@ -1,9 +1,11 @@
 import './App.css'
 import 'react-tooltip/dist/react-tooltip.css'
 import './styles/tooltip.css'
+import '@mantine/core/styles.css'
 import Login from '@/feature/auth/Login'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { GoogleOAuthProvider } from '@react-oauth/google'
+import { MantineProvider } from '@mantine/core'
 import { ProtectedRoute } from '@/routes/ProtectedRoute'
 import { MainLayout } from '@/components/layout/MainLayout'
 import { useUserStore } from '@/store/userStore'
@@ -17,10 +19,12 @@ function App() {
     console.error('Google Client ID is not set in environment variables')
   }
   return (
-    <GoogleOAuthProvider clientId={googleClientId || ''}>
-      <AppRoutes />
-      <Tooltip id="global-tooltip" place="bottom" offset={10} delayShow={200} />
-    </GoogleOAuthProvider>
+    <MantineProvider>
+      <GoogleOAuthProvider clientId={googleClientId || ''}>
+        <AppRoutes />
+        <Tooltip id="global-tooltip" place="bottom" offset={10} delayShow={200} />
+      </GoogleOAuthProvider>
+    </MantineProvider>
   )
 }
 
