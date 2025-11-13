@@ -40,7 +40,6 @@
 }
 
 /* Global text element animations */
-div,
 p,
 h1,
 h2,
@@ -61,5 +60,12 @@ label,
 li,
 td,
 th {
+  @apply animate-in fade-in duration-300;
+}
+
+/* Apply to divs but exclude popover content and its children */
+div:not([data-radix-popper-content-wrapper]):not([data-radix-popper-content-wrapper] *):not(
+    .no-global-animation
+  ):not(.no-global-animation *) {
   @apply animate-in fade-in duration-300;
 }

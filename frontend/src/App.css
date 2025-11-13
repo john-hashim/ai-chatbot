@@ -39,23 +39,24 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  /* Add your custom colors from common.css */
-  --color-primary-blue: var(--primary-blue);
-  --color-primary-purple: var(--primary-purple);
-  --color-success-green: var(--success-green);
-  --color-warning-orange: var(--warning-orange);
-  --color-error-red: var(--error-red);
-  --color-text-primary: var(--text-primary);
-  --color-text-secondary: var(--text-secondary);
-  --color-text: var(--color-text);
-  --color-text-weak: var(--color-text-weak);
-  --color-icon: var(--color-icon);
-  --color-border-strong: var(--color-border-strong);
-  --color-background-dark-accent: var(--color-background-dark-accent);
-  --color-nav-topbar: var(--color-navigation-topbar-background);
-  --color-icon-weak: var(--color-icon-weak);
-  --color-icon-hover: var(--color-icon-hover);
-  --color-icon-bg-hover: var(--color-icon-bg-hover);
+  /* Add your custom colors */
+  --color-primary-blue: #2563eb;
+  --color-primary-purple: #7c3aed;
+  --color-success-green: #10b981;
+  --color-warning-orange: #f59e0b;
+  --color-error-red: #ef4444;
+  --color-text-primary: #1a1a1a;
+  --color-text-secondary: #2d2d2d;
+  --color-text: #1e1f21;
+  --color-text-weak: #6d6e6f;
+  --color-icon: #6d6e6f;
+  --color-border-strong: #cfcbcb;
+  --color-background-dark-week: #f9f8f8;
+  --color-background-dark-strong: #cfcbcb;
+  --color-nav-topbar: #f9f8f8;
+  --color-icon-weak: #f3f1f1;
+  --color-icon-hover: #1e1f21;
+  --color-icon-bg-hover: #e9e7e7;
   --color-purple-week: #fcf6fd;
   --color-purple-strong: #f8e3fd;
   --color-purple-glow: #f5ccfe;
