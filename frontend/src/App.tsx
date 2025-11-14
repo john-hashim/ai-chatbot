@@ -15,6 +15,21 @@ import { Landing } from '@/feature/Landing/Landing'
 import { ChatbotBasicSetup } from './feature/create-chatbot/ChatbotBasicSetup'
 
 const theme = createTheme({
+  colors: {
+    brand: [
+      '#ffd1cd', // 1
+      '#ffb3ad', // 2
+      '#ff968e', // 3
+      '#ff786e', // 4
+      '#fe5e51', // 5 - your color
+      '#ffe8e6', // 0 - lightest
+      '#fe5e51', // 6 - slightly darker (primary shade)
+      '#cc3d32', // 7
+      '#b32e24', // 8
+      '#991f16', // 9 - darkest
+    ],
+  },
+  primaryColor: 'brand',
   fontFamily: 'Inter, sans-serif',
   defaultRadius: 'md',
 

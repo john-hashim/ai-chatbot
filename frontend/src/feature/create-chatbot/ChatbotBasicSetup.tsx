@@ -1,5 +1,5 @@
 import { Logo } from '@/components/common/logo'
-import { TextInput, SegmentedControl, Center, ColorInput } from '@mantine/core'
+import { TextInput, SegmentedControl, Center, ColorInput, Switch } from '@mantine/core'
 import { ArrowLeft, X, Sun, Moon } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -9,6 +9,7 @@ export const ChatbotBasicSetup: React.FC = () => {
 
   const [theme, setTheme] = useState<'light' | 'dark'>('light')
   const [selectedColor, setSelectedColor] = useState('#2563eb')
+  const [checked, setChecked] = useState(true)
 
   return (
     <div className="flex flex-col h-screen">
@@ -41,12 +42,12 @@ export const ChatbotBasicSetup: React.FC = () => {
               Customize your agent's look now. Additional styling options in settings.
             </p>
             <div className="mt-10">
-              <p className="text-text-weak text-sm">Chatbot Name</p>
+              <p className="text-text-secondary text-sm">What's your chatbot's name?</p>
               <TextInput className="mt-1" type="text" id="chatbotname" placeholder="Luna AI" />
             </div>
             <div className="h-0.5 mt-6 border-t border-gray-100"></div>
             <div className="flex justify-between items-center mt-6">
-              <p className="text-text-weak text-sm">Appearance</p>
+              <p className="text-text-secondary text-sm">Appearance</p>
               <SegmentedControl
                 value={theme}
                 onChange={value => setTheme(value as 'light' | 'dark')}
@@ -71,7 +72,7 @@ export const ChatbotBasicSetup: React.FC = () => {
               />
             </div>
             <div className="flex justify-between items-center mt-6">
-              <p className="text-text-weak text-sm">Choose your brand color</p>
+              <p className="text-text-secondary text-sm">Choose your brand color</p>
               <div className="w-1/3">
                 <ColorInput
                   defaultValue={selectedColor}
@@ -82,6 +83,21 @@ export const ChatbotBasicSetup: React.FC = () => {
                   swatches={['#2563eb', '#7c3aed', '#10b981', '#f59e0b', '#ef4444']}
                 />
               </div>
+            </div>
+            <div className="flex justify-between items-center mt-6">
+              <p className="text-text-secondary text-sm">Use brand color for header</p>
+              <div>
+                <Switch
+                  checked={checked}
+                  onChange={event => setChecked(event.currentTarget.checked)}
+                  color="teal"
+                />
+              </div>
+            </div>
+            <div className="h-0.5 mt-6 border-t border-gray-100"></div>
+            <div className="flex justify-between items-center mt-6">
+              <p className="text-text-secondary text-sm">Profile Picture</p>
+              <div></div>
             </div>
           </div>
           <div className="w-1/2 h-full hidden lg:block bg-[radial-gradient(circle,_#ebebeb_2px,_#fafafa_0)] bg-[length:30px_30px]"></div>
