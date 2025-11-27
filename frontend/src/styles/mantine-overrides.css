@@ -1,0 +1,32 @@
+/* Remove default left border from all notifications */
+.mantine-Notification-root {
+  border-left: none !important;
+  border: 1px solid #edeae9 !important;
+  font-weight: 500;
+}
+
+.mantine-Notification-icon {
+  background-color: transparent;
+}
+
+.mantine-Notification-root::before {
+  display: none !important;
+}
+
+.error .mantine-Notification-title {
+  color: #c72027 !important;
+  font-weight: 600;
+}
+
+.error .mantine-Notification-description {
+  color: #c72027 !important;
+}
+
+.success .mantine-Notification-title {
+  color: #58a182 !important;
+  font-weight: 600;
+}
+
+.success .mantine-Notification-description {
+  color: #58a182 !important;
+}

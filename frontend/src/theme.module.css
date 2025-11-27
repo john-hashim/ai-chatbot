@@ -1,10 +1,17 @@
 /* Button styles */
 .buttonRoot {
   border: 1px solid var(--color-border-week) !important;
+  background-color: transparent !important;
+  color: var(--color-text-weak) !important;
 }
 
 .buttonRoot:hover {
   border: 1px solid var(--color-border-strong) !important;
+  background-color: transparent !important;
+}
+
+.buttonRoot[data-with-left-section] {
+  padding-inline-start: var(--button-padding-x) !important;
 }
 
 .buttonLabel {
@@ -43,4 +50,24 @@
 
 .colorInput:focus {
   border: 1px solid var(--color-border-strong) !important;
+}
+
+/* Dropzone styles */
+.dropzoneRoot {
+  min-height: 120px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 0;
+  background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
+}
+
+.dropzoneRoot[data-accept] {
+  color: var(--mantine-color-white);
+  background-color: var(--mantine-color-blue-6);
+}
+
+.dropzoneRoot[data-reject] {
+  color: var(--mantine-color-white);
+  background-color: var(--mantine-color-red-6);
 }

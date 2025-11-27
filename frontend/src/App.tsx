@@ -1,12 +1,19 @@
 import './App.css'
 import 'react-tooltip/dist/react-tooltip.css'
 import './styles/tooltip.css'
+
 import '@mantine/core/styles.css'
+import '@mantine/dropzone/styles.css'
+import '@mantine/notifications/styles.css'
+import './styles/mantine-overrides.css'
 import classes from './theme.module.css'
+import { createTheme, MantineProvider, Button, TextInput, ColorInput } from '@mantine/core'
+import { Notifications } from '@mantine/notifications'
+
 import Login from '@/feature/auth/Login'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { GoogleOAuthProvider } from '@react-oauth/google'
-import { createTheme, MantineProvider, Button, TextInput, ColorInput } from '@mantine/core'
+import { Dropzone } from '@mantine/dropzone'
 import { ProtectedRoute } from '@/routes/ProtectedRoute'
 import { MainLayout } from '@/components/layout/MainLayout'
 import { useUserStore } from '@/store/userStore'
@@ -52,6 +59,11 @@ const theme = createTheme({
         input: classes.colorInput,
       },
     }),
+    Dropzone: Dropzone.extend({
+      classNames: {
+        root: classes.dropzoneRoot,
+      },
+    }),
   },
 })
 
@@ -62,6 +74,7 @@ function App() {
   }
   return (
     <MantineProvider theme={theme}>
+      <Notifications position="top-right" autoClose={5000} />
       <GoogleOAuthProvider clientId={googleClientId || ''}>
         <AppRoutes />
         <Tooltip id="global-tooltip" place="bottom" offset={10} delayShow={200} />

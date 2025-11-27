@@ -36,7 +36,7 @@ export const Landing: React.FC = () => {
       </div>
       <div className="h-[50vh] mt-6 flex flex-wrap">
         <div className="border border-purple-strong bg-purple-week cursor pointer hover:bg-purple-strong sm:w-full lg:w-1/4 lg:mr-6 h-full rounded-2xl flex items-center justify-center flex-col p-6 overflow-visible">
-          <div className="w-32 aspect-[375/667] mb-4 shadow-[0_0_18px_0_var(--color-purple-glow)] rounded-2xl overflow-hidden bg-[#F8F9FA]">
+          <div className="w-32 aspect-375/667 mb-4 shadow-[0_0_18px_0_var(--color-purple-glow)] rounded-2xl overflow-hidden bg-[#F8F9FA]">
             <ChatbotSkeleton />
           </div>
           <h3 className="text-lg font-semibold text-center mb-2">Build your first AI chatbot</h3>

@@ -1,8 +1,19 @@
 import { Logo } from '@/components/common/logo'
-import { TextInput, SegmentedControl, Center, ColorInput, Switch } from '@mantine/core'
-import { ArrowLeft, X, Sun, Moon } from 'lucide-react'
-import { useState } from 'react'
+import {
+  TextInput,
+  SegmentedControl,
+  Center,
+  ColorInput,
+  Switch,
+  Text,
+  FileButton,
+  Button,
+  Group,
+} from '@mantine/core'
+import { ArrowLeft, X, Sun, Moon, ImageUp, CircleAlert } from 'lucide-react'
+import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { notifications } from '@mantine/notifications'
 
 export const ChatbotBasicSetup: React.FC = () => {
   const navigate = useNavigate()
@@ -10,6 +21,29 @@ export const ChatbotBasicSetup: React.FC = () => {
   const [theme, setTheme] = useState<'light' | 'dark'>('light')
   const [selectedColor, setSelectedColor] = useState('#2563eb')
   const [checked, setChecked] = useState(true)
+  const [file, setFile] = useState<File | null>(null)
+  const resetRef = useRef<() => void>(null)
+
+  const handleFileChange = (selectedFile: File | null) => {
+    if (selectedFile) {
+      const maxSizeInBytes = 1 * 1024 * 1024
+      if (selectedFile.size > maxSizeInBytes) {
+        notifications.show({
+          message: 'Image size larger than 1MB',
+          className: 'error',
+          icon: <CircleAlert color="#c72027" size={18} />,
+        })
+        resetRef.current?.()
+        return
+      }
+      setFile(selectedFile)
+    }
+  }
+
+  const clearFile = () => {
+    setFile(null)
+    resetRef.current?.()
+  }
 
   return (
     <div className="flex flex-col h-screen">
@@ -95,12 +129,44 @@ export const ChatbotBasicSetup: React.FC = () => {
               </div>
             </div>
             <div className="h-0.5 mt-6 border-t border-gray-100"></div>
-            <div className="flex justify-between items-center mt-6">
+            <div className="mt-6">
               <p className="text-text-secondary text-sm">Profile Picture</p>
-              <div></div>
+              <div className="flex justify-between items-center mt-4">
+                <p className="text-text-weak text-[12px]">JPG, PNG, and SVG up to 1MB</p>
+                <div>
+                  {file ? (
+                    <div className="flex items-center">
+                      <Text size="sm" ta="center" mt="sm" c="green">
+                        Picked file: {file.name}
+                      </Text>
+                      <X
+                        data-tooltip-id="global-tooltip"
+                        data-tooltip-content="Remove Profile Picture"
+                        data-tooltip-place="bottom"
+                        className="h-5 w-5 text-text-weak hover:text-icon-hover cursor-pointer"
+                        onClick={clearFile}
+                      />
+                    </div>
+                  ) : (
+                    <Group justify="center">
+                      <FileButton
+                        onChange={handleFileChange}
+                        accept="image/png,image/jpeg"
+                        resetRef={resetRef}
+                      >
+                        {props => (
+                          <Button {...props} leftSection={<ImageUp size={14} />}>
+                            Upload image
+                          </Button>
+                        )}
+                      </FileButton>
+                    </Group>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
-          <div className="w-1/2 h-full hidden lg:block bg-[radial-gradient(circle,_#ebebeb_2px,_#fafafa_0)] bg-[length:30px_30px]"></div>
+          <div className="w-1/2 h-full hidden lg:block bg-[radial-gradient(circle,#ebebeb_2px,#fafafa_0)] bg-size-[30px_30px]"></div>
         </div>
       </div>
     </div>
