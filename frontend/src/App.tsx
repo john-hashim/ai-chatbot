@@ -20,6 +20,7 @@ import { useUserStore } from '@/store/userStore'
 import { Tooltip } from 'react-tooltip'
 import { Landing } from '@/feature/Landing/Landing'
 import { ChatbotBasicSetup } from './feature/create-chatbot/ChatbotBasicSetup'
+import { ModalsProvider } from '@mantine/modals'
 
 const theme = createTheme({
   colors: {
@@ -74,11 +75,13 @@ function App() {
   }
   return (
     <MantineProvider theme={theme}>
-      <Notifications position="top-right" autoClose={5000} />
-      <GoogleOAuthProvider clientId={googleClientId || ''}>
-        <AppRoutes />
-        <Tooltip id="global-tooltip" place="bottom" offset={10} delayShow={200} />
-      </GoogleOAuthProvider>
+      <ModalsProvider>
+        <Notifications position="top-right" autoClose={5000} />
+        <GoogleOAuthProvider clientId={googleClientId || ''}>
+          <AppRoutes />
+          <Tooltip id="global-tooltip" place="bottom" offset={10} delayShow={200} />
+        </GoogleOAuthProvider>
+      </ModalsProvider>
     </MantineProvider>
   )
 }

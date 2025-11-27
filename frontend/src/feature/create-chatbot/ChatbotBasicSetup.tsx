@@ -5,15 +5,16 @@ import {
   Center,
   ColorInput,
   Switch,
-  Text,
   FileButton,
   Button,
   Group,
 } from '@mantine/core'
 import { ArrowLeft, X, Sun, Moon, ImageUp, CircleAlert } from 'lucide-react'
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { notifications } from '@mantine/notifications'
+import { modals } from '@mantine/modals'
+import { CropperComponent } from '@/components/common/Cropper'
 
 export const ChatbotBasicSetup: React.FC = () => {
   const navigate = useNavigate()
@@ -22,7 +23,16 @@ export const ChatbotBasicSetup: React.FC = () => {
   const [selectedColor, setSelectedColor] = useState('#2563eb')
   const [checked, setChecked] = useState(true)
   const [file, setFile] = useState<File | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const resetRef = useRef<() => void>(null)
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl)
+      }
+    }
+  }, [previewUrl])
 
   const handleFileChange = (selectedFile: File | null) => {
     if (selectedFile) {
@@ -36,12 +46,43 @@ export const ChatbotBasicSetup: React.FC = () => {
         resetRef.current?.()
         return
       }
-      setFile(selectedFile)
+      openCropperModal(selectedFile)
     }
+  }
+
+  const openCropperModal = (imageFile: File) => {
+    modals.open({
+      title: 'Crop Profile Picture',
+      size: 'lg',
+      children: (
+        <CropperComponent
+          image={imageFile}
+          onSave={handleCroppedImage}
+          onCancel={() => {
+            modals.closeAll()
+            resetRef.current?.()
+          }}
+        />
+      ),
+    })
+  }
+
+  const handleCroppedImage = (croppedFile: File) => {
+    setFile(croppedFile)
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl)
+    }
+    const newPreviewUrl = URL.createObjectURL(croppedFile)
+    setPreviewUrl(newPreviewUrl)
+    modals.closeAll()
   }
 
   const clearFile = () => {
     setFile(null)
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl)
+      setPreviewUrl(null)
+    }
     resetRef.current?.()
   }
 
@@ -134,16 +175,18 @@ export const ChatbotBasicSetup: React.FC = () => {
               <div className="flex justify-between items-center mt-4">
                 <p className="text-text-weak text-[12px]">JPG, PNG, and SVG up to 1MB</p>
                 <div>
-                  {file ? (
-                    <div className="flex items-center">
-                      <Text size="sm" ta="center" mt="sm" c="green">
-                        Picked file: {file.name}
-                      </Text>
+                  {file && previewUrl ? (
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={previewUrl}
+                        alt="Profile preview"
+                        className="w-9 h-9 rounded-full object-cover border-2 border-gray-200"
+                      />
                       <X
                         data-tooltip-id="global-tooltip"
                         data-tooltip-content="Remove Profile Picture"
                         data-tooltip-place="bottom"
-                        className="h-5 w-5 text-text-weak hover:text-icon-hover cursor-pointer"
+                        className="h-5 w-5 text-text-weak hover:text-icon-hover cursor-pointer shrink-0"
                         onClick={clearFile}
                       />
                     </div>
