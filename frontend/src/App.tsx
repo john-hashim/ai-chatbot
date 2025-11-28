@@ -16,11 +16,12 @@ import { GoogleOAuthProvider } from '@react-oauth/google'
 import { Dropzone } from '@mantine/dropzone'
 import { ProtectedRoute } from '@/routes/ProtectedRoute'
 import { MainLayout } from '@/components/layout/MainLayout'
-import { useUserStore } from '@/store/userStore'
+import { useStore } from '@/store'
 import { Tooltip } from 'react-tooltip'
 import { Landing } from '@/feature/Landing/Landing'
 import { ChatbotBasicSetup } from './feature/create-chatbot/ChatbotBasicSetup'
 import { ModalsProvider } from '@mantine/modals'
+import { ChatbotKnowledgeBaseSetup } from './feature/create-chatbot/ChatbotKnowledgeBaseSetup'
 
 const theme = createTheme({
   colors: {
@@ -87,7 +88,7 @@ function App() {
 }
 
 function AppRoutes() {
-  const token = useUserStore(state => state.token)
+  const token = useStore(state => state.token)
 
   return (
     <Routes>
@@ -99,12 +100,15 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       >
-        <Route path="/landing" element={<Landing />} />
-        <Route path="/new" element={<ChatbotBasicSetup />} />
+        <Route path="/chatbot/landing" element={<Landing />} />
+        <Route path="/chatbot/new" element={<ChatbotBasicSetup />} />
+        <Route path="/chatbot/:id/setup-knowledgebase" element={<ChatbotKnowledgeBaseSetup />} />
       </Route>
       <Route
         path="/"
-        element={token ? <Navigate to="/landing" replace /> : <Navigate to="/login" replace />}
+        element={
+          token ? <Navigate to="/chatbot/landing" replace /> : <Navigate to="/login" replace />
+        }
       />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

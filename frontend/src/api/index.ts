@@ -5,7 +5,7 @@ import axios, {
   type AxiosResponse,
   AxiosError,
 } from 'axios'
-import { useUserStore } from '@/store/userStore'
+import { useStore } from '@/store'
 import { notifications } from '@mantine/notifications'
 
 const BASE_URL = import.meta.env.VITE_API_URL
@@ -21,7 +21,7 @@ const apiClient: AxiosInstance = axios.create({
 // Request interceptor for adding auth token
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig): InternalAxiosRequestConfig => {
-    const token = useUserStore.getState().token
+    const token = useStore.getState().token
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`
     }
@@ -44,7 +44,7 @@ apiClient.interceptors.response.use(
           message: 'Session expired. Please login again.',
           className: 'error',
         })
-        useUserStore.getState().logout()
+        useStore.getState().logout()
       }
     } else if (response?.status === 400) {
       // Validation errors

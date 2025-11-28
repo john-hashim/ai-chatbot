@@ -1,6 +1,6 @@
 import { authService } from '@/api/services/auth'
 import { useApi } from '@/hooks/useApi'
-import { useUserStore } from '@/store/userStore'
+import { useStore } from '@/store'
 import type { AuthResponse, GoogleSignInRequest } from '@/types/auth'
 import { GoogleLogin, type CredentialResponse } from '@react-oauth/google'
 
@@ -9,7 +9,8 @@ const Login: React.FC = () => {
     authService.googleSignIn
   )
 
-  const userStore = useUserStore()
+  const setUser = useStore(state => state.setUser)
+  const setToken = useStore(state => state.setToken)
 
   const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
     if (!credentialResponse.credential) {
@@ -20,8 +21,8 @@ const Login: React.FC = () => {
       const response = await executeGoogleSignIn({
         credential: credentialResponse.credential,
       })
-      userStore.setUser(response.user)
-      userStore.setToken(response.token)
+      setUser(response.user)
+      setToken(response.token)
     } catch (err) {
       console.error('Google login failed:', err)
     }

@@ -20,9 +20,11 @@ import { type ApiResponse, type Chatbot, type ChatbotFormData } from '@/types/ch
 import { chatbotService } from '@/api/services/chatbot'
 import { useApi } from '@/hooks/useApi'
 import { AxiosError } from 'axios'
+import { useStore } from '@/store'
 
 export const ChatbotBasicSetup: React.FC = () => {
   const navigate = useNavigate()
+  const upsertChatbot = useStore(state => state.upsertChatbot)
 
   const { execute: excuteCreateChatbot } = useApi<ApiResponse<Chatbot>, [ChatbotFormData]>(
     chatbotService.createChatbot
@@ -111,7 +113,12 @@ export const ChatbotBasicSetup: React.FC = () => {
 
   const onSubmit = async (data: ChatbotFormData) => {
     try {
-      await excuteCreateChatbot(data)
+      const response = await excuteCreateChatbot(data)
+
+      // Store the chatbot from API response
+      if (response?.data) {
+        upsertChatbot(response.data)
+      }
 
       notifications.show({
         message: 'Chatbot created successfully!',

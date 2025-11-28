@@ -1,12 +1,12 @@
 import { Navigate } from 'react-router-dom'
-import { useUserStore } from '@/store/userStore'
+import { useStore } from '@/store'
 
 interface ProtectedRouteProps {
   children: React.ReactNode
 }
 
 export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
-  const token = useUserStore(state => state.token)
+  const token = useStore(state => state.token)
 
   if (!token) {
     return <Navigate to="/login" replace />

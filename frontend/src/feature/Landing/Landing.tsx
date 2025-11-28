@@ -1,6 +1,6 @@
 import { ChatbotSkeleton } from '@/components/common/ChatbotSkeleton'
 import { Button } from '@mantine/core'
-import { useUserStore } from '@/store/userStore'
+import { useStore } from '@/store'
 import { format, getHours } from 'date-fns'
 import { Plus, TrendingUp } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
@@ -8,10 +8,10 @@ import { useNavigate } from 'react-router-dom'
 export const Landing: React.FC = () => {
   const day = format(new Date(), 'eeee')
   const date = format(new Date(), 'MMMM dd')
-  const userStore = useUserStore()
+  const user = useStore(state => state.user)
   const navigate = useNavigate()
 
-  const firstName = userStore.user?.name.split(' ')[0]
+  const firstName = user?.name.split(' ')[0]
   const formattedFirstName = firstName
     ? firstName.charAt(0).toUpperCase() + firstName.slice(1).toLowerCase()
     : ''
@@ -50,7 +50,7 @@ export const Landing: React.FC = () => {
           <p className="text-s">Let’s get started! Create your first AI chatbot</p>
           <Button
             className="cursor-pointer mt-2"
-            onClick={() => navigate('/new')}
+            onClick={() => navigate('/chatbot/new')}
             leftSection={<Plus size={18} />}
             variant="default"
           >

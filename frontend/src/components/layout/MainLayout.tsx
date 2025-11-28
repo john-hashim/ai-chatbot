@@ -3,7 +3,7 @@ import { Header } from './Header'
 
 export function MainLayout() {
   const location = useLocation()
-  const hideHeader = location.pathname === '/new'
+  const hideHeader = location.pathname === '/chatbot/new'
 
   return (
     <div>
