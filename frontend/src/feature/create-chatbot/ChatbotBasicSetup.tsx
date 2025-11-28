@@ -9,7 +9,7 @@ import {
   Button,
   Group,
 } from '@mantine/core'
-import { ArrowLeft, X, Sun, Moon, ImageUp, CircleAlert, CircleCheck } from 'lucide-react'
+import { ArrowLeft, X, Sun, Moon, ImageUp, CircleAlert, CircleCheck, Loader2 } from 'lucide-react'
 import { useRef, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { notifications } from '@mantine/notifications'
@@ -26,7 +26,7 @@ export const ChatbotBasicSetup: React.FC = () => {
   const navigate = useNavigate()
   const upsertChatbot = useStore(state => state.upsertChatbot)
 
-  const { execute: excuteCreateChatbot } = useApi<ApiResponse<Chatbot>, [ChatbotFormData]>(
+  const { execute: excuteCreateChatbot, loading } = useApi<ApiResponse<Chatbot>, [ChatbotFormData]>(
     chatbotService.createChatbot
   )
 
@@ -114,17 +114,17 @@ export const ChatbotBasicSetup: React.FC = () => {
   const onSubmit = async (data: ChatbotFormData) => {
     try {
       const response = await excuteCreateChatbot(data)
-
-      // Store the chatbot from API response
       if (response?.data) {
         upsertChatbot(response.data)
-      }
 
-      notifications.show({
-        message: 'Chatbot created successfully!',
-        className: 'success',
-        icon: <CircleCheck color="#58a182" size={18} />,
-      })
+        notifications.show({
+          message: 'Chatbot created successfully!',
+          className: 'success',
+          icon: <CircleCheck color="#58a182" size={18} />,
+        })
+
+        navigate(`/chatbot/${response.data.id}/setup-knowledgebase`)
+      }
     } catch (err) {
       const axiosError = err as AxiosError<{ message?: string; code?: string }>
       if (axiosError.response?.status === 409) {
@@ -286,12 +286,12 @@ export const ChatbotBasicSetup: React.FC = () => {
               <div className="mt-10 flex justify-center items-center">
                 <Button
                   type="submit"
-                  onClick={() => navigate('/chatbot/1321/setup-knowledgebase')}
                   variant="default"
                   style={{ width: '75%' }}
-                  disabled={!!errors.name}
+                  disabled={!!errors.name || loading}
+                  leftSection={loading ? <Loader2 size={16} className="animate-spin" /> : null}
                 >
-                  Save And Continue
+                  {loading ? 'Creating...' : 'Save And Continue'}
                 </Button>
               </div>
             </form>

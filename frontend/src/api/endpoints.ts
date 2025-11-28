@@ -9,6 +9,7 @@ export const ENDPOINTS = {
   },
   CHATBOT: {
     CREATE: 'chatbot/create',
+    GET_ALL: 'chatbot/chatbots',
   },
 } as const
 

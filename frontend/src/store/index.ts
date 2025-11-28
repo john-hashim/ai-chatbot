@@ -36,6 +36,7 @@ export const useUserStore = () =>
 export const useChatbotStore = () =>
   useStore(state => ({
     chatbots: state.chatbots,
+    setChatbots: state.setChatbots,
     upsertChatbot: state.upsertChatbot,
     deleteChatbot: state.deleteChatbot,
     clearChatbots: state.clearChatbots,

@@ -13,4 +13,11 @@ export const chatbotService = {
   createChatbot: (data: ChatbotFormData): Promise<AxiosResponse<ApiResponse<Chatbot>>> => {
     return apiClient.post(ENDPOINTS.CHATBOT.CREATE, data)
   },
+  /**
+   * Get Chatbots list
+   * @returns Promise with chatbot data
+   */
+  getChabots: (): Promise<AxiosResponse<ApiResponse<Chatbot[]>>> => {
+    return apiClient.get(ENDPOINTS.CHATBOT.GET_ALL)
+  },
 }

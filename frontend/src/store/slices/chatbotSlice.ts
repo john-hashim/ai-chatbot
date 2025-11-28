@@ -3,6 +3,7 @@ import type { StateCreator } from 'zustand'
 
 export interface ChatbotSlice {
   chatbots: Chatbot[]
+  setChatbots: (chatbots: Chatbot[]) => void
   upsertChatbot: (chatbot: Chatbot) => void
   deleteChatbot: (id: string) => void
   clearChatbots: () => void
@@ -10,6 +11,7 @@ export interface ChatbotSlice {
 
 export const createChatbotSlice: StateCreator<ChatbotSlice> = set => ({
   chatbots: [],
+  setChatbots: chatbots => set({ chatbots }),
   upsertChatbot: chatbot =>
     set(state => {
       const existingIndex = state.chatbots.findIndex(bot => bot.id === chatbot.id)
