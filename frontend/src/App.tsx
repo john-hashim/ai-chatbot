@@ -76,7 +76,7 @@ function App() {
   return (
     <MantineProvider theme={theme}>
       <ModalsProvider>
-        <Notifications position="top-right" autoClose={5000} />
+        <Notifications position="top-right" autoClose={4000} />
         <GoogleOAuthProvider clientId={googleClientId || ''}>
           <AppRoutes />
           <Tooltip id="global-tooltip" place="bottom" offset={10} delayShow={200} />

@@ -2,7 +2,7 @@
 import { type AxiosResponse } from 'axios'
 import apiClient from '../index'
 import { ENDPOINTS } from '../endpoints'
-import type { Chatbot, ChatbotFormData } from '@/types/chatbot'
+import type { ApiResponse, Chatbot, ChatbotFormData } from '@/types/chatbot'
 
 export const chatbotService = {
   /**
@@ -10,7 +10,7 @@ export const chatbotService = {
    * @param data - chatbot payload
    * @returns Promise with chatbot data
    */
-  createChatbot: (data: ChatbotFormData): Promise<AxiosResponse<Chatbot>> => {
+  createChatbot: (data: ChatbotFormData): Promise<AxiosResponse<ApiResponse<Chatbot>>> => {
     return apiClient.post(ENDPOINTS.CHATBOT.CREATE, data)
   },
 }

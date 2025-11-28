@@ -9,21 +9,22 @@ import {
   Button,
   Group,
 } from '@mantine/core'
-import { ArrowLeft, X, Sun, Moon, ImageUp, CircleAlert } from 'lucide-react'
+import { ArrowLeft, X, Sun, Moon, ImageUp, CircleAlert, CircleCheck } from 'lucide-react'
 import { useRef, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { notifications } from '@mantine/notifications'
 import { modals } from '@mantine/modals'
 import { CropperComponent } from '@/components/common/Cropper'
 import { useForm, Controller } from 'react-hook-form'
-import type { Chatbot, ChatbotFormData } from '@/types/chatbot'
+import { type ApiResponse, type Chatbot, type ChatbotFormData } from '@/types/chatbot'
 import { chatbotService } from '@/api/services/chatbot'
 import { useApi } from '@/hooks/useApi'
+import { AxiosError } from 'axios'
 
 export const ChatbotBasicSetup: React.FC = () => {
   const navigate = useNavigate()
 
-  const { execute: excuteCreateChatbot } = useApi<Chatbot, [ChatbotFormData]>(
+  const { execute: excuteCreateChatbot } = useApi<ApiResponse<Chatbot>, [ChatbotFormData]>(
     chatbotService.createChatbot
   )
 
@@ -108,8 +109,25 @@ export const ChatbotBasicSetup: React.FC = () => {
     ProfilePictureResetRef.current?.()
   }
 
-  const onSubmit = (data: ChatbotFormData) => {
-    excuteCreateChatbot(data)
+  const onSubmit = async (data: ChatbotFormData) => {
+    try {
+      await excuteCreateChatbot(data)
+
+      notifications.show({
+        message: 'Chatbot created successfully!',
+        className: 'success',
+        icon: <CircleCheck color="#58a182" size={18} />,
+      })
+    } catch (err) {
+      const axiosError = err as AxiosError<{ message?: string; code?: string }>
+      if (axiosError.response?.status === 409) {
+        notifications.show({
+          message: 'A chatbot with this name already exists. Please choose a different name.',
+          className: 'error',
+          icon: <CircleAlert color="#c72027" size={18} />,
+        })
+      }
+    }
   }
 
   return (
