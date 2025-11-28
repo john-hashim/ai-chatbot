@@ -1,7 +1,8 @@
-import type { Request, Response } from 'express'
+import type { Request, Response, NextFunction } from 'express'
 import crypto from 'crypto'
 import { prisma } from '../prisma/client.js'
 import { OAuth2Client } from 'google-auth-library'
+import { ApiStatus, type ApiResponse } from '../types/api.js'
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID)
 
@@ -23,12 +24,15 @@ const createSession = async (userId: string) => {
   return session
 }
 
-export const logout = async (req: Request, res: Response): Promise<void> => {
+export const logout = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const session = req.session
 
     if (!session) {
-      res.status(400).json({ message: 'No session found' })
+      res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'No session found',
+      } satisfies ApiResponse)
       return
     }
 
@@ -36,25 +40,34 @@ export const logout = async (req: Request, res: Response): Promise<void> => {
       where: { id: session.id },
     })
 
-    res.status(200).json({ message: 'Logged out successfully' })
+    res.status(200).json({
+      status: ApiStatus.SUCCESS,
+      message: 'Logged out successfully',
+    } satisfies ApiResponse)
   } catch (error) {
     console.error('Logout error:', error)
-    res.status(500).json({ message: 'Error during logout' })
+    next(error)
   }
 }
 
-export const googleSignIn = async (req: Request, res: Response): Promise<void> => {
+export const googleSignIn = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { credential } = req.body
 
     if (!credential) {
-      res.status(400).json({ message: 'Google credential is required' })
+      res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'Google credential is required',
+      } satisfies ApiResponse)
       return
     }
 
     const clientId = process.env.GOOGLE_CLIENT_ID
     if (!clientId) {
-      res.status(500).json({ message: 'Server configuration error' })
+      res.status(500).json({
+        status: ApiStatus.FAILURE,
+        message: 'Server configuration error',
+      } satisfies ApiResponse)
       return
     }
 
@@ -66,7 +79,10 @@ export const googleSignIn = async (req: Request, res: Response): Promise<void> =
     const payload = ticket.getPayload()
 
     if (!payload?.sub || !payload?.email) {
-      res.status(400).json({ message: 'Invalid Google token' })
+      res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'Invalid Google token',
+      } satisfies ApiResponse)
       return
     }
 
@@ -98,24 +114,30 @@ export const googleSignIn = async (req: Request, res: Response): Promise<void> =
     const session = await createSession(user.id)
 
     res.status(200).json({
+      status: ApiStatus.SUCCESS,
       message: isNewUser ? 'Account created successfully' : 'Login successful',
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        avatar: user.avatar,
+      data: {
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          avatar: user.avatar,
+        },
+        token: session.token,
+        isNewUser,
       },
-      token: session.token,
-      isNewUser,
-    })
+    } satisfies ApiResponse)
   } catch (error) {
     console.error('Google sign-in error:', error)
 
     if (error instanceof Error && error.message.includes('Token used too late')) {
-      res.status(401).json({ message: 'Google token has expired. Please try signing in again.' })
+      res.status(401).json({
+        status: ApiStatus.FAILURE,
+        message: 'Google token has expired. Please try signing in again.',
+      } satisfies ApiResponse)
       return
     }
 
-    res.status(500).json({ message: 'Error processing Google sign-in' })
+    next(error)
   }
 }

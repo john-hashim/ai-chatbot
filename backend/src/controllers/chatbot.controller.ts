@@ -1,17 +1,10 @@
-import type { Request, Response } from 'express'
+import type { Request, Response, NextFunction } from 'express'
 import { prisma } from '../prisma/client.js'
 import { ApiStatus, type ApiResponse } from '../types/api.js'
 
-export const createChatbot = async (req: Request, res: Response) => {
+export const createChatbot = async (req: Request, res: Response, next: Function) => {
   try {
     const user = req.user
-
-    if (!user || !user.id) {
-      return res.status(401).json({
-        status: ApiStatus.FAILURE,
-        message: 'Unauthorized: User not authenticated',
-      } satisfies ApiResponse)
-    }
 
     const { name, appearance, brandColor, brandColorForHeader, profilePicture } = req.body
 
@@ -32,27 +25,33 @@ export const createChatbot = async (req: Request, res: Response) => {
       message: 'Chatbot created successfully',
     } satisfies ApiResponse)
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message.includes('Foreign key constraint')) {
-        return res.status(400).json({
-          status: ApiStatus.FAILURE,
-          message: 'Invalid user reference',
-          error: error.message,
-        } satisfies ApiResponse)
-      }
-
-      if (error.message.includes('Unique constraint')) {
-        return res.status(409).json({
-          status: ApiStatus.FAILURE,
-          message: 'A chatbot with this name already exists',
-          error: error.message,
-        } satisfies ApiResponse)
-      }
+    if (error instanceof Error && error.message.includes('Unique constraint')) {
+      return res.status(409).json({
+        status: ApiStatus.FAILURE,
+        message: 'A chatbot with this name already exists',
+        error: error.message,
+      } satisfies ApiResponse)
     }
 
-    res.status(500).json({
-      status: ApiStatus.FAILURE,
-      message: 'Internal server error while creating chatbot',
+    next(error)
+  }
+}
+
+export const getChatbots = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const user = req.user
+
+    const chatbots = await prisma.chatbot.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: 'desc' },
+    })
+
+    res.status(200).json({
+      status: ApiStatus.SUCCESS,
+      data: chatbots,
+      message: 'Chatbots retrieved successfully',
     } satisfies ApiResponse)
+  } catch (error) {
+    next(error)
   }
 }

@@ -286,7 +286,7 @@ export const ChatbotBasicSetup: React.FC = () => {
               <div className="mt-10 flex justify-center items-center">
                 <Button
                   type="submit"
-                  onClick={() => navigate('/new')}
+                  onClick={() => navigate('/chatbot/1321/setup-knowledgebase')}
                   variant="default"
                   style={{ width: '75%' }}
                   disabled={!!errors.name}

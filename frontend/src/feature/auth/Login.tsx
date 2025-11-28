@@ -21,8 +21,8 @@ const Login: React.FC = () => {
       const response = await executeGoogleSignIn({
         credential: credentialResponse.credential,
       })
-      setUser(response.user)
-      setToken(response.token)
+      setUser(response.data.user)
+      setToken(response.data.token)
     } catch (err) {
       console.error('Google login failed:', err)
     }

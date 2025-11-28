@@ -92,7 +92,7 @@ function AppRoutes() {
 
   return (
     <Routes>
-      <Route path="/login" element={token ? <Navigate to="/Landing" replace /> : <Login />} />
+      <Route path="/login" element={token ? <Navigate to="/chatbot/landing" replace /> : <Login />} />
       <Route
         element={
           <ProtectedRoute>

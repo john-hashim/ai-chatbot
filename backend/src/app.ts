@@ -3,6 +3,7 @@ import dotenv from 'dotenv'
 import cors from 'cors'
 import authRoutes from './routes/auth.routes.js'
 import chatbotRoutes from './routes/chatbot.routes.js'
+import { errorHandler } from './middleware/error.middleware.js'
 
 dotenv.config()
 
@@ -22,6 +23,8 @@ app.get('/', (req, res) => {
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() })
 })
+
+app.use(errorHandler)
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`)

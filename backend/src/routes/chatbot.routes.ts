@@ -5,5 +5,6 @@ import * as chatbotController from '../controllers/chatbot.controller.js'
 const router = express.Router()
 
 router.post('/create', authMiddleware.authenticateToken, chatbotController.createChatbot)
+router.get('/chatbots', authMiddleware.authenticateToken, chatbotController.getChatbots)
 
 export default router

@@ -1,6 +1,7 @@
 // src/middleware/auth.middleware.ts
 import type { Request, Response, NextFunction } from 'express'
 import { prisma } from '../prisma/client.js'
+import { ApiStatus, type ApiResponse } from '../types/api.js'
 
 declare global {
   namespace Express {
@@ -21,7 +22,10 @@ export const authenticateToken = async (
     const token = authHeader && authHeader.split(' ')[1]
 
     if (!token) {
-      return res.status(401).json({ message: 'Authentication required' })
+      return res.status(401).json({
+        status: ApiStatus.FAILURE,
+        message: 'Authentication required',
+      } satisfies ApiResponse)
     }
 
     const session = await prisma.session.findUnique({
@@ -33,7 +37,10 @@ export const authenticateToken = async (
       if (session) {
         await prisma.session.delete({ where: { id: session.id } })
       }
-      return res.status(401).json({ message: 'Session expired or invalid' })
+      return res.status(401).json({
+        status: ApiStatus.FAILURE,
+        message: 'Session expired or invalid',
+      } satisfies ApiResponse)
     }
 
     req.user = {
@@ -46,6 +53,9 @@ export const authenticateToken = async (
     next()
   } catch (error) {
     console.error('Authentication error:', error)
-    return res.status(500).json({ message: 'Authentication failed' })
+    return res.status(500).json({
+      status: ApiStatus.FAILURE,
+      message: 'Authentication failed',
+    } satisfies ApiResponse)
   }
 }

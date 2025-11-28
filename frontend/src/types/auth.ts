@@ -5,11 +5,16 @@ export interface User {
   avatar?: string
 }
 
-export interface AuthResponse {
+export interface AuthResponseData {
   user: User
-  message: string
   token: string
   isNewUser: boolean
+}
+
+export interface AuthResponse {
+  status: 'success' | 'failure'
+  message: string
+  data: AuthResponseData
 }
 
 export interface GoogleAuthResponse {
