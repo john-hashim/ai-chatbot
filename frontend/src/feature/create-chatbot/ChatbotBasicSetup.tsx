@@ -15,16 +15,37 @@ import { useNavigate } from 'react-router-dom'
 import { notifications } from '@mantine/notifications'
 import { modals } from '@mantine/modals'
 import { CropperComponent } from '@/components/common/Cropper'
+import { useForm, Controller } from 'react-hook-form'
+
+interface ChatbotFormData {
+  name: string
+  appearance: 'light' | 'dark'
+  brandColor: string
+  brandColorForHeader: boolean
+  profilePicture: File | null
+}
 
 export const ChatbotBasicSetup: React.FC = () => {
   const navigate = useNavigate()
 
-  const [theme, setTheme] = useState<'light' | 'dark'>('light')
-  const [selectedColor, setSelectedColor] = useState('#2563eb')
-  const [checked, setChecked] = useState(true)
   const [file, setFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
-  const resetRef = useRef<() => void>(null)
+  const ProfilePictureResetRef = useRef<() => void>(null)
+  const {
+    register,
+    handleSubmit,
+    control,
+    setValue,
+    formState: { errors },
+  } = useForm<ChatbotFormData>({
+    defaultValues: {
+      name: '',
+      appearance: 'light',
+      brandColor: '#2563eb',
+      brandColorForHeader: true,
+      profilePicture: null,
+    },
+  })
 
   useEffect(() => {
     return () => {
@@ -43,7 +64,7 @@ export const ChatbotBasicSetup: React.FC = () => {
           className: 'error',
           icon: <CircleAlert color="#c72027" size={18} />,
         })
-        resetRef.current?.()
+        ProfilePictureResetRef.current?.()
         return
       }
       openCropperModal(selectedFile)
@@ -60,7 +81,7 @@ export const ChatbotBasicSetup: React.FC = () => {
           onSave={handleCroppedImage}
           onCancel={() => {
             modals.closeAll()
-            resetRef.current?.()
+            ProfilePictureResetRef.current?.()
           }}
         />
       ),
@@ -69,6 +90,7 @@ export const ChatbotBasicSetup: React.FC = () => {
 
   const handleCroppedImage = (croppedFile: File) => {
     setFile(croppedFile)
+    setValue('profilePicture', croppedFile)
     if (previewUrl) {
       URL.revokeObjectURL(previewUrl)
     }
@@ -79,11 +101,16 @@ export const ChatbotBasicSetup: React.FC = () => {
 
   const clearFile = () => {
     setFile(null)
+    setValue('profilePicture', null)
     if (previewUrl) {
       URL.revokeObjectURL(previewUrl)
       setPreviewUrl(null)
     }
-    resetRef.current?.()
+    ProfilePictureResetRef.current?.()
+  }
+
+  const onSubmit = (data: ChatbotFormData) => {
+    console.log(data)
   }
 
   return (
@@ -109,105 +136,141 @@ export const ChatbotBasicSetup: React.FC = () => {
       </div>
       <div className="lg:px-32 px-6 flex-1 pt-1 pb-15 flex flex-wrap">
         <div className="border flex-1 border-border-week lg:mt-0 rounded-2xl flex overflow-hidden">
-          <div className="lg:w-1/2 w-full h-full border-r border-border-week lg:p-20 px-5 py-12">
-            <p className="text-3xl font-semibold text-center sm:text-left">
-              Let's Build Your Chatbot
-            </p>
-            <p className="text-sm font-light text-center sm:text-left">
-              Customize your agent's look now. Additional styling options in settings.
-            </p>
-            <div className="mt-10">
-              <p className="text-text-secondary text-sm">What's your chatbot's name?</p>
-              <TextInput className="mt-1" type="text" id="chatbotname" placeholder="Luna AI" />
-            </div>
-            <div className="h-0.5 mt-6 border-t border-gray-100"></div>
-            <div className="flex justify-between items-center mt-6">
-              <p className="text-text-secondary text-sm">Appearance</p>
-              <SegmentedControl
-                value={theme}
-                onChange={value => setTheme(value as 'light' | 'dark')}
-                data={[
-                  {
-                    value: 'light',
-                    label: (
-                      <Center style={{ gap: 10 }}>
-                        <Sun size={16} />
-                      </Center>
-                    ),
-                  },
-                  {
-                    value: 'dark',
-                    label: (
-                      <Center style={{ gap: 10 }}>
-                        <Moon size={16} />
-                      </Center>
-                    ),
-                  },
-                ]}
-              />
-            </div>
-            <div className="flex justify-between items-center mt-6">
-              <p className="text-text-secondary text-sm">Choose your brand color</p>
-              <div className="w-1/3">
-                <ColorInput
-                  defaultValue={selectedColor}
-                  onChangeEnd={setSelectedColor}
-                  swatchesPerRow={5}
-                  closeOnColorSwatchClick
-                  withEyeDropper={false}
-                  swatches={['#2563eb', '#7c3aed', '#10b981', '#f59e0b', '#ef4444']}
+          <div className="lg:w-1/2 w-full h-full border-r border-border-week lg:p-20 px-8 py-12">
+            <form onSubmit={handleSubmit(onSubmit)}>
+              <p className="text-3xl font-semibold text-center sm:text-left">
+                Let's Build Your Chatbot
+              </p>
+              <p className="text-sm font-light text-center sm:text-left">
+                Customize your agent's look now. Additional styling options in settings.
+              </p>
+              <div className="mt-10">
+                <p className="text-text-secondary text-sm">What's your chatbot's name?</p>
+                <TextInput
+                  {...register('name', { required: 'Please provide your chatbot name' })}
+                  className="mt-1"
+                  type="text"
+                  id="chatbotname"
+                  placeholder="Luna AI"
+                  error={errors.name?.message}
                 />
               </div>
-            </div>
-            <div className="flex justify-between items-center mt-6">
-              <p className="text-text-secondary text-sm">Use brand color for header</p>
-              <div>
-                <Switch
-                  checked={checked}
-                  onChange={event => setChecked(event.currentTarget.checked)}
-                  color="teal"
-                />
-              </div>
-            </div>
-            <div className="h-0.5 mt-6 border-t border-gray-100"></div>
-            <div className="mt-6">
-              <p className="text-text-secondary text-sm">Profile Picture</p>
-              <div className="flex justify-between items-center mt-4">
-                <p className="text-text-weak text-[12px]">JPG, PNG, and SVG up to 1MB</p>
-                <div>
-                  {file && previewUrl ? (
-                    <div className="flex items-center gap-3">
-                      <img
-                        src={previewUrl}
-                        alt="Profile preview"
-                        className="w-9 h-9 rounded-full object-cover border-2 border-gray-200"
-                      />
-                      <X
-                        data-tooltip-id="global-tooltip"
-                        data-tooltip-content="Remove Profile Picture"
-                        data-tooltip-place="bottom"
-                        className="h-5 w-5 text-text-weak hover:text-icon-hover cursor-pointer shrink-0"
-                        onClick={clearFile}
-                      />
-                    </div>
-                  ) : (
-                    <Group justify="center">
-                      <FileButton
-                        onChange={handleFileChange}
-                        accept="image/png,image/jpeg"
-                        resetRef={resetRef}
-                      >
-                        {props => (
-                          <Button {...props} leftSection={<ImageUp size={14} />}>
-                            Upload image
-                          </Button>
-                        )}
-                      </FileButton>
-                    </Group>
+              <div className="h-0.5 mt-6 border-t border-gray-100"></div>
+              <div className="flex justify-between items-center mt-6">
+                <p className="text-text-secondary text-sm">Appearance</p>
+                <Controller
+                  name="appearance"
+                  control={control}
+                  render={({ field }) => (
+                    <SegmentedControl
+                      {...field}
+                      data={[
+                        {
+                          value: 'light',
+                          label: (
+                            <Center style={{ gap: 10 }}>
+                              <Sun size={16} />
+                            </Center>
+                          ),
+                        },
+                        {
+                          value: 'dark',
+                          label: (
+                            <Center style={{ gap: 10 }}>
+                              <Moon size={16} />
+                            </Center>
+                          ),
+                        },
+                      ]}
+                    />
                   )}
+                />
+              </div>
+              <div className="flex justify-between items-center mt-6">
+                <p className="text-text-secondary text-sm">Choose your brand color</p>
+                <div className="w-1/3">
+                  <Controller
+                    name="brandColor"
+                    control={control}
+                    render={({ field }) => (
+                      <ColorInput
+                        {...field}
+                        swatchesPerRow={5}
+                        closeOnColorSwatchClick
+                        withEyeDropper={false}
+                        swatches={['#2563eb', '#7c3aed', '#10b981', '#f59e0b', '#ef4444']}
+                      />
+                    )}
+                  />
                 </div>
               </div>
-            </div>
+              <div className="flex justify-between items-center mt-6">
+                <p className="text-text-secondary text-sm">Use brand color for header</p>
+                <div>
+                  <Controller
+                    name="brandColorForHeader"
+                    control={control}
+                    render={({ field: { value, onChange } }) => (
+                      <Switch
+                        checked={value}
+                        onChange={event => onChange(event.currentTarget.checked)}
+                        color="teal"
+                      />
+                    )}
+                  />
+                </div>
+              </div>
+              <div className="h-0.5 mt-6 border-t border-gray-100"></div>
+              <div className="mt-6">
+                <p className="text-text-secondary text-sm">Profile Picture</p>
+                <div className="flex justify-between items-center mt-4">
+                  <p className="text-text-weak text-[12px]">JPG, PNG, and SVG up to 1MB</p>
+                  <div>
+                    {file && previewUrl ? (
+                      <div className="flex items-center gap-3">
+                        <img
+                          src={previewUrl}
+                          alt="Profile preview"
+                          className="w-9 h-9 rounded-full object-cover border-2 border-gray-200"
+                        />
+                        <X
+                          data-tooltip-id="global-tooltip"
+                          data-tooltip-content="Remove Profile Picture"
+                          data-tooltip-place="bottom"
+                          className="h-5 w-5 text-text-weak hover:text-icon-hover cursor-pointer shrink-0"
+                          onClick={clearFile}
+                        />
+                      </div>
+                    ) : (
+                      <Group justify="center">
+                        <FileButton
+                          onChange={handleFileChange}
+                          accept="image/png,image/jpeg"
+                          resetRef={ProfilePictureResetRef}
+                        >
+                          {props => (
+                            <Button {...props} leftSection={<ImageUp size={14} />}>
+                              Upload image
+                            </Button>
+                          )}
+                        </FileButton>
+                      </Group>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div className="mt-10 flex justify-center items-center">
+                <Button
+                  type="submit"
+                  onClick={() => navigate('/new')}
+                  variant="default"
+                  style={{ width: '75%' }}
+                  disabled={!!errors.name}
+                >
+                  Save And Continue
+                </Button>
+              </div>
+            </form>
           </div>
           <div className="w-1/2 h-full hidden lg:block bg-[radial-gradient(circle,#ebebeb_2px,#fafafa_0)] bg-size-[30px_30px]"></div>
         </div>
