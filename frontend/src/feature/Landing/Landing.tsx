@@ -25,7 +25,7 @@ export const Landing: React.FC = () => {
   }
 
   return (
-    <div className="px-5 py-6 lg:px-40 border-t border-t-border-strong">
+    <div className="px-5 py-6 lg:px-40 border-t border-t-border-week">
       <div className="text-sm font-medium">
         <span>{day}</span>, <span>{date}</span>
       </div>

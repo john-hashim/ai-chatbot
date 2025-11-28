@@ -7,6 +7,9 @@ export const ENDPOINTS = {
       SIGNIN: '/auth/google/signin', // POST - API-based Google sign-in
     },
   },
+  CHATBOT: {
+    CREATE: 'chatbot/create',
+  },
 } as const
 
 export type EndpointValues = typeof ENDPOINTS

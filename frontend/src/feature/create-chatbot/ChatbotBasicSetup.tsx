@@ -16,17 +16,16 @@ import { notifications } from '@mantine/notifications'
 import { modals } from '@mantine/modals'
 import { CropperComponent } from '@/components/common/Cropper'
 import { useForm, Controller } from 'react-hook-form'
-
-interface ChatbotFormData {
-  name: string
-  appearance: 'light' | 'dark'
-  brandColor: string
-  brandColorForHeader: boolean
-  profilePicture: File | null
-}
+import type { Chatbot, ChatbotFormData } from '@/types/chatbot'
+import { chatbotService } from '@/api/services/chatbot'
+import { useApi } from '@/hooks/useApi'
 
 export const ChatbotBasicSetup: React.FC = () => {
   const navigate = useNavigate()
+
+  const { execute: excuteCreateChatbot } = useApi<Chatbot, [ChatbotFormData]>(
+    chatbotService.createChatbot
+  )
 
   const [file, setFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
@@ -110,7 +109,7 @@ export const ChatbotBasicSetup: React.FC = () => {
   }
 
   const onSubmit = (data: ChatbotFormData) => {
-    console.log(data)
+    excuteCreateChatbot(data)
   }
 
   return (

@@ -2,6 +2,7 @@ import express from 'express'
 import dotenv from 'dotenv'
 import cors from 'cors'
 import authRoutes from './routes/auth.routes.js'
+import chatbotRoutes from './routes/chatbot.routes.js'
 
 dotenv.config()
 
@@ -12,6 +13,7 @@ app.use(cors())
 app.use(express.json())
 
 app.use('/api/auth', authRoutes)
+app.use('/api/chatbot', chatbotRoutes)
 
 app.get('/', (req, res) => {
   res.json({ message: 'AI Chatbot Backend Server is running!' })
