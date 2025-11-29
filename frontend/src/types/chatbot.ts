@@ -3,7 +3,7 @@ export interface ChatbotFormData {
   appearance: 'light' | 'dark'
   brandColor: string
   brandColorForHeader: boolean
-  profilePicture: File | null
+  profilePicture: string | null
 }
 
 export interface Chatbot extends ChatbotFormData {

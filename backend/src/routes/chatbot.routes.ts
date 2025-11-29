@@ -6,5 +6,10 @@ const router = express.Router()
 
 router.post('/create', authMiddleware.authenticateToken, chatbotController.createChatbot)
 router.get('/chatbots', authMiddleware.authenticateToken, chatbotController.getChatbots)
+router.post(
+  '/upload-url',
+  authMiddleware.authenticateToken,
+  chatbotController.getPresignedUploadUrl
+)
 
 export default router

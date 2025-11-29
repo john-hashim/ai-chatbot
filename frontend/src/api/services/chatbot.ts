@@ -4,6 +4,12 @@ import apiClient from '../index'
 import { ENDPOINTS } from '../endpoints'
 import type { ApiResponse, Chatbot, ChatbotFormData } from '@/types/chatbot'
 
+interface PresignedUrlData {
+  uploadUrl: string
+  fileUrl: string
+  key: string
+}
+
 export const chatbotService = {
   /**
    * Create Chatbot from frist step
@@ -19,5 +25,18 @@ export const chatbotService = {
    */
   getChabots: (): Promise<AxiosResponse<ApiResponse<Chatbot[]>>> => {
     return apiClient.get(ENDPOINTS.CHATBOT.GET_ALL)
+  },
+  /**
+   * Get presigned URL for uploading profile picture to R2
+   * @param fileName - name of the file
+   * @param fileType - MIME type of the file
+   * @returns Promise with presigned URL data
+   */
+  getPresignedUploadUrl: (
+    fileName: string,
+    fileType: string,
+    directory: string
+  ): Promise<AxiosResponse<ApiResponse<PresignedUrlData>>> => {
+    return apiClient.post(ENDPOINTS.CHATBOT.UPLOAD_URL, { fileName, fileType, directory })
   },
 }
