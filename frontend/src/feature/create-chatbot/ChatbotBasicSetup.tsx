@@ -10,10 +10,9 @@ import {
   Group,
   Tooltip,
 } from '@mantine/core'
-import { ArrowLeft, X, Sun, Moon, ImageUp, CircleAlert, CircleCheck, Loader2 } from 'lucide-react'
+import { ArrowLeft, X, Sun, Moon, ImageUp, Loader2 } from 'lucide-react'
 import { useRef, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { notifications } from '@mantine/notifications'
 import { modals } from '@mantine/modals'
 import { CropperComponent } from '@/components/common/Cropper'
 import { useForm, Controller } from 'react-hook-form'
@@ -22,6 +21,8 @@ import { chatbotService } from '@/api/services/chatbot'
 import { useApi } from '@/hooks/useApi'
 import { AxiosError } from 'axios'
 import { useStore } from '@/store'
+import { showNotification } from '@/utils/notifications'
+import { uploadImageToR2 } from '@/api/services/upload'
 
 export const ChatbotBasicSetup: React.FC = () => {
   const navigate = useNavigate()
@@ -39,7 +40,7 @@ export const ChatbotBasicSetup: React.FC = () => {
     handleSubmit,
     control,
     setValue,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<ChatbotFormData>({
     defaultValues: {
       name: '',
@@ -62,11 +63,7 @@ export const ChatbotBasicSetup: React.FC = () => {
     if (selectedFile) {
       const maxSizeInBytes = 1 * 1024 * 1024
       if (selectedFile.size > maxSizeInBytes) {
-        notifications.show({
-          message: 'Image size larger than 1MB',
-          className: 'error',
-          icon: <CircleAlert color="#c72027" size={18} />,
-        })
+        showNotification('error', 'Image size larger than 1MB')
         ProfilePictureResetRef.current?.()
         return
       }
@@ -117,38 +114,14 @@ export const ChatbotBasicSetup: React.FC = () => {
 
       if (file) {
         try {
-          const presignedResponse = await chatbotService.getPresignedUploadUrl(
-            file.name,
-            file.type,
-            'profile-pictures'
-          )
-
-          if (presignedResponse.data.data) {
-            const { uploadUrl, fileUrl } = presignedResponse.data.data
-
-            const uploadResponse = await fetch(uploadUrl, {
-              method: 'PUT',
-              body: file,
-              headers: {
-                'Content-Type': file.type,
-              },
-            })
-
-            if (!uploadResponse.ok) {
-              throw new Error('Upload failed')
-            }
-            profilePictureUrl = fileUrl
-          }
+          profilePictureUrl = await uploadImageToR2(file, 'profile-pictures')
         } catch (error) {
           console.error('Error uploading to R2:', error)
-          notifications.show({
-            message: 'Failed to upload profile picture. Please try again.',
-            className: 'error',
-            icon: <CircleAlert color="#c72027" size={18} />,
-          })
+          showNotification('error', 'Failed to upload profile picture. Please try again.')
           return
         }
       }
+
       const chatbotData: ChatbotFormData = {
         ...data,
         profilePicture: profilePictureUrl,
@@ -158,23 +131,18 @@ export const ChatbotBasicSetup: React.FC = () => {
 
       if (response?.data) {
         upsertChatbot(response.data)
-
-        notifications.show({
-          message: 'Chatbot created successfully!',
-          className: 'success',
-          icon: <CircleCheck color="#58a182" size={18} />,
-        })
-
         navigate(`/chatbot/${response.data.id}/setup-knowledgebase`)
+        showNotification('success', 'Chatbot created successfully!')
       }
     } catch (err) {
       const axiosError = err as AxiosError<{ message?: string; code?: string }>
       if (axiosError.response?.status === 409) {
-        notifications.show({
-          message: 'A chatbot with this name already exists. Please choose a different name.',
-          className: 'error',
-          icon: <CircleAlert color="#c72027" size={18} />,
-        })
+        showNotification(
+          'error',
+          'A chatbot with this name already exists. Please choose a different name.'
+        )
+      } else {
+        showNotification('error', 'Failed to create chatbot. Please try again.')
       }
     }
   }
@@ -327,10 +295,10 @@ export const ChatbotBasicSetup: React.FC = () => {
                   type="submit"
                   variant="default"
                   style={{ width: '75%' }}
-                  disabled={!!errors.name || loading}
-                  leftSection={loading ? <Loader2 size={16} className="animate-spin" /> : null}
+                  disabled={!!errors.name || isSubmitting || loading}
+                  leftSection={isSubmitting ? <Loader2 size={16} className="animate-spin" /> : null}
                 >
-                  {loading ? 'Creating...' : 'Save And Continue'}
+                  {isSubmitting || loading ? 'Creating...' : 'Save And Continue'}
                 </Button>
               </div>
             </form>
