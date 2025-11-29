@@ -1,13 +1,11 @@
 import './App.css'
-import 'react-tooltip/dist/react-tooltip.css'
-import './styles/tooltip.css'
 
 import '@mantine/core/styles.css'
 import '@mantine/dropzone/styles.css'
 import '@mantine/notifications/styles.css'
 import './styles/mantine-overrides.css'
 import classes from './theme.module.css'
-import { createTheme, MantineProvider, Button, TextInput, ColorInput } from '@mantine/core'
+import { createTheme, MantineProvider, Button, TextInput, ColorInput, Tooltip } from '@mantine/core'
 import { Notifications } from '@mantine/notifications'
 
 import Login from '@/feature/auth/Login'
@@ -17,7 +15,6 @@ import { Dropzone } from '@mantine/dropzone'
 import { ProtectedRoute } from '@/routes/ProtectedRoute'
 import { MainLayout } from '@/components/layout/MainLayout'
 import { useStore } from '@/store'
-import { Tooltip } from 'react-tooltip'
 import { Landing } from '@/feature/Landing/Landing'
 import { ChatbotBasicSetup } from './feature/create-chatbot/ChatbotBasicSetup'
 import { ModalsProvider } from '@mantine/modals'
@@ -66,6 +63,11 @@ const theme = createTheme({
         root: classes.dropzoneRoot,
       },
     }),
+    Tooltip: Tooltip.extend({
+      defaultProps: {
+        transitionProps: { transition: 'pop', duration: 300 },
+      },
+    }),
   },
 })
 
@@ -80,7 +82,6 @@ function App() {
         <Notifications position="top-right" autoClose={4000} />
         <GoogleOAuthProvider clientId={googleClientId || ''}>
           <AppRoutes />
-          <Tooltip id="global-tooltip" place="bottom" offset={10} delayShow={200} />
         </GoogleOAuthProvider>
       </ModalsProvider>
     </MantineProvider>
@@ -92,7 +93,10 @@ function AppRoutes() {
 
   return (
     <Routes>
-      <Route path="/login" element={token ? <Navigate to="/chatbot/landing" replace /> : <Login />} />
+      <Route
+        path="/login"
+        element={token ? <Navigate to="/chatbot/landing" replace /> : <Login />}
+      />
       <Route
         element={
           <ProtectedRoute>

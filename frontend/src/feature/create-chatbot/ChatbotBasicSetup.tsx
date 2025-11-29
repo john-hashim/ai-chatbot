@@ -8,6 +8,7 @@ import {
   FileButton,
   Button,
   Group,
+  Tooltip,
 } from '@mantine/core'
 import { ArrowLeft, X, Sun, Moon, ImageUp, CircleAlert, CircleCheck, Loader2 } from 'lucide-react'
 import { useRef, useState, useEffect } from 'react'
@@ -140,23 +141,21 @@ export const ChatbotBasicSetup: React.FC = () => {
   return (
     <div className="flex flex-col h-screen">
       <div className="px-5 py-2 flex items-center justify-between">
-        <div
-          className="p-1 hover:bg-icon-bg-hover rounded cursor-pointer"
-          data-tooltip-id="global-tooltip"
-          data-tooltip-content="Go Back"
-          data-tooltip-place="bottom-start"
-          onClick={() => navigate('/landing')}
-        >
-          <ArrowLeft className="h-5 w-5 text-text-weak hover:text-icon-hover" />
-        </div>
+        <Tooltip label="Go Back" position="bottom-start">
+          <div
+            className="p-1 hover:bg-icon-bg-hover rounded cursor-pointer"
+            onClick={() => navigate('/landing')}
+          >
+            <ArrowLeft className="h-5 w-5 text-text-weak hover:text-icon-hover" />
+          </div>
+        </Tooltip>
         <Logo height={40} width={28} fontSize={25} logoIcon={false} />
-        <X
-          data-tooltip-id="global-tooltip"
-          data-tooltip-content="Close"
-          data-tooltip-place="bottom-end"
-          className="h-5 w-5 text-text-weak hover:text-icon-hover cursor-pointer"
-          onClick={() => navigate('/landing')}
-        />
+        <Tooltip label="Close" position="bottom-end">
+          <X
+            className="h-5 w-5 text-text-weak hover:text-icon-hover cursor-pointer"
+            onClick={() => navigate('/landing')}
+          />
+        </Tooltip>
       </div>
       <div className="lg:px-32 px-6 flex-1 pt-1 pb-15 flex flex-wrap">
         <div className="border flex-1 border-border-week lg:mt-0 rounded-2xl flex overflow-hidden">
@@ -257,13 +256,12 @@ export const ChatbotBasicSetup: React.FC = () => {
                           alt="Profile preview"
                           className="w-9 h-9 rounded-full object-cover border-2 border-gray-200"
                         />
-                        <X
-                          data-tooltip-id="global-tooltip"
-                          data-tooltip-content="Remove Profile Picture"
-                          data-tooltip-place="bottom"
-                          className="h-5 w-5 text-text-weak hover:text-icon-hover cursor-pointer shrink-0"
-                          onClick={clearFile}
-                        />
+                        <Tooltip label="Remove Profile Picture" position="bottom">
+                          <X
+                            className="h-5 w-5 text-text-weak hover:text-icon-hover cursor-pointer shrink-0"
+                            onClick={clearFile}
+                          />
+                        </Tooltip>
                       </div>
                     ) : (
                       <Group justify="center">
