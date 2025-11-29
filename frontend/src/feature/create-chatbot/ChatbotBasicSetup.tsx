@@ -93,58 +93,12 @@ export const ChatbotBasicSetup: React.FC = () => {
 
   const handleCroppedImage = async (croppedFile: File) => {
     setFile(croppedFile)
-
-    // Create preview URL
     if (previewUrl) {
       URL.revokeObjectURL(previewUrl)
     }
     const newPreviewUrl = URL.createObjectURL(croppedFile)
     setPreviewUrl(newPreviewUrl)
     modals.closeAll()
-
-    try {
-      const presignedResponse = await chatbotService.getPresignedUploadUrl(
-        croppedFile.name,
-        croppedFile.type,
-        'profile-pictures'
-      )
-
-      if (presignedResponse.data.data) {
-        const { uploadUrl, fileUrl } = presignedResponse.data.data
-
-        const uploadResponse = await fetch(uploadUrl, {
-          method: 'PUT',
-          body: croppedFile,
-          headers: {
-            'Content-Type': croppedFile.type,
-          },
-        })
-
-        if (uploadResponse.ok) {
-          if (previewUrl) {
-            URL.revokeObjectURL(previewUrl)
-          }
-          setPreviewUrl(fileUrl)
-          setValue('profilePicture', fileUrl)
-
-          notifications.show({
-            message: 'Profile picture uploaded successfully!',
-            className: 'success',
-            icon: <CircleCheck color="#58a182" size={18} />,
-          })
-        } else {
-          throw new Error('Upload failed')
-        }
-      }
-    } catch (error) {
-      console.error('Error uploading to R2:', error)
-      notifications.show({
-        message: 'Failed to upload profile picture. Please try again.',
-        className: 'error',
-        icon: <CircleAlert color="#c72027" size={18} />,
-      })
-      clearFile()
-    }
   }
 
   const clearFile = () => {
@@ -159,7 +113,49 @@ export const ChatbotBasicSetup: React.FC = () => {
 
   const onSubmit = async (data: ChatbotFormData) => {
     try {
-      const response = await excuteCreateChatbot(data)
+      let profilePictureUrl: string | null = null
+
+      if (file) {
+        try {
+          const presignedResponse = await chatbotService.getPresignedUploadUrl(
+            file.name,
+            file.type,
+            'profile-pictures'
+          )
+
+          if (presignedResponse.data.data) {
+            const { uploadUrl, fileUrl } = presignedResponse.data.data
+
+            const uploadResponse = await fetch(uploadUrl, {
+              method: 'PUT',
+              body: file,
+              headers: {
+                'Content-Type': file.type,
+              },
+            })
+
+            if (!uploadResponse.ok) {
+              throw new Error('Upload failed')
+            }
+            profilePictureUrl = fileUrl
+          }
+        } catch (error) {
+          console.error('Error uploading to R2:', error)
+          notifications.show({
+            message: 'Failed to upload profile picture. Please try again.',
+            className: 'error',
+            icon: <CircleAlert color="#c72027" size={18} />,
+          })
+          return
+        }
+      }
+      const chatbotData: ChatbotFormData = {
+        ...data,
+        profilePicture: profilePictureUrl,
+      }
+
+      const response = await excuteCreateChatbot(chatbotData)
+
       if (response?.data) {
         upsertChatbot(response.data)
 
