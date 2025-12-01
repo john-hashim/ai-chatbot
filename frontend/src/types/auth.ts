@@ -11,18 +11,6 @@ export interface AuthResponseData {
   isNewUser: boolean
 }
 
-export interface AuthResponse {
-  status: 'success' | 'failure'
-  message: string
-  data: AuthResponseData
-}
-
-export interface GoogleAuthResponse {
-  success: boolean
-  authUrl: string
-  message: string
-}
-
 export interface GoogleSignInRequest {
   credential: string
 }

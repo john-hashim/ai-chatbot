@@ -16,13 +16,14 @@ import { useNavigate } from 'react-router-dom'
 import { modals } from '@mantine/modals'
 import { CropperComponent } from '@/components/common/Cropper'
 import { useForm, Controller } from 'react-hook-form'
-import { type ApiResponse, type Chatbot, type ChatbotFormData } from '@/types/chatbot'
+import { type Chatbot, type ChatbotFormData } from '@/types/chatbot'
 import { chatbotService } from '@/api/services/chatbot'
 import { useApi } from '@/hooks/useApi'
 import { AxiosError } from 'axios'
 import { useStore } from '@/store'
 import { showNotification } from '@/utils/notifications'
 import { uploadImageToR2 } from '@/api/services/upload'
+import type { ApiResponse } from '@/types/api'
 
 export const ChatbotBasicSetup: React.FC = () => {
   const navigate = useNavigate()

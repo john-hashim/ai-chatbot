@@ -5,9 +5,10 @@ import { format, getHours } from 'date-fns'
 import { Plus, TrendingUp } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useApi } from '@/hooks/useApi'
-import type { ApiResponse, Chatbot } from '@/types/chatbot'
+import type { Chatbot } from '@/types/chatbot'
 import { chatbotService } from '@/api/services/chatbot'
 import { useEffect, useRef } from 'react'
+import type { ApiResponse } from '@/types/api'
 
 export const Landing: React.FC = () => {
   const day = format(new Date(), 'eeee')

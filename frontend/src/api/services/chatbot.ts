@@ -2,7 +2,8 @@
 import { type AxiosResponse } from 'axios'
 import apiClient from '../index'
 import { ENDPOINTS } from '../endpoints'
-import type { ApiResponse, Chatbot, ChatbotFormData } from '@/types/chatbot'
+import type { Chatbot, ChatbotFormData } from '@/types/chatbot'
+import type { ApiResponse } from '@/types/api'
 
 interface PresignedUrlData {
   uploadUrl: string

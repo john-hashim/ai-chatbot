@@ -141,3 +141,44 @@ export const googleSignIn = async (req: Request, res: Response, next: NextFuncti
     next(error)
   }
 }
+
+export const getMe = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const userId = req.user?.id
+
+    if (!userId) {
+      res.status(401).json({
+        status: ApiStatus.FAILURE,
+        message: 'Unauthorized',
+      } satisfies ApiResponse)
+      return
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        avatar: true,
+      },
+    })
+
+    if (!user) {
+      res.status(404).json({
+        status: ApiStatus.FAILURE,
+        message: 'User not found',
+      } satisfies ApiResponse)
+      return
+    }
+
+    res.status(200).json({
+      status: ApiStatus.SUCCESS,
+      message: 'User retrieved successfully',
+      data: user,
+    } satisfies ApiResponse)
+  } catch (error) {
+    console.error('Get user error:', error)
+    next(error)
+  }
+}
