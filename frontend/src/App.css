@@ -10,19 +10,25 @@
   --color-error-red: #ef4444;
   --color-error: #c72027;
   --color-success: #58a182;
+
   --color-text-primary: #1a1a1a;
   --color-text-secondary: #2d2d2d;
   --color-text: #1e1f21;
   --color-text-weak: #6d6e6f;
-  --color-icon: #6d6e6f;
+
   --color-border-strong: #6d6e6f;
   --color-border-week: #edeae9;
+
   --color-background-dark-week: #f9f8f8;
   --color-background-dark-strong: #cfcbcb;
+
   --color-nav-topbar: #f9f8f8;
+
+  --color-icon: #6d6e6f;
   --color-icon-weak: #f3f1f1;
   --color-icon-hover: #1e1f21;
   --color-icon-bg-hover: #e9e7e7;
+
   --color-purple-week: #fcf6fd;
   --color-purple-strong: #f8e3fd;
   --color-purple-glow: #f5ccfe;

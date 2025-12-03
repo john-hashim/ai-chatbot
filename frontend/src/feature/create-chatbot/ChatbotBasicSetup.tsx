@@ -231,7 +231,14 @@ export const ChatbotBasicSetup: React.FC = () => {
                         swatchesPerRow={5}
                         closeOnColorSwatchClick
                         withEyeDropper={false}
-                        swatches={['#2563eb', '#7c3aed', '#10b981', '#f59e0b', '#ef4444']}
+                        swatches={[
+                          '#2563eb',
+                          '#7c3aed',
+                          '#10b981',
+                          '#f59e0b',
+                          '#ef4444',
+                          '#5B083A',
+                        ]}
                       />
                     )}
                   />

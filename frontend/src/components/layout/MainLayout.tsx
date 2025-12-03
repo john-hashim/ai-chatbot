@@ -3,7 +3,8 @@ import { Header } from './Header'
 
 export function MainLayout() {
   const location = useLocation()
-  const hideHeader = location.pathname === '/chatbot/new'
+  const hideHeader =
+    location.pathname === '/chatbot/new' || location.pathname.includes('setup-knowledgebase')
 
   return (
     <div>
