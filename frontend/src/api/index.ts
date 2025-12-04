@@ -64,7 +64,6 @@ apiClient.interceptors.response.use(
         className: 'error',
       })
     } else if (!response) {
-      // Network error
       notifications.show({
         message: 'Network error. Please check your connection.',
         className: 'error',

@@ -1,38 +1,25 @@
 import { ChatbotSkeleton } from '@/components/common/ChatbotSkeleton'
 import { Button } from '@mantine/core'
-import { useStore } from '@/store'
+import { useChatbotStore, useUserStore } from '@/store'
 import { format, getHours } from 'date-fns'
 import { Plus, TrendingUp } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { useApi } from '@/hooks/useApi'
-import type { Chatbot } from '@/types/chatbot'
-import { chatbotService } from '@/api/services/chatbot'
 import { useEffect, useRef } from 'react'
-import type { ApiResponse } from '@/types/api'
 
 export const Landing: React.FC = () => {
   const day = format(new Date(), 'eeee')
   const date = format(new Date(), 'MMMM dd')
-  const user = useStore(state => state.user)
-  const setChatbots = useStore(state => state.setChatbots)
+  const { getChatbots } = useChatbotStore()
+  const { user } = useUserStore()
   const navigate = useNavigate()
   const hasFetched = useRef(false)
 
-  const { execute: excuteGetChatbots } = useApi<ApiResponse<Chatbot[]>, []>(
-    chatbotService.getChabots
-  )
-
   useEffect(() => {
     if (hasFetched.current) return
-    const fetchChatbots = async () => {
-      hasFetched.current = true
-      const result = await excuteGetChatbots()
-      if (result?.data) {
-        setChatbots(result.data)
-      }
-    }
-    fetchChatbots()
-  }, [excuteGetChatbots, setChatbots])
+    hasFetched.current = true
+    getChatbots()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const firstName = user?.name.split(' ')[0]
   const formattedFirstName = firstName

@@ -1,9 +1,11 @@
+import { chatbotService } from '@/api/services/chatbot'
 import type { Chatbot } from '@/types/chatbot'
 import type { StateCreator } from 'zustand'
 
 export interface ChatbotSlice {
   chatbots: Chatbot[]
-  setChatbots: (chatbots: Chatbot[]) => void
+
+  getChatbots: () => void
   upsertChatbot: (chatbot: Chatbot) => void
   deleteChatbot: (id: string) => void
   clearChatbots: () => void
@@ -11,7 +13,19 @@ export interface ChatbotSlice {
 
 export const createChatbotSlice: StateCreator<ChatbotSlice> = set => ({
   chatbots: [],
-  setChatbots: chatbots => set({ chatbots }),
+
+  getChatbots: async () => {
+    try {
+      const response = await chatbotService.getChabots()
+      if (!response.data.data) {
+        throw new Error('No data received from server')
+      }
+      const chatbots = response.data.data
+      set({ chatbots })
+    } catch (error) {
+      console.log(error)
+    }
+  },
   upsertChatbot: chatbot =>
     set(state => {
       const existingIndex = state.chatbots.findIndex(bot => bot.id === chatbot.id)

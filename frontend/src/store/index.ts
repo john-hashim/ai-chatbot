@@ -23,7 +23,6 @@ export const useStore = create<StoreState>()(
   )
 )
 
-// Export convenience selectors with shallow comparison
 export const useUserStore = () =>
   useStore(
     useShallow(state => ({
@@ -41,7 +40,7 @@ export const useChatbotStore = () =>
   useStore(
     useShallow(state => ({
       chatbots: state.chatbots,
-      setChatbots: state.setChatbots,
+      getChatbots: state.getChatbots,
       upsertChatbot: state.upsertChatbot,
       deleteChatbot: state.deleteChatbot,
       clearChatbots: state.clearChatbots,
