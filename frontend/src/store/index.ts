@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { devtools, persist } from 'zustand/middleware'
+import { useShallow } from 'zustand/react/shallow'
 import { createUserSlice, type UserSlice } from './slices/userSlice'
 import { createChatbotSlice, type ChatbotSlice } from './slices/chatbotSlice'
 
@@ -22,22 +23,27 @@ export const useStore = create<StoreState>()(
   )
 )
 
-// Export convenience selectors
+// Export convenience selectors with shallow comparison
 export const useUserStore = () =>
-  useStore(state => ({
-    user: state.user,
-    token: state.token,
-    isAuthenticated: state.isAuthenticated,
-    setUser: state.setUser,
-    setToken: state.setToken,
-    logout: state.logout,
-  }))
+  useStore(
+    useShallow(state => ({
+      user: state.user,
+      token: state.token,
+      isAuthenticated: state.isAuthenticated,
+      loading: state.loading,
+      error: state.error,
+      googleSignIn: state.googleSignIn,
+      logout: state.logout,
+    }))
+  )
 
 export const useChatbotStore = () =>
-  useStore(state => ({
-    chatbots: state.chatbots,
-    setChatbots: state.setChatbots,
-    upsertChatbot: state.upsertChatbot,
-    deleteChatbot: state.deleteChatbot,
-    clearChatbots: state.clearChatbots,
-  }))
+  useStore(
+    useShallow(state => ({
+      chatbots: state.chatbots,
+      setChatbots: state.setChatbots,
+      upsertChatbot: state.upsertChatbot,
+      deleteChatbot: state.deleteChatbot,
+      clearChatbots: state.clearChatbots,
+    }))
+  )

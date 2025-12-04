@@ -1,17 +1,8 @@
-import { authService } from '@/api/services/auth'
-import { useApi } from '@/hooks/useApi'
-import { useStore } from '@/store'
-import type { AuthResponseData, GoogleSignInRequest } from '@/types/auth'
-import type { ApiResponse } from '@/types/api'
+import { useUserStore } from '@/store'
 import { GoogleLogin, type CredentialResponse } from '@react-oauth/google'
 
 const Login: React.FC = () => {
-  const { execute: executeGoogleSignIn } = useApi<ApiResponse<AuthResponseData>, [GoogleSignInRequest]>(
-    authService.googleSignIn
-  )
-
-  const setUser = useStore(state => state.setUser)
-  const setToken = useStore(state => state.setToken)
+  const { googleSignIn, loading } = useUserStore()
 
   const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
     if (!credentialResponse.credential) {
@@ -19,13 +10,9 @@ const Login: React.FC = () => {
       return
     }
     try {
-      const response = await executeGoogleSignIn({
+      await googleSignIn({
         credential: credentialResponse.credential,
       })
-      if (response.data) {
-        setUser(response.data.user)
-        setToken(response.data.token)
-      }
     } catch (err) {
       console.error('Google login failed:', err)
     }
@@ -45,16 +32,21 @@ const Login: React.FC = () => {
           </div>
 
           <div className="flex justify-center">
-            <GoogleLogin
-              onSuccess={handleGoogleSuccess}
-              onError={handleGoogleError}
-              theme="outline"
-              size="large"
-              width={320}
-              shape="rectangular"
-              useOneTap
-              auto_select={false}
-            />
+            {/* Disable button while loading */}
+            {loading ? (
+              <div className="text-gray-600">Signing in...</div>
+            ) : (
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={handleGoogleError}
+                theme="outline"
+                size="large"
+                width={320}
+                shape="rectangular"
+                useOneTap
+                auto_select={false}
+              />
+            )}
           </div>
         </div>
       </div>
