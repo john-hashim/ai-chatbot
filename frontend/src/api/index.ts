@@ -36,36 +36,69 @@ apiClient.interceptors.response.use(
   (error: AxiosError<{ message?: string }>): Promise<AxiosError> => {
     const { response } = error
 
-    // Handle global errors with notifications
-    if (response?.status === 401) {
+    // Network error (no response from server)
+    if (!response) {
+      notifications.show({
+        message: 'Network error. Please check your connection.',
+        className: 'error',
+      })
+      return Promise.reject(error)
+    }
+
+    // Get backend message if available
+    const backendMessage = response.data?.message
+
+    // Handle specific status codes with custom logic
+    if (response.status === 401) {
       const isLoginEndpoint = error.config?.url?.includes('/auth/login')
       if (!isLoginEndpoint) {
+        // Session expired - logout user
         notifications.show({
           message: 'Session expired. Please login again.',
           className: 'error',
         })
         useStore.getState().logout()
+      } else {
+        // Login endpoint - show error but don't logout
+        notifications.show({
+          message: backendMessage || 'Authentication failed. Please try again.',
+          className: 'error',
+        })
       }
-    } else if (response?.status === 400) {
+    } else if (response.status === 400) {
       // Validation errors
-      const message = response.data?.message || 'Invalid request. Please check your inputs.'
       notifications.show({
-        message,
+        message: backendMessage || 'Invalid request. Please check your inputs.',
         className: 'error',
       })
-    } else if (response?.status === 500) {
+    } else if (response.status === 404) {
+      // Resource not found
       notifications.show({
-        message: 'Server error. Please try again later.',
+        message: backendMessage || 'Resource not found.',
         className: 'error',
       })
-    } else if (response?.status === 503) {
+    } else if (response.status === 409) {
+      // Conflict errors (e.g., duplicate entries)
       notifications.show({
-        message: 'Service unavailable. Please try again.',
+        message: backendMessage || 'A conflict occurred. The resource may already exist.',
         className: 'error',
       })
-    } else if (!response) {
+    } else if (response.status === 500) {
+      // Internal server error
       notifications.show({
-        message: 'Network error. Please check your connection.',
+        message: backendMessage || 'Server error. Please try again later.',
+        className: 'error',
+      })
+    } else if (response.status === 503) {
+      // Service unavailable
+      notifications.show({
+        message: backendMessage || 'Service unavailable. Please try again.',
+        className: 'error',
+      })
+    } else {
+      // Catch-all for any other error status codes (403, 422, 429, 502, 504, etc.)
+      notifications.show({
+        message: backendMessage || 'An error occurred. Please try again.',
         className: 'error',
       })
     }

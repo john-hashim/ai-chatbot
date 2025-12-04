@@ -3,7 +3,7 @@ import { prisma } from '../prisma/client.js'
 import { ApiStatus, type ApiResponse } from '../types/api.js'
 import * as r2Service from '../services/r2.service.js'
 
-export const createChatbot = async (req: Request, res: Response, next: Function) => {
+export const createChatbot = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const user = req.user
 
@@ -26,14 +26,6 @@ export const createChatbot = async (req: Request, res: Response, next: Function)
       message: 'Chatbot created successfully',
     } satisfies ApiResponse)
   } catch (error) {
-    if (error instanceof Error && error.message.includes('Unique constraint')) {
-      return res.status(409).json({
-        status: ApiStatus.FAILURE,
-        message: 'A chatbot with this name already exists',
-        error: error.message,
-      } satisfies ApiResponse)
-    }
-
     next(error)
   }
 }

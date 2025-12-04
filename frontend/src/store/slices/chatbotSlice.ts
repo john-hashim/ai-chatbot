@@ -15,16 +15,11 @@ export const createChatbotSlice: StateCreator<ChatbotSlice> = set => ({
   chatbots: [],
 
   getChatbots: async () => {
-    try {
-      const response = await chatbotService.getChabots()
-      if (!response.data.data) {
-        throw new Error('No data received from server')
-      }
-      const chatbots = response.data.data
-      set({ chatbots })
-    } catch (error) {
-      console.log(error)
+    const response = await chatbotService.getChabots()
+    if (!response.data.data) {
+      throw new Error('No data received from server')
     }
+    set({ chatbots: response.data.data })
   },
   upsertChatbot: chatbot =>
     set(state => {
