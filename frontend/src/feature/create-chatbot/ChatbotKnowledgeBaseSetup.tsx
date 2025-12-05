@@ -40,18 +40,18 @@ export const ChatbotKnowledgeBaseSetup: React.FC = () => {
             <p className="text-sm font-light text-center mt-3 sm:text-left">
               Provide documents or URLs to help your Agent learn and answer accurately.
             </p>
-            <div className="mt-6">
+            <div className="mt-10">
               {sources.map((source, index) => {
                 const IconComponent = source.icon
                 return (
                   <div
                     key={index}
-                    className="flex items-center justify-between py-2 mt-4 border-b w-full border-border-week"
+                    className="flex items-center justify-between py-2 mt-8 border-b w-full border-border-week"
                   >
                     <div className="flex items-center">
-                      <IconComponent className="h-4 w-4 text-icon" />
+                      <IconComponent className="h-5 w-5 text-text-primary" />
                       &nbsp;&nbsp;
-                      <span className="text-text-secondary">
+                      <span className="text-text-primary text-md">
                         {source.count > 0 && `${source.count}`}
                         &nbsp;{source.name}
                       </span>
@@ -68,7 +68,7 @@ export const ChatbotKnowledgeBaseSetup: React.FC = () => {
                 )
               })}
             </div>
-            <div className="mt-10 flex justify-center items-center">
+            <div className="mt-24 flex justify-center items-center">
               <Button type="submit" variant="default" style={{ width: '75%' }}>
                 Train & Continue to agent dashboard
               </Button>
