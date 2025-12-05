@@ -16,23 +16,25 @@ export const ChatbotKnowledgeBaseSetup: React.FC = () => {
 
   return (
     <div className="flex flex-col h-screen">
-      <div className="px-5 py-2 flex items-center justify-between">
+      <header className="px-5 py-2 flex items-center justify-between">
         <Tooltip label="Go Back" position="bottom-start">
-          <div
-            className="p-1 hover:bg-icon-bg-hover rounded cursor-pointer"
+          <button
+            className="p-1 hover:bg-icon-bg-hover rounded cursor-pointer border-0 bg-transparent"
             onClick={() => navigate('/landing')}
           >
             <ArrowLeft className="h-5 w-5 text-text-weak hover:text-icon-hover" />
-          </div>
+          </button>
         </Tooltip>
         <Logo height={40} width={28} fontSize={25} logoIcon={false} />
         <Tooltip label="Close" position="bottom-end">
-          <X
-            className="h-5 w-5 text-text-weak hover:text-icon-hover cursor-pointer"
+          <button
+            className="border-0 bg-transparent p-0 cursor-pointer"
             onClick={() => navigate('/landing')}
-          />
+          >
+            <X className="h-5 w-5 text-text-weak hover:text-icon-hover" />
+          </button>
         </Tooltip>
-      </div>
+      </header>
       <div className="lg:px-32 px-6 flex-1 pt-1 pb-15 flex flex-wrap">
         <div className="border flex-1 border-border-week lg:mt-0 rounded-2xl flex overflow-hidden">
           <div className="lg:w-1/2 w-full h-full border-r border-border-week lg:p-20 px-8 py-12">
@@ -40,11 +42,11 @@ export const ChatbotKnowledgeBaseSetup: React.FC = () => {
             <p className="text-sm font-light text-center mt-3 sm:text-left">
               Provide documents or URLs to help your Agent learn and answer accurately.
             </p>
-            <div className="mt-10">
+            <ul className="mt-10 list-none">
               {sources.map((source, index) => {
                 const IconComponent = source.icon
                 return (
-                  <div
+                  <li
                     key={index}
                     className="flex items-center justify-between py-2 mt-8 border-b w-full border-border-week"
                   >
@@ -57,17 +59,17 @@ export const ChatbotKnowledgeBaseSetup: React.FC = () => {
                       </span>
                     </div>
 
-                    <div className="p-1 hover:bg-icon-bg-hover border border-border-week rounded cursor-pointer">
+                    <button className="p-1 hover:bg-icon-bg-hover border border-border-week rounded cursor-pointer bg-transparent">
                       {source.count > 0 ? (
                         <Pencil className="h-4 w-4 text-text-weak hover:text-icon-hover" />
                       ) : (
                         <PlusIcon className="h-4 w-4 text-text-weak hover:text-icon-hover" />
                       )}
-                    </div>
-                  </div>
+                    </button>
+                  </li>
                 )
               })}
-            </div>
+            </ul>
             <div className="mt-24 flex justify-center items-center">
               <Button type="submit" variant="default" style={{ width: '75%' }}>
                 Train & Continue to agent dashboard

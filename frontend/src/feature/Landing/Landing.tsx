@@ -35,17 +35,15 @@ export const Landing: React.FC = () => {
   }
 
   return (
-    <div className="px-5 py-6 lg:px-40 border-t border-t-border-week">
-      <div className="text-sm font-medium">
+    <main className="px-5 py-6 lg:px-40 border-t border-t-border-week">
+      <time className="text-sm font-medium block">
         <span>{day}</span>, <span>{date}</span>
-      </div>
-      <div className="text-3xl mt-2">
-        <span>
-          {greeting}, {formattedFirstName}
-        </span>
-      </div>
+      </time>
+      <h1 className="text-3xl mt-2">
+        {greeting}, {formattedFirstName}
+      </h1>
       <div className="h-[50vh] mt-6 flex flex-wrap">
-        <div className="border border-purple-strong bg-purple-week cursor pointer hover:bg-purple-strong sm:w-full lg:w-1/4 lg:mr-6 h-full rounded-2xl flex items-center justify-center flex-col p-6 overflow-visible">
+        <article className="border border-purple-strong bg-purple-week cursor-pointer hover:bg-purple-strong sm:w-full lg:w-1/4 lg:mr-6 h-full rounded-2xl flex items-center justify-center flex-col p-6 overflow-visible">
           <div className="w-32 aspect-375/667 mb-4 shadow-[0_0_18px_0_var(--color-purple-glow)] rounded-2xl overflow-hidden bg-[#F8F9FA]">
             <ChatbotSkeleton />
           </div>
@@ -53,11 +51,11 @@ export const Landing: React.FC = () => {
           <p className="text-sm text-center text-gray-600">
             Connect your data, choose your tone, and go live in minutes
           </p>
-        </div>
+        </article>
 
-        <div className="border h-full flex-1 border-border-week mt-4 lg:mt-0 rounded-2xl flex items-center justify-center flex-col">
+        <section className="border h-full flex-1 border-border-week mt-4 lg:mt-0 rounded-2xl flex items-center justify-center flex-col">
           <TrendingUp size={50} className="mb-1" />
-          <p className="text-s">Let’s get started! Create your first AI chatbot</p>
+          <p className="text-s">Let's get started! Create your first AI chatbot</p>
           <Button
             className="cursor-pointer mt-2"
             onClick={() => navigate('/chatbot/new')}
@@ -66,8 +64,8 @@ export const Landing: React.FC = () => {
           >
             Add New Chatbot
           </Button>
-        </div>
+        </section>
       </div>
-    </div>
+    </main>
   )
 }
