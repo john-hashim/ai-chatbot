@@ -57,3 +57,7 @@ td,
 th {
   @apply animate-in fade-in duration-300;
 }
+
+.div-fade-animation {
+  @apply animate-in fade-in duration-300;
+}
