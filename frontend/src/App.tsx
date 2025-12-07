@@ -5,7 +5,16 @@ import '@mantine/dropzone/styles.css'
 import '@mantine/notifications/styles.css'
 import './styles/mantine-overrides.css'
 import classes from './theme.module.css'
-import { createTheme, MantineProvider, Button, TextInput, ColorInput, Tooltip } from '@mantine/core'
+import {
+  createTheme,
+  MantineProvider,
+  Button,
+  TextInput,
+  ColorInput,
+  Tooltip,
+  Checkbox,
+  Select,
+} from '@mantine/core'
 import { Notifications } from '@mantine/notifications'
 
 import Login from '@/feature/auth/Login'
@@ -38,6 +47,13 @@ const theme = createTheme({
   primaryColor: 'brand',
   fontFamily: 'Inter, sans-serif',
   defaultRadius: 'md',
+  radius: {
+    xs: '2px',
+    sm: '4px',
+    md: '8px',
+    lg: '12px',
+    xl: '16px',
+  },
 
   components: {
     Button: Button.extend({
@@ -66,6 +82,16 @@ const theme = createTheme({
     Tooltip: Tooltip.extend({
       defaultProps: {
         transitionProps: { transition: 'pop', duration: 300 },
+      },
+    }),
+    Checkbox: Checkbox.extend({
+      classNames: {
+        input: classes.checkboxInput,
+      },
+    }),
+    Select: Select.extend({
+      classNames: {
+        input: classes.selectInput,
       },
     }),
   },

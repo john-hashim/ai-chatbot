@@ -75,20 +75,59 @@
 
 /* Dropzone styles */
 .dropzoneRoot {
-  min-height: 120px;
+  min-height: 150px;
   display: flex;
   justify-content: center;
   align-items: center;
-  border: 0;
   background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
 }
 
 .dropzoneRoot[data-accept] {
   color: var(--mantine-color-white);
   background-color: var(--mantine-color-blue-6);
+  padding-top: 20px;
 }
 
 .dropzoneRoot[data-reject] {
   color: var(--mantine-color-white);
   background-color: var(--mantine-color-red-6);
+}
+
+/* Checkbox styles */
+.checkboxInput {
+  border-radius: 4px;
+}
+.checkboxInput:checked {
+  background-color: black !important;
+  border-color: black !important;
+}
+
+.checkboxInput:hover {
+  border: 1px solid var(--color-border-strong) !important;
+}
+
+/* Select styles */
+.selectInput {
+  border: 1px solid var(--color-border-week) !important;
+}
+
+.selectInput:hover {
+  border: 1px solid var(--color-border-strong) !important;
+}
+
+.selectInput:focus {
+  border: 1px solid var(--color-border-strong) !important;
+}
+
+/* Select borderless variant */
+.selectInputBorderless {
+  border: 1px solid transparent !important;
+}
+
+.selectInputBorderless:hover {
+  border: 1px solid var(--color-border-strong) !important;
+}
+
+.selectInputBorderless:focus {
+  border: 1px solid var(--color-border-strong) !important;
 }
