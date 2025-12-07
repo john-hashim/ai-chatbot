@@ -1,6 +1,13 @@
 import { DropzoneUpload } from '../../components/common/DropzoneUpload'
+import { Search, ChevronDown } from 'lucide-react'
+import { TextInput } from '@mantine/core'
+import { Checkbox } from '@mantine/core'
+import { Select } from '@mantine/core'
+import classes from '@/theme.module.css'
+import { useState } from 'react'
 
 export const UploadFile: React.FC = () => {
+  const [value, setValue] = useState<string | null>('Newest')
   return (
     <div className="px-4">
       <header className="">
@@ -12,6 +19,41 @@ export const UploadFile: React.FC = () => {
       <div className="mt-8">
         <DropzoneUpload />
       </div>
+      <div className="mt-6">
+        <div className="flex items-center justify-between">
+          <p className="text-md font-semibold text-center sm:text-left">File sources</p>
+          <div>
+            {' '}
+            <TextInput
+              className="mt-1"
+              type="text"
+              id="search-file"
+              placeholder="Search"
+              leftSection={<Search size={16} />}
+            />
+          </div>
+        </div>
+        <div className="flex items-center mt-6 justify-between">
+          <Checkbox defaultChecked label="Select All" />
+          <div className="flex items-center">
+            <p className="text-sm mr-2">Sort By:</p>
+            <div style={{ width: 'fit-content', minWidth: '120px' }}>
+              <Select
+                placeholder="Pick value"
+                data={['Oldest', 'Newest', 'Status', 'Alphabetical(A-Z)', 'Alphabetical(Z-A)']}
+                checkIconPosition="right"
+                classNames={{ input: classes.selectInputBorderless }}
+                rightSection={<ChevronDown size={16} />}
+                comboboxProps={{ width: 200, position: 'bottom-end' }}
+                value={value}
+                onChange={setValue}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="border-b mt-2 border-border-week"></div>
+      {}
     </div>
   )
 }

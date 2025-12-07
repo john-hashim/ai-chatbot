@@ -28,6 +28,7 @@ import { Landing } from '@/feature/Landing/Landing'
 import { ChatbotBasicSetup } from './feature/create-chatbot/ChatbotBasicSetup'
 import { ModalsProvider } from '@mantine/modals'
 import { ChatbotKnowledgeBaseSetup } from './feature/create-chatbot/ChatbotKnowledgeBaseSetup'
+import { Toaster } from 'sonner'
 
 const theme = createTheme({
   colors: {
@@ -105,6 +106,7 @@ function App() {
   return (
     <MantineProvider theme={theme}>
       <ModalsProvider>
+        <Toaster position="top-right" />
         <Notifications position="top-right" autoClose={4000} />
         <GoogleOAuthProvider clientId={googleClientId || ''}>
           <AppRoutes />
