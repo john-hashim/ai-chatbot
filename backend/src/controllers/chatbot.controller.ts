@@ -2,6 +2,9 @@ import type { Request, Response, NextFunction } from 'express'
 import { prisma } from '../prisma/client.js'
 import { ApiStatus, type ApiResponse } from '../types/api.js'
 import * as r2Service from '../services/r2.service.js'
+import { PDFParse } from 'pdf-parse'
+import mammoth from 'mammoth'
+import WordExtractor from 'word-extractor'
 
 export const createChatbot = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -83,18 +86,67 @@ export const uploadDocument = async (req: Request, res: Response, next: NextFunc
       } satisfies ApiResponse)
     }
 
-    // Log file buffers (you can process them as needed)
-    files.forEach(file => console.log(file.buffer))
+    const processedFiles = await Promise.all(
+      files.map(async file => {
+        let textContent = ''
+        if (file.mimetype === 'application/pdf') {
+          const parser = new PDFParse({ data: file.buffer })
+          const result = await parser.getText()
+          textContent = result.text
 
-    const uploadedFiles = files.map(file => ({
-      name: file.originalname,
-      type: file.mimetype,
-      size: file.size,
-    }))
+          return {
+            name: file.originalname,
+            type: file.mimetype,
+            size: file.size,
+            text: textContent,
+          }
+        }
+        // Handle .doc files (old Word format)
+        if (file.mimetype === 'application/msword') {
+          const extractor = new WordExtractor()
+          const extracted = await extractor.extract(file.buffer)
+          textContent = extracted.getBody()
 
+          return {
+            name: file.originalname,
+            type: file.mimetype,
+            size: file.size,
+            text: textContent,
+          }
+        }
+
+        // Handle .docx files (newer Word format)
+        if (
+          file.mimetype ===
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        ) {
+          const result = await mammoth.extractRawText({ buffer: file.buffer })
+          textContent = result.value
+
+          return {
+            name: file.originalname,
+            type: file.mimetype,
+            size: file.size,
+            text: textContent,
+          }
+        }
+
+        if (file.mimetype === 'text/plain') {
+          textContent = file.buffer.toString('utf-8')
+          return {
+            name: file.originalname,
+            type: file.mimetype,
+            size: file.size,
+            text: textContent,
+          }
+        }
+      })
+    )
+
+    console.log(processedFiles)
     res.status(200).json({
       status: ApiStatus.SUCCESS,
-      data: uploadedFiles,
+      data: null,
       message: `${files.length} document(s) uploaded successfully`,
     } satisfies ApiResponse)
   } catch (error) {

@@ -26,13 +26,17 @@
     "dotenv": "^17.2.2",
     "express": "^5.1.0",
     "google-auth-library": "^10.4.0",
+    "mammoth": "^1.11.0",
     "multer": "^2.0.2",
-    "pgvector": "^0.2.1"
+    "pdf-parse": "^2.4.5",
+    "pgvector": "^0.2.1",
+    "word-extractor": "^1.0.4"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
     "@types/dotenv": "^6.1.1",
     "@types/node": "^24.5.2",
+    "@types/word-extractor": "^1.0.6",
     "nodemon": "^3.1.10",
     "prettier": "^3.6.2",
     "prisma": "^6.17.0",
