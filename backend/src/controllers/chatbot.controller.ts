@@ -71,3 +71,33 @@ export const getPresignedUploadUrl = async (req: Request, res: Response, next: N
     next(error)
   }
 }
+
+export const uploadDocument = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const files = req.files as Express.Multer.File[]
+
+    if (!files || files.length === 0) {
+      return res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'No files uploaded',
+      } satisfies ApiResponse)
+    }
+
+    // Log file buffers (you can process them as needed)
+    files.forEach(file => console.log(file.buffer))
+
+    const uploadedFiles = files.map(file => ({
+      name: file.originalname,
+      type: file.mimetype,
+      size: file.size,
+    }))
+
+    res.status(200).json({
+      status: ApiStatus.SUCCESS,
+      data: uploadedFiles,
+      message: `${files.length} document(s) uploaded successfully`,
+    } satisfies ApiResponse)
+  } catch (error) {
+    next(error)
+  }
+}

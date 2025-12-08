@@ -12,3 +12,9 @@ export interface Chatbot extends ChatbotFormData {
   updatedAt: Date
   userId: string
 }
+
+export interface UploadDocumentResponse {
+  name: string
+  type: string
+  size: number
+}

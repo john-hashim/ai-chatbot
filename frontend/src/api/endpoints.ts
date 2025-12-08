@@ -11,6 +11,7 @@ export const ENDPOINTS = {
     CREATE: 'chatbot/create',
     GET_ALL: 'chatbot/chatbots',
     UPLOAD_URL: 'chatbot/upload-url',
+    UPLOAD_DOCUMENT: 'chatbot/upload-document',
   },
 } as const
 

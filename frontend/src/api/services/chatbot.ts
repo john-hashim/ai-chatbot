@@ -2,7 +2,7 @@
 import { type AxiosResponse } from 'axios'
 import apiClient from '../index'
 import { ENDPOINTS } from '../endpoints'
-import type { Chatbot, ChatbotFormData } from '@/types/chatbot'
+import type { Chatbot, ChatbotFormData, UploadDocumentResponse } from '@/types/chatbot'
 import type { ApiResponse } from '@/types/api'
 
 interface PresignedUrlData {
@@ -39,5 +39,24 @@ export const chatbotService = {
     directory: string
   ): Promise<AxiosResponse<ApiResponse<PresignedUrlData>>> => {
     return apiClient.post(ENDPOINTS.CHATBOT.UPLOAD_URL, { fileName, fileType, directory })
+  },
+  /**
+   * Upload documents (PDF, DOC, DOCX, TXT) to backend for processing
+   * @param files - Array of files to upload
+   * @returns Promise with upload response
+   */
+  uploadDocuments: (
+    files: File[]
+  ): Promise<AxiosResponse<ApiResponse<UploadDocumentResponse[]>>> => {
+    const formData = new FormData()
+    files.forEach(file => {
+      formData.append('documents', file)
+    })
+
+    return apiClient.post(ENDPOINTS.CHATBOT.UPLOAD_DOCUMENT, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    })
   },
 }

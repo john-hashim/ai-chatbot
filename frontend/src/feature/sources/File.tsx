@@ -5,9 +5,33 @@ import { Checkbox } from '@mantine/core'
 import { Select } from '@mantine/core'
 import classes from '@/theme.module.css'
 import { useState } from 'react'
+import type { FileWithPath } from '@mantine/dropzone'
+import { showLoadingNotification } from '@/utils/notifications'
+import { useApi } from '@/hooks/useApi'
+import type { ApiResponse } from '@/types/api'
+import type { UploadDocumentResponse } from '@/types/chatbot'
+import { chatbotService } from '@/api/services/chatbot'
 
 export const UploadFile: React.FC = () => {
   const [value, setValue] = useState<string | null>('Newest')
+
+  const { execute: excuteUploadDocument } = useApi<ApiResponse<UploadDocumentResponse[]>, [File[]]>(
+    chatbotService.uploadDocuments
+  )
+
+  const onFileDrop = async (files: FileWithPath[]) => {
+    const notification = showLoadingNotification(
+      'Uploading File',
+      'Please wait while we upload your file'
+    )
+
+    const resp = await excuteUploadDocument(files)
+    if (resp.status === 'success') {
+      notification.success('File Uploaded Successfully')
+    } else {
+      notification.error('Failed to upload file')
+    }
+  }
   return (
     <div className="px-4">
       <header className="">
@@ -17,7 +41,7 @@ export const UploadFile: React.FC = () => {
         </p>
       </header>
       <div className="mt-8">
-        <DropzoneUpload />
+        <DropzoneUpload onFilesSelected={onFileDrop} />
       </div>
       <div className="mt-6">
         <div className="flex items-center justify-between">
