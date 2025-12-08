@@ -1,14 +1,31 @@
 import { useEffect, useState } from 'react'
 import { Dropzone, PDF_MIME_TYPE, type FileWithPath } from '@mantine/dropzone'
-import { Upload } from 'lucide-react'
-import { toast } from 'sonner'
+import { CircleCheck, Upload } from 'lucide-react'
+import { notifications } from '@mantine/notifications'
 
 export const DropzoneUpload = () => {
   const [files, setFiles] = useState<FileWithPath[]>([])
 
   useEffect(() => {
     if (files.length > 0) {
-      toast.success(files[0].name)
+      const id = notifications.show({
+        loading: true,
+        title: 'Uploading File',
+        message: 'Please wait we uploading your file',
+        autoClose: false,
+        withCloseButton: false,
+      })
+      setTimeout(() => {
+        notifications.update({
+          id,
+          color: 'teal',
+          title: 'Success',
+          message: 'File Uploaded Successfully',
+          icon: <CircleCheck color="#58a182" size={24} />,
+          loading: false,
+          autoClose: 2000,
+        })
+      }, 3000)
     }
   }, [files])
 
@@ -21,7 +38,6 @@ export const DropzoneUpload = () => {
           <p className="text-xs mt-1 text-text-weak">Supported file types: pdf, doc, docx, txt</p>
         </div>
       </Dropzone>
-      {/* {files && files.map(file => <div>{file.name}</div>)} */}
     </div>
   )
 }
