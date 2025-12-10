@@ -4,22 +4,19 @@ import { useChatbotStore, useUserStore } from '@/store'
 import { format, getHours } from 'date-fns'
 import { Plus, TrendingUp } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
 
 export const Landing: React.FC = () => {
   const day = format(new Date(), 'eeee')
   const date = format(new Date(), 'MMMM dd')
-  const { getChatbots } = useChatbotStore()
+  const { getChatbots, clearCurrentChatbot } = useChatbotStore()
   const { user } = useUserStore()
   const navigate = useNavigate()
-  const hasFetched = useRef(false)
 
   useEffect(() => {
-    if (hasFetched.current) return
-    hasFetched.current = true
     getChatbots()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+    clearCurrentChatbot()
+  }, [clearCurrentChatbot, getChatbots])
 
   const firstName = user?.name.split(' ')[0]
   const formattedFirstName = firstName

@@ -1,3 +1,5 @@
+import type { Document } from './document'
+
 export interface ChatbotFormData {
   name: string
   appearance: 'light' | 'dark'
@@ -11,10 +13,5 @@ export interface Chatbot extends ChatbotFormData {
   createdAt: Date
   updatedAt: Date
   userId: string
-}
-
-export interface UploadDocumentResponse {
-  name: string
-  type: string
-  size: number
+  documents: Document[]
 }

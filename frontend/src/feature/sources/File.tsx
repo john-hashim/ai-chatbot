@@ -9,13 +9,15 @@ import type { FileWithPath } from '@mantine/dropzone'
 import { showLoadingNotification } from '@/utils/notifications'
 import { useApi } from '@/hooks/useApi'
 import type { ApiResponse } from '@/types/api'
-import type { UploadDocumentResponse } from '@/types/chatbot'
 import { chatbotService } from '@/api/services/chatbot'
+import { useChatbotStore } from '@/store'
+import type { Document } from '@/types/document'
 
 export const UploadFile: React.FC = () => {
   const [value, setValue] = useState<string | null>('Newest')
+  const { currentChatbot, addDocument } = useChatbotStore()
 
-  const { execute: excuteUploadDocument } = useApi<ApiResponse<UploadDocumentResponse[]>, [File[]]>(
+  const { execute: excuteUploadDocument } = useApi<ApiResponse<Document[]>, [File[], string]>(
     chatbotService.uploadDocuments
   )
 
@@ -24,12 +26,14 @@ export const UploadFile: React.FC = () => {
       'Uploading File',
       'Please wait while we upload your file'
     )
-
-    const resp = await excuteUploadDocument(files)
-    if (resp.status === 'success') {
-      notification.success('File Uploaded Successfully')
-    } else {
-      notification.error('Failed to upload file')
+    if (currentChatbot) {
+      const resp = await excuteUploadDocument(files, currentChatbot.id)
+      if (resp.status === 'success' && resp.data) {
+        addDocument(resp.data)
+        notification.success('File Uploaded Successfully')
+      } else {
+        notification.error('Failed to upload file')
+      }
     }
   }
   return (

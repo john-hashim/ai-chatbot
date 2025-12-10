@@ -40,7 +40,12 @@ export const useChatbotStore = () =>
   useStore(
     useShallow(state => ({
       chatbots: state.chatbots,
+      currentChatbot: state.currentChatbot,
       getChatbots: state.getChatbots,
+      setCurrentChatbot: state.setCurrentChatbot,
+      clearCurrentChatbot: state.clearCurrentChatbot,
+      addDocument: state.addDocument,
+      getChatbotDocuments: state.getChatbotDocuments,
       upsertChatbot: state.upsertChatbot,
       deleteChatbot: state.deleteChatbot,
       clearChatbots: state.clearChatbots,

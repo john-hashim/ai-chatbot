@@ -1,25 +1,62 @@
 import { chatbotService } from '@/api/services/chatbot'
 import type { Chatbot } from '@/types/chatbot'
+import type { Document } from '@/types/document'
 import type { StateCreator } from 'zustand'
 
 export interface ChatbotSlice {
   chatbots: Chatbot[]
+  currentChatbot: Chatbot | null
 
   getChatbots: () => void
+  setCurrentChatbot: (chatbotId: string) => void
+  clearCurrentChatbot: () => void
+  getChatbotDocuments: (chatbotId: string) => void
   upsertChatbot: (chatbot: Chatbot) => void
   deleteChatbot: (id: string) => void
   clearChatbots: () => void
+  addDocument: (documents: Document[]) => void
 }
 
 export const createChatbotSlice: StateCreator<ChatbotSlice> = set => ({
   chatbots: [],
+  currentChatbot: null,
 
   getChatbots: async () => {
     const response = await chatbotService.getChabots()
     if (!response.data.data) {
       throw new Error('No data received from server')
     }
-    set({ chatbots: response.data.data })
+    set({ chatbots: response.data.data, currentChatbot: null })
+  },
+  setCurrentChatbot: (chatbotId: string) => {
+    set(state => {
+      const currentChatbot = state.chatbots.find(chatbot => chatbot.id === chatbotId)
+      return { currentChatbot }
+    })
+  },
+  clearCurrentChatbot: () => set({ currentChatbot: null }),
+  addDocument: (documents: Document[]) =>
+    set(state => {
+      if (!state.currentChatbot) return state
+      const currentChatbot = {
+        ...state.currentChatbot,
+        documents: [...(state.currentChatbot.documents || []), ...documents],
+      }
+      return { currentChatbot }
+    }),
+  getChatbotDocuments: async (chatbotId: string) => {
+    const response = await chatbotService.getChabotsDocuments(chatbotId)
+    const documents = response.data.data || []
+
+    set(state => {
+      const chatbot = state.chatbots.find(bot => bot.id === chatbotId)
+      if (!chatbot) {
+        throw new Error('Chatbot not found')
+      }
+      return {
+        currentChatbot: { ...chatbot, documents },
+      }
+    })
   },
   upsertChatbot: chatbot =>
     set(state => {

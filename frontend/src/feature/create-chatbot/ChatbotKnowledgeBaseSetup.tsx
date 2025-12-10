@@ -1,22 +1,34 @@
 import { Logo } from '@/components/common/logo'
 import { Button, Tooltip } from '@mantine/core'
 import { ArrowLeft, X, File, Text, MessageSquare, Link, PlusIcon, Pencil } from 'lucide-react'
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 import { UploadFile } from '../sources/File'
 import { UploadLinks } from '../sources/Links'
 import { UploadText } from '../sources/Text'
 import { UploadQandA } from '../sources/QandA'
+import { useChatbotStore } from '@/store'
 
 export const ChatbotKnowledgeBaseSetup: React.FC = () => {
+  const hasFetched = useRef(false)
   const navigate = useNavigate()
-
   const [sources, setSources] = useState([
     { name: 'File', icon: File, count: 0, isSelected: false },
     { name: 'Text', icon: Text, count: 0, isSelected: false },
     { name: 'Q&A', icon: MessageSquare, count: 0, isSelected: false },
     { name: 'Links', icon: Link, count: 0, isSelected: false },
   ])
+  const { id } = useParams()
+  const { getChatbotDocuments, setCurrentChatbot } = useChatbotStore()
+
+  useEffect(() => {
+    if (hasFetched.current) return
+    hasFetched.current = true
+    if (id) {
+      setCurrentChatbot(id)
+      getChatbotDocuments(id)
+    }
+  }, [id, getChatbotDocuments, setCurrentChatbot])
 
   const handleSourceClick = (index: number) => {
     setSources(prevSources =>

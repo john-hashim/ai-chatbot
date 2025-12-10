@@ -78,11 +78,31 @@ export const getPresignedUploadUrl = async (req: Request, res: Response, next: N
 export const uploadDocument = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const files = req.files as Express.Multer.File[]
+    const { chatbotId } = req.params
+
+    if (!chatbotId) {
+      return res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'Chatbot ID is required',
+      } satisfies ApiResponse)
+    }
 
     if (!files || files.length === 0) {
       return res.status(400).json({
         status: ApiStatus.FAILURE,
         message: 'No files uploaded',
+      } satisfies ApiResponse)
+    }
+
+    // Verify chatbot exists
+    const chatbot = await prisma.chatbot.findUnique({
+      where: { id: chatbotId },
+    })
+
+    if (!chatbot) {
+      return res.status(404).json({
+        status: ApiStatus.FAILURE,
+        message: 'Chatbot not found',
       } satisfies ApiResponse)
     }
 
@@ -96,9 +116,11 @@ export const uploadDocument = async (req: Request, res: Response, next: NextFunc
 
           return {
             name: file.originalname,
-            type: file.mimetype,
+            type: 'document',
+            subtype: 'pdf',
             size: file.size,
-            text: textContent,
+            content: textContent,
+            chatbotId: chatbotId,
           }
         }
         // Handle .doc files (old Word format)
@@ -109,9 +131,11 @@ export const uploadDocument = async (req: Request, res: Response, next: NextFunc
 
           return {
             name: file.originalname,
-            type: file.mimetype,
+            type: 'document',
+            subtype: 'doc',
+            content: textContent,
             size: file.size,
-            text: textContent,
+            chatbotId: chatbotId,
           }
         }
 
@@ -125,9 +149,11 @@ export const uploadDocument = async (req: Request, res: Response, next: NextFunc
 
           return {
             name: file.originalname,
-            type: file.mimetype,
+            type: 'document',
+            subtype: 'docx',
             size: file.size,
-            text: textContent,
+            content: textContent,
+            chatbotId: chatbotId,
           }
         }
 
@@ -135,20 +161,42 @@ export const uploadDocument = async (req: Request, res: Response, next: NextFunc
           textContent = file.buffer.toString('utf-8')
           return {
             name: file.originalname,
-            type: file.mimetype,
+            type: 'document',
+            subtype: 'txt',
             size: file.size,
-            text: textContent,
+            content: textContent,
+            chatbotId: chatbotId,
           }
         }
+
+        throw new Error(`Unsupported file type: ${file.mimetype} for file ${file.originalname}`)
       })
     )
 
-    console.log(processedFiles)
+    // Insert documents into database
+    const createdDocuments = await Promise.all(
+      processedFiles.map(async fileData => {
+        return await prisma.document.create({
+          data: fileData,
+        })
+      })
+    )
+
     res.status(200).json({
       status: ApiStatus.SUCCESS,
-      data: null,
+      data: createdDocuments,
       message: `${files.length} document(s) uploaded successfully`,
     } satisfies ApiResponse)
+  } catch (error) {
+    next(error)
+  }
+}
+
+export const getDocuments = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { chatbotId } = req.params
+    console.log(chatbotId)
+    res.json({ message: 'success' })
   } catch (error) {
     next(error)
   }

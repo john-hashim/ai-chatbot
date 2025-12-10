@@ -2,8 +2,9 @@
 import { type AxiosResponse } from 'axios'
 import apiClient from '../index'
 import { ENDPOINTS } from '../endpoints'
-import type { Chatbot, ChatbotFormData, UploadDocumentResponse } from '@/types/chatbot'
+import type { Chatbot, ChatbotFormData } from '@/types/chatbot'
 import type { ApiResponse } from '@/types/api'
+import type { Document } from '@/types/document'
 
 interface PresignedUrlData {
   uploadUrl: string
@@ -28,6 +29,13 @@ export const chatbotService = {
     return apiClient.get(ENDPOINTS.CHATBOT.GET_ALL)
   },
   /**
+   * Get Chatbots documents list
+   * @returns Promise with documents data
+   */
+  getChabotsDocuments: (chatbotId: string): Promise<AxiosResponse<ApiResponse<Document[]>>> => {
+    return apiClient.get(ENDPOINTS.CHATBOT.GET_DOCUMENTS.replace(':chatbotId', chatbotId))
+  },
+  /**
    * Get presigned URL for uploading profile picture to R2
    * @param fileName - name of the file
    * @param fileType - MIME type of the file
@@ -46,17 +54,22 @@ export const chatbotService = {
    * @returns Promise with upload response
    */
   uploadDocuments: (
-    files: File[]
-  ): Promise<AxiosResponse<ApiResponse<UploadDocumentResponse[]>>> => {
+    files: File[],
+    chatbotId: string
+  ): Promise<AxiosResponse<ApiResponse<Document[]>>> => {
     const formData = new FormData()
     files.forEach(file => {
       formData.append('documents', file)
     })
 
-    return apiClient.post(ENDPOINTS.CHATBOT.UPLOAD_DOCUMENT, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    })
+    return apiClient.post(
+      ENDPOINTS.CHATBOT.UPLOAD_DOCUMENT.replace(':chatbotId', chatbotId),
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    )
   },
 }

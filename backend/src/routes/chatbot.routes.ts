@@ -13,10 +13,15 @@ router.post(
   chatbotController.getPresignedUploadUrl
 )
 router.post(
-  '/upload-document',
+  '/:chatbotId/upload-document',
   authMiddleware.authenticateToken,
   uploadMiddleware.uploadMultipleDocuments,
   chatbotController.uploadDocument
+)
+router.get(
+  '/:chatbotId/documents',
+  authMiddleware.authenticateToken,
+  chatbotController.getDocuments
 )
 
 export default router
