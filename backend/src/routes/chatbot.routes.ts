@@ -23,5 +23,15 @@ router.get(
   authMiddleware.authenticateToken,
   chatbotController.getDocuments
 )
+router.delete(
+  '/documents/:documentId',
+  authMiddleware.authenticateToken,
+  chatbotController.deleteDocument
+)
+router.post(
+  '/documents/delete-multiple',
+  authMiddleware.authenticateToken,
+  chatbotController.deleteMultipleDocuments
+)
 
 export default router

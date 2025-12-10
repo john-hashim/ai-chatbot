@@ -72,4 +72,22 @@ export const chatbotService = {
       }
     )
   },
+  /**
+   * Delete a single document
+   * @param documentId - ID of the document to delete
+   * @returns Promise with delete response
+   */
+  deleteDocument: (documentId: string): Promise<AxiosResponse<ApiResponse<null>>> => {
+    return apiClient.delete(ENDPOINTS.CHATBOT.DELETE_DOCUMENT.replace(':documentId', documentId))
+  },
+  /**
+   * Delete multiple documents
+   * @param documentIds - Array of document IDs to delete
+   * @returns Promise with delete response containing count of deleted documents
+   */
+  deleteMultipleDocuments: (
+    documentIds: string[]
+  ): Promise<AxiosResponse<ApiResponse<{ deletedCount: number }>>> => {
+    return apiClient.post(ENDPOINTS.CHATBOT.DELETE_MULTIPLE_DOCUMENTS, { documentIds })
+  },
 }

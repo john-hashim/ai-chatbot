@@ -15,6 +15,8 @@ export interface ChatbotSlice {
   deleteChatbot: (id: string) => void
   clearChatbots: () => void
   addDocument: (documents: Document[]) => void
+  deleteDocument: (documentId: string) => Promise<void>
+  deleteMultipleDocuments: (documentIds: string[]) => Promise<number>
 }
 
 export const createChatbotSlice: StateCreator<ChatbotSlice> = set => ({
@@ -57,6 +59,45 @@ export const createChatbotSlice: StateCreator<ChatbotSlice> = set => ({
         currentChatbot: { ...chatbot, documents },
       }
     })
+  },
+  deleteDocument: async (documentId: string) => {
+    await chatbotService.deleteDocument(documentId)
+
+    set(state => {
+      if (!state.currentChatbot) return state
+
+      const updatedDocuments = (state.currentChatbot.documents || []).filter(
+        doc => doc.id !== documentId
+      )
+
+      return {
+        currentChatbot: {
+          ...state.currentChatbot,
+          documents: updatedDocuments,
+        },
+      }
+    })
+  },
+  deleteMultipleDocuments: async (documentIds: string[]) => {
+    const response = await chatbotService.deleteMultipleDocuments(documentIds)
+    const deletedCount = response.data.data?.deletedCount || 0
+
+    set(state => {
+      if (!state.currentChatbot) return state
+
+      const updatedDocuments = (state.currentChatbot.documents || []).filter(
+        doc => !documentIds.includes(doc.id)
+      )
+
+      return {
+        currentChatbot: {
+          ...state.currentChatbot,
+          documents: updatedDocuments,
+        },
+      }
+    })
+
+    return deletedCount
   },
   upsertChatbot: chatbot =>
     set(state => {

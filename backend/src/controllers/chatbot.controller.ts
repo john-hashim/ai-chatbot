@@ -195,8 +195,112 @@ export const uploadDocument = async (req: Request, res: Response, next: NextFunc
 export const getDocuments = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { chatbotId } = req.params
-    console.log(chatbotId)
-    res.json({ message: 'success' })
+
+    if (!chatbotId) {
+      return res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'Chatbot ID is required',
+      } satisfies ApiResponse)
+    }
+
+    const chatbot = await prisma.chatbot.findUnique({
+      where: { id: chatbotId },
+    })
+
+    if (!chatbot) {
+      return res.status(404).json({
+        status: ApiStatus.FAILURE,
+        message: 'Chatbot not found',
+      } satisfies ApiResponse)
+    }
+
+    const documents = await prisma.document.findMany({
+      where: { chatbotId },
+    })
+
+    res.status(200).json({
+      status: ApiStatus.SUCCESS,
+      data: documents,
+      message: `${documents.length} document(s) uploaded successfully`,
+    } satisfies ApiResponse)
+  } catch (error) {
+    next(error)
+  }
+}
+
+export const deleteDocument = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const user = req.user
+    const { documentId } = req.params
+
+    if (!documentId) {
+      return res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'Document ID is required',
+      } satisfies ApiResponse)
+    }
+
+    const result = await prisma.document.deleteMany({
+      where: {
+        id: documentId,
+        chatbot: {
+          userId: user.id,
+        },
+      },
+    })
+
+    if (result.count === 0) {
+      return res.status(404).json({
+        status: ApiStatus.FAILURE,
+        message: 'Document not found or you do not have permission to delete it',
+      } satisfies ApiResponse)
+    }
+
+    res.status(200).json({
+      status: ApiStatus.SUCCESS,
+      data: null,
+      message: 'Document deleted successfully',
+    } satisfies ApiResponse)
+  } catch (error) {
+    next(error)
+  }
+}
+
+export const deleteMultipleDocuments = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const user = req.user
+    const { documentIds } = req.body
+
+    // Validate input
+    if (!documentIds || !Array.isArray(documentIds) || documentIds.length === 0) {
+      return res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'Document IDs array is required and must not be empty',
+      } satisfies ApiResponse)
+    }
+
+    // Validate all IDs are strings
+    if (!documentIds.every(id => typeof id === 'string')) {
+      return res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'All document IDs must be valid strings',
+      } satisfies ApiResponse)
+    }
+
+    const result = await prisma.document.deleteMany({
+      where: {
+        id: { in: documentIds },
+        chatbot: {
+          userId: user.id,
+        },
+      },
+    })
+
+    res.status(200).json({
+      status: ApiStatus.SUCCESS,
+      data: { deletedCount: result.count },
+      message: `${result.count} document(s) deleted successfully`,
+    } satisfies ApiResponse)
   } catch (error) {
     next(error)
   }

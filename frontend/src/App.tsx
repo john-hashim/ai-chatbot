@@ -16,6 +16,8 @@ import {
   Select,
 } from '@mantine/core'
 import { Notifications } from '@mantine/notifications'
+import { Toaster } from 'sonner'
+import { ModalsProvider } from '@mantine/modals'
 
 import Login from '@/feature/auth/Login'
 import { Routes, Route, Navigate } from 'react-router-dom'
@@ -26,7 +28,6 @@ import { MainLayout } from '@/components/layout/MainLayout'
 import { useStore } from '@/store'
 import { Landing } from '@/feature/Landing/Landing'
 import { ChatbotBasicSetup } from './feature/create-chatbot/ChatbotBasicSetup'
-import { ModalsProvider } from '@mantine/modals'
 import { ChatbotKnowledgeBaseSetup } from './feature/create-chatbot/ChatbotKnowledgeBaseSetup'
 
 const theme = createTheme({
@@ -105,6 +106,7 @@ function App() {
   return (
     <MantineProvider theme={theme}>
       <ModalsProvider>
+        <Toaster position="top-right" richColors />
         <Notifications position="top-right" autoClose={4000} />
         <GoogleOAuthProvider clientId={googleClientId || ''}>
           <AppRoutes />

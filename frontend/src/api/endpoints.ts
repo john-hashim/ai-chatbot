@@ -13,6 +13,8 @@ export const ENDPOINTS = {
     UPLOAD_URL: 'chatbot/upload-url',
     UPLOAD_DOCUMENT: 'chatbot/:chatbotId/upload-document',
     GET_DOCUMENTS: 'chatbot/:chatbotId/documents',
+    DELETE_DOCUMENT: 'chatbot/documents/:documentId',
+    DELETE_MULTIPLE_DOCUMENTS: 'chatbot/documents/delete-multiple',
   },
 } as const
 

@@ -65,7 +65,7 @@ export const ChatbotKnowledgeBaseSetup: React.FC = () => {
           </button>
         </Tooltip>
       </header>
-      <div className="lg:px-32 px-6 flex-1 pt-1 pb-15 flex flex-wrap div-fade-animation">
+      <div className="lg:px-32 px-6 pt-1 pb-15 flex flex-wrap div-fade-animation">
         <div className="border flex-1 border-border-week lg:mt-0 rounded-2xl flex overflow-hidden div-fade-animation">
           <div
             className={`${sources.some(source => source.isSelected) && 'hidden lg:block lg:w-1/2 border-r'} w-full h-full border-border-week lg:p-20 px-8 py-12 div-fade-animation`}
@@ -115,7 +115,7 @@ export const ChatbotKnowledgeBaseSetup: React.FC = () => {
           </div>
 
           {sources.some(source => source.isSelected) && (
-            <div className="w-full lg:w-1/2 h-full div-fade-animation p-3">
+            <div className="w-full lg:w-1/2 max-h-[82vh] overflow-y-auto div-fade-animation p-3">
               <button
                 className="p-1 hover:bg-icon-bg-hover rounded cursor-pointer border-0 bg-transparent ml-auto flex justify-end"
                 onClick={() => unselectSource()}
