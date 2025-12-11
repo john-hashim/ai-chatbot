@@ -1,6 +1,16 @@
 import { Logo } from '@/components/common/logo'
 import { Button, Tooltip } from '@mantine/core'
-import { ArrowLeft, X, File, Text, MessageSquare, Link, PlusIcon, Pencil } from 'lucide-react'
+import {
+  ArrowLeft,
+  X,
+  File,
+  Text,
+  MessageSquare,
+  Link,
+  PlusIcon,
+  Pencil,
+  CheckCircle2,
+} from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { UploadFile } from '../sources/File'
@@ -18,13 +28,34 @@ export const ChatbotKnowledgeBaseSetup: React.FC = () => {
     { name: 'Links', icon: Link, count: 0, isSelected: false },
   ])
   const { chatbotId } = useParams()
-  const { getChatbot } = useChatbotStore()
+  const { getChatbot, currentChatbot } = useChatbotStore()
 
   useEffect(() => {
     if (chatbotId) {
       getChatbot(chatbotId)
     }
   }, [chatbotId, getChatbot])
+
+  useEffect(() => {
+    if (currentChatbot) {
+      setSources(prevSources =>
+        prevSources.map(source => {
+          switch (source.name) {
+            case 'File':
+              return { ...source, count: currentChatbot.fileCount || 0 }
+            case 'Text':
+              return { ...source, count: currentChatbot.textCount || 0 }
+            case 'Q&A':
+              return { ...source, count: currentChatbot.QandACount || 0 }
+            case 'Links':
+              return { ...source, count: currentChatbot.linkCount || 0 }
+            default:
+              return source
+          }
+        })
+      )
+    }
+  }, [currentChatbot])
 
   const handleSourceClick = (index: number) => {
     setSources(prevSources =>
@@ -79,7 +110,11 @@ export const ChatbotKnowledgeBaseSetup: React.FC = () => {
                     className={`${source.isSelected && `bg-background-dark-week rounded`} flex items-center justify-between p-2 mt-8 border-b w-full border-border-week`}
                   >
                     <div className="flex items-center">
-                      <IconComponent className="h-4 w-4 text-text-secondary" />
+                      {source.count > 0 ? (
+                        <CheckCircle2 className="h-6 w-6 text-white fill-green-800" />
+                      ) : (
+                        <IconComponent className="h-4 w-4 text-text-secondary" />
+                      )}
                       &nbsp;
                       <span className="text-text-primary text-md">
                         {source.count > 0 && `${source.count}`}
@@ -94,7 +129,7 @@ export const ChatbotKnowledgeBaseSetup: React.FC = () => {
                       {source.isSelected ? (
                         <X className="h-4 w-4 text-text-weak hover:text-icon-hover" />
                       ) : source.count > 0 ? (
-                        <Pencil className="h-4 w-4 text-text-weak hover:text-icon-hover" />
+                        <Pencil className="h-4 w-4 fill-text-weak hover:text-icon-hover" />
                       ) : (
                         <PlusIcon className="h-4 w-4 text-text-weak hover:text-icon-hover" />
                       )}
