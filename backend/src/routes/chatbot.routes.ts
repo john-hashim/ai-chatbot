@@ -18,7 +18,7 @@ router.post(
   uploadMiddleware.uploadMultipleDocuments,
   chatbotController.uploadDocument
 )
-router.get(
+router.post(
   '/:chatbotId/documents',
   authMiddleware.authenticateToken,
   chatbotController.getDocuments

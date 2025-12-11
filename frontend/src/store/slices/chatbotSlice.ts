@@ -1,27 +1,41 @@
 import { chatbotService } from '@/api/services/chatbot'
 import type { Chatbot } from '@/types/chatbot'
-import type { Document } from '@/types/document'
+import type { Document, DocumentFilters } from '@/types/document'
 import type { StateCreator } from 'zustand'
 
 export interface ChatbotSlice {
   chatbots: Chatbot[]
   currentChatbot: Chatbot | null
+  documentFilters: DocumentFilters
 
   getChatbots: () => void
+
   setCurrentChatbot: (chatbotId: string) => void
   clearCurrentChatbot: () => void
-  getChatbotDocuments: (chatbotId: string) => void
+  getChatbotDocuments: (chatbotId?: string) => void
+
   upsertChatbot: (chatbot: Chatbot) => void
   deleteChatbot: (id: string) => void
   clearChatbots: () => void
+
   addDocument: (documents: Document[]) => void
   deleteDocument: (documentId: string) => Promise<void>
   deleteMultipleDocuments: (documentIds: string[]) => Promise<number>
+
+  setDocumentFilters: (filters: Partial<DocumentFilters>) => void
+  // getFilteredDocuments: () => void
+  // resetDocumentFilters: () => void
 }
 
-export const createChatbotSlice: StateCreator<ChatbotSlice> = set => ({
+const defaultFilters: DocumentFilters = {
+  searchParam: '',
+  sortBy: 'Newest',
+}
+
+export const createChatbotSlice: StateCreator<ChatbotSlice> = (set, get) => ({
   chatbots: [],
   currentChatbot: null,
+  documentFilters: defaultFilters,
 
   getChatbots: async () => {
     const response = await chatbotService.getChabots()
@@ -46,12 +60,20 @@ export const createChatbotSlice: StateCreator<ChatbotSlice> = set => ({
       }
       return { currentChatbot }
     }),
-  getChatbotDocuments: async (chatbotId: string) => {
-    const response = await chatbotService.getChabotsDocuments(chatbotId)
+  getChatbotDocuments: async (chatbotId?: string) => {
+    const state = get()
+    const id = chatbotId || state.currentChatbot?.id
+
+    if (!id) {
+      throw new Error('No chatbot ID provided and no current chatbot set')
+    }
+
+    const filters = state.documentFilters
+    const response = await chatbotService.getChabotsDocuments(id, filters)
     const documents = response.data.data || []
 
     set(state => {
-      const chatbot = state.chatbots.find(bot => bot.id === chatbotId)
+      const chatbot = state.chatbots.find(bot => bot.id === id)
       if (!chatbot) {
         throw new Error('Chatbot not found')
       }
@@ -112,4 +134,7 @@ export const createChatbotSlice: StateCreator<ChatbotSlice> = set => ({
     }),
   deleteChatbot: id => set(state => ({ chatbots: state.chatbots.filter(bot => bot.id !== id) })),
   clearChatbots: () => set({ chatbots: [] }),
+
+  setDocumentFilters: filter =>
+    set(state => ({ documentFilters: { ...state.documentFilters, ...filter } })),
 })

@@ -14,4 +14,9 @@ export interface Chatbot extends ChatbotFormData {
   updatedAt: Date
   userId: string
   documents: Document[]
+  documentsCount?: number
+  fileCount?: number
+  linkCount?: number
+  textCount?: number
+  QandACount?: number
 }

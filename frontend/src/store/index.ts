@@ -41,6 +41,7 @@ export const useChatbotStore = () =>
     useShallow(state => ({
       chatbots: state.chatbots,
       currentChatbot: state.currentChatbot,
+      documentFilters: state.documentFilters,
       getChatbots: state.getChatbots,
       setCurrentChatbot: state.setCurrentChatbot,
       clearCurrentChatbot: state.clearCurrentChatbot,
@@ -51,5 +52,6 @@ export const useChatbotStore = () =>
       upsertChatbot: state.upsertChatbot,
       deleteChatbot: state.deleteChatbot,
       clearChatbots: state.clearChatbots,
+      setDocumentFilters: state.setDocumentFilters,
     }))
   )

@@ -134,7 +134,10 @@ function AppRoutes() {
       >
         <Route path="/chatbot/landing" element={<Landing />} />
         <Route path="/chatbot/new" element={<ChatbotBasicSetup />} />
-        <Route path="/chatbot/:id/setup-knowledgebase" element={<ChatbotKnowledgeBaseSetup />} />
+        <Route
+          path="/chatbot/:chatbotId/setup-knowledgebase"
+          element={<ChatbotKnowledgeBaseSetup />}
+        />
       </Route>
       <Route
         path="/"

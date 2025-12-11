@@ -4,7 +4,7 @@ import apiClient from '../index'
 import { ENDPOINTS } from '../endpoints'
 import type { Chatbot, ChatbotFormData } from '@/types/chatbot'
 import type { ApiResponse } from '@/types/api'
-import type { Document } from '@/types/document'
+import type { Document, DocumentFilters } from '@/types/document'
 
 interface PresignedUrlData {
   uploadUrl: string
@@ -32,8 +32,11 @@ export const chatbotService = {
    * Get Chatbots documents list
    * @returns Promise with documents data
    */
-  getChabotsDocuments: (chatbotId: string): Promise<AxiosResponse<ApiResponse<Document[]>>> => {
-    return apiClient.get(ENDPOINTS.CHATBOT.GET_DOCUMENTS.replace(':chatbotId', chatbotId))
+  getChabotsDocuments: (
+    chatbotId: string,
+    filter: DocumentFilters
+  ): Promise<AxiosResponse<ApiResponse<Document[]>>> => {
+    return apiClient.post(ENDPOINTS.CHATBOT.GET_DOCUMENTS.replace(':chatbotId', chatbotId), filter)
   },
   /**
    * Get presigned URL for uploading profile picture to R2
