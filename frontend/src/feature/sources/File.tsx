@@ -43,6 +43,8 @@ export const UploadFile: React.FC = () => {
       const resp = await excuteUploadDocument(files, currentChatbot.id)
       if (resp.status === 'success' && resp.data) {
         await addDocument()
+        setDocumentsToDelete([])
+        setSelectAll(false)
         notification.success('File Uploaded Successfully')
       } else {
         notification.error('Failed to upload file')
@@ -144,9 +146,9 @@ export const UploadFile: React.FC = () => {
 
   return (
     <div className="px-4">
-      <header className="">
-        <p className="text-2xl font-semibold text-center sm:text-left">Files</p>
-        <p className="text-sm mt-1 font-light text-text-weak text-center sm:text-left max-w-2/3">
+      <header className="text-center sm:text-left">
+        <p className="text-2xl font-semibold">Files</p>
+        <p className="text-sm mt-1 font-light text-text-weak max-w-2/3 mx-auto sm:mx-0">
           Add documents to train your chatbot
         </p>
       </header>
@@ -171,35 +173,48 @@ export const UploadFile: React.FC = () => {
                 />
               </div>
             </div>
-            <div className="flex items-center mt-6 justify-between">
-              <div className="flex items-center gap-4">
-                <Checkbox label="Select All" checked={selectAll} onChange={handleSelectAll} />
-                {documentToDelete.length > 0 && (
+            <div className="mt-6">
+              <div className="flex items-center justify-between gap-2">
+                <Checkbox
+                  label={<span className="text-xs sm:text-sm">Select All</span>}
+                  checked={selectAll}
+                  onChange={handleSelectAll}
+                />
+                <div className="flex items-center">
+                  <p className="text-xs sm:text-sm mr-2 hidden sm:block">Sort By:</p>
+                  <div style={{ width: 'fit-content', minWidth: '100px' }}>
+                    <Select
+                      placeholder="Sort"
+                      data={[
+                        'Default',
+                        'Oldest',
+                        'Newest',
+                        'Alphabetical(A-Z)',
+                        'Alphabetical(Z-A)',
+                      ]}
+                      checkIconPosition="right"
+                      classNames={{ input: classes.selectInputBorderless }}
+                      rightSection={<ChevronDown size={16} />}
+                      comboboxProps={{ width: 200, position: 'bottom-end' }}
+                      value={documentFilters.sortBy}
+                      onChange={handleSortChange}
+                    />
+                  </div>
+                </div>
+              </div>
+              {documentToDelete.length > 0 && (
+                <div className="mt-3 div-fade-animation">
                   <Button
-                    color="red"
+                    color="#ff0000"
+                    variant="filled"
                     size="xs"
                     leftSection={<Trash size={14} />}
                     onClick={handleDeleteMultiple}
                   >
                     Delete Selected ({documentToDelete.length})
                   </Button>
-                )}
-              </div>
-              <div className="flex items-center">
-                <p className="text-sm mr-2">Sort By:</p>
-                <div style={{ width: 'fit-content', minWidth: '120px' }}>
-                  <Select
-                    placeholder="Pick value"
-                    data={['Default', 'Oldest', 'Newest', 'Alphabetical(A-Z)', 'Alphabetical(Z-A)']}
-                    checkIconPosition="right"
-                    classNames={{ input: classes.selectInputBorderless }}
-                    rightSection={<ChevronDown size={16} />}
-                    comboboxProps={{ width: 200, position: 'bottom-end' }}
-                    value={documentFilters.sortBy}
-                    onChange={handleSortChange}
-                  />
                 </div>
-              </div>
+              )}
             </div>
           </div>
           <div className="border-b mt-2 border-border-week"></div>

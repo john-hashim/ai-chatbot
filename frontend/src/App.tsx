@@ -16,7 +16,6 @@ import {
   Select,
 } from '@mantine/core'
 import { Notifications } from '@mantine/notifications'
-import { Toaster } from 'sonner'
 import { ModalsProvider } from '@mantine/modals'
 
 import Login from '@/feature/auth/Login'
@@ -106,7 +105,6 @@ function App() {
   return (
     <MantineProvider theme={theme}>
       <ModalsProvider>
-        <Toaster position="top-right" richColors />
         <Notifications position="top-right" autoClose={4000} />
         <GoogleOAuthProvider clientId={googleClientId || ''}>
           <AppRoutes />

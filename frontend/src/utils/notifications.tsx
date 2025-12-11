@@ -41,7 +41,7 @@ export const showLoadingNotification = (
         message: successMessage,
         icon: <CircleCheck color="#58a182" size={24} />,
         loading: false,
-        autoClose: 2000,
+        autoClose: 4000,
       })
     },
     error: (errorMessage: string, errorTitle: string = 'Error') => {
@@ -52,10 +52,10 @@ export const showLoadingNotification = (
         message: errorMessage,
         icon: <CircleAlert color="#c72027" size={24} />,
         loading: false,
-        autoClose: 2000,
+        autoClose: 4000,
       })
     },
-    update: (props) => {
+    update: props => {
       notifications.update({
         id,
         ...props,
