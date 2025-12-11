@@ -1,6 +1,6 @@
 import { chatbotService } from '@/api/services/chatbot'
 import type { Chatbot } from '@/types/chatbot'
-import type { Document, DocumentFilters } from '@/types/document'
+import type { DocumentFilters } from '@/types/document'
 import type { StateCreator } from 'zustand'
 
 export interface ChatbotSlice {
@@ -12,18 +12,17 @@ export interface ChatbotSlice {
 
   setCurrentChatbot: (chatbotId: string) => void
   clearCurrentChatbot: () => void
-  getChatbotDocuments: (chatbotId?: string) => void
+  getChatbot: (chatbotId?: string) => void
 
   upsertChatbot: (chatbot: Chatbot) => void
   deleteChatbot: (id: string) => void
   clearChatbots: () => void
 
-  addDocument: (documents: Document[]) => void
+  addDocument: () => Promise<void>
   deleteDocument: (documentId: string) => Promise<void>
   deleteMultipleDocuments: (documentIds: string[]) => Promise<number>
 
   setDocumentFilters: (filters: Partial<DocumentFilters>) => void
-  // getFilteredDocuments: () => void
   // resetDocumentFilters: () => void
 }
 
@@ -51,16 +50,7 @@ export const createChatbotSlice: StateCreator<ChatbotSlice> = (set, get) => ({
     })
   },
   clearCurrentChatbot: () => set({ currentChatbot: null }),
-  addDocument: (documents: Document[]) =>
-    set(state => {
-      if (!state.currentChatbot) return state
-      const currentChatbot = {
-        ...state.currentChatbot,
-        documents: [...(state.currentChatbot.documents || []), ...documents],
-      }
-      return { currentChatbot }
-    }),
-  getChatbotDocuments: async (chatbotId?: string) => {
+  getChatbot: async (chatbotId?: string) => {
     const state = get()
     const id = chatbotId || state.currentChatbot?.id
 
@@ -69,55 +59,39 @@ export const createChatbotSlice: StateCreator<ChatbotSlice> = (set, get) => ({
     }
 
     const filters = state.documentFilters
-    const response = await chatbotService.getChabotsDocuments(id, filters)
-    const documents = response.data.data || []
+    const response = await chatbotService.getChatbot(id, filters)
+    const chatbot = response.data.data
 
-    set(state => {
-      const chatbot = state.chatbots.find(bot => bot.id === id)
-      if (!chatbot) {
-        throw new Error('Chatbot not found')
-      }
-      return {
-        currentChatbot: { ...chatbot, documents },
-      }
-    })
+    if (!chatbot) {
+      throw new Error('Chatbot not found')
+    }
+    set({ currentChatbot: chatbot })
+  },
+  addDocument: async () => {
+    const state = get()
+    if (!state.currentChatbot) return
+
+    // Refresh chatbot data from server to get updated state
+    await state.getChatbot()
   },
   deleteDocument: async (documentId: string) => {
+    const state = get()
+    if (!state.currentChatbot) return
+
     await chatbotService.deleteDocument(documentId)
 
-    set(state => {
-      if (!state.currentChatbot) return state
-
-      const updatedDocuments = (state.currentChatbot.documents || []).filter(
-        doc => doc.id !== documentId
-      )
-
-      return {
-        currentChatbot: {
-          ...state.currentChatbot,
-          documents: updatedDocuments,
-        },
-      }
-    })
+    // Refresh chatbot data from server to get updated state
+    await state.getChatbot()
   },
   deleteMultipleDocuments: async (documentIds: string[]) => {
+    const state = get()
+    if (!state.currentChatbot) return 0
+
     const response = await chatbotService.deleteMultipleDocuments(documentIds)
     const deletedCount = response.data.data?.deletedCount || 0
 
-    set(state => {
-      if (!state.currentChatbot) return state
-
-      const updatedDocuments = (state.currentChatbot.documents || []).filter(
-        doc => !documentIds.includes(doc.id)
-      )
-
-      return {
-        currentChatbot: {
-          ...state.currentChatbot,
-          documents: updatedDocuments,
-        },
-      }
-    })
+    // Refresh chatbot data from server to get updated state
+    await state.getChatbot()
 
     return deletedCount
   },

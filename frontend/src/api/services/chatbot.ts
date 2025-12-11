@@ -29,14 +29,16 @@ export const chatbotService = {
     return apiClient.get(ENDPOINTS.CHATBOT.GET_ALL)
   },
   /**
-   * Get Chatbots documents list
-   * @returns Promise with documents data
+   * Get single chatbot by ID with complete details including documents
+   * @param chatbotId - ID of the chatbot to retrieve
+   * @param filter - Optional filter parameters for documents
+   * @returns Promise with complete chatbot data
    */
-  getChabotsDocuments: (
+  getChatbot: (
     chatbotId: string,
     filter: DocumentFilters
-  ): Promise<AxiosResponse<ApiResponse<Document[]>>> => {
-    return apiClient.post(ENDPOINTS.CHATBOT.GET_DOCUMENTS.replace(':chatbotId', chatbotId), filter)
+  ): Promise<AxiosResponse<ApiResponse<Chatbot>>> => {
+    return apiClient.post(ENDPOINTS.CHATBOT.GET_BY_ID.replace(':chatbotId', chatbotId), filter)
   },
   /**
    * Get presigned URL for uploading profile picture to R2

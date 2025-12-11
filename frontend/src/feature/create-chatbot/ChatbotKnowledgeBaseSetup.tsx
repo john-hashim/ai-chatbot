@@ -18,14 +18,13 @@ export const ChatbotKnowledgeBaseSetup: React.FC = () => {
     { name: 'Links', icon: Link, count: 0, isSelected: false },
   ])
   const { chatbotId } = useParams()
-  const { getChatbotDocuments, setCurrentChatbot } = useChatbotStore()
+  const { getChatbot } = useChatbotStore()
 
   useEffect(() => {
     if (chatbotId) {
-      setCurrentChatbot(chatbotId)
-      getChatbotDocuments()
+      getChatbot(chatbotId)
     }
-  }, [chatbotId, getChatbotDocuments, setCurrentChatbot])
+  }, [chatbotId, getChatbot])
 
   const handleSourceClick = (index: number) => {
     setSources(prevSources =>

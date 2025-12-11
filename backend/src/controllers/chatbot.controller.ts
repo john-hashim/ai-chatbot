@@ -92,6 +92,99 @@ export const getChatbots = async (req: Request, res: Response, next: NextFunctio
   }
 }
 
+export const getChatbot = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const user = req.user
+    const { chatbotId } = req.params
+    const { searchParam, sortBy } = req.body
+
+    if (!chatbotId) {
+      return res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'Chatbot ID is required',
+      } satisfies ApiResponse)
+    }
+
+    // Verify chatbot exists and belongs to user
+    const chatbot = await prisma.chatbot.findUnique({
+      where: { id: chatbotId, userId: user.id },
+    })
+
+    if (!chatbot) {
+      return res.status(404).json({
+        status: ApiStatus.FAILURE,
+        message: 'Chatbot not found',
+      } satisfies ApiResponse)
+    }
+
+    // Get sort order
+    const getOrderBy = (filter: string) => {
+      switch (filter) {
+        case 'Oldest':
+          return { uploadedAt: 'asc' as const }
+        case 'Newest':
+          return { uploadedAt: 'desc' as const }
+        case 'Status':
+          return { status: 'asc' as const }
+        case 'Alphabetical(A-Z)':
+          return { name: 'asc' as const }
+        case 'Alphabetical(Z-A)':
+          return { name: 'desc' as const }
+        case 'Default':
+        default:
+          return { uploadedAt: 'desc' as const }
+      }
+    }
+
+    // Get filtered and sorted documents
+    const documents = await prisma.document.findMany({
+      where: {
+        chatbotId,
+        ...(searchParam && {
+          name: {
+            contains: searchParam,
+            mode: 'insensitive',
+          },
+        }),
+      },
+      orderBy: getOrderBy(sortBy || 'Default'),
+    })
+
+    // Get document counts by type
+    const documentCounts = await prisma.document.groupBy({
+      by: ['type'],
+      where: {
+        chatbotId,
+      },
+      _count: {
+        id: true,
+      },
+    })
+
+    const fileCount = documentCounts.find(dc => dc.type === 'document')?._count.id || 0
+    const linkCount = documentCounts.find(dc => dc.type === 'website')?._count.id || 0
+    const textCount = documentCounts.find(dc => dc.type === 'text')?._count.id || 0
+    const QandACount = documentCounts.find(dc => dc.type === 'q&a')?._count.id || 0
+    const documentsCount = fileCount + linkCount + textCount + QandACount
+
+    res.status(200).json({
+      status: ApiStatus.SUCCESS,
+      data: {
+        ...chatbot,
+        documents,
+        documentsCount,
+        fileCount,
+        linkCount,
+        textCount,
+        QandACount,
+      },
+      message: 'Chatbot retrieved successfully',
+    } satisfies ApiResponse)
+  } catch (error) {
+    next(error)
+  }
+}
+
 export const getPresignedUploadUrl = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { fileName, fileType, directory } = req.body
@@ -226,69 +319,6 @@ export const uploadDocument = async (req: Request, res: Response, next: NextFunc
       status: ApiStatus.SUCCESS,
       data: createdDocuments,
       message: `${files.length} document(s) uploaded successfully`,
-    } satisfies ApiResponse)
-  } catch (error) {
-    next(error)
-  }
-}
-
-export const getDocuments = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { chatbotId } = req.params
-    const { searchParam, sortBy } = req.body
-    if (!chatbotId) {
-      return res.status(400).json({
-        status: ApiStatus.FAILURE,
-        message: 'Chatbot ID is required',
-      } satisfies ApiResponse)
-    }
-
-    const getOrderBy = (filter: string) => {
-      switch (filter) {
-        case 'Oldest':
-          return { uploadedAt: 'asc' as const }
-        case 'Newest':
-          return { uploadedAt: 'desc' as const }
-        case 'Status':
-          return { status: 'asc' as const }
-        case 'Alphabetical(A-Z)':
-          return { name: 'asc' as const }
-        case 'Alphabetical(Z-A)':
-          return { name: 'desc' as const }
-        case 'Default':
-        default:
-          return { uploadedAt: 'desc' as const }
-      }
-    }
-
-    const chatbot = await prisma.chatbot.findUnique({
-      where: { id: chatbotId },
-    })
-
-    if (!chatbot) {
-      return res.status(404).json({
-        status: ApiStatus.FAILURE,
-        message: 'Chatbot not found',
-      } satisfies ApiResponse)
-    }
-
-    const documents = await prisma.document.findMany({
-      where: {
-        chatbotId,
-        ...(searchParam && {
-          name: {
-            contains: searchParam,
-            mode: 'insensitive',
-          },
-        }),
-      },
-      orderBy: getOrderBy(sortBy),
-    })
-
-    res.status(200).json({
-      status: ApiStatus.SUCCESS,
-      data: documents,
-      message: `${documents.length} document(s) retrieved successfully`,
     } satisfies ApiResponse)
   } catch (error) {
     next(error)

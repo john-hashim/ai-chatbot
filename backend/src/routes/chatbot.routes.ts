@@ -7,6 +7,7 @@ const router = express.Router()
 
 router.post('/create', authMiddleware.authenticateToken, chatbotController.createChatbot)
 router.get('/chatbots', authMiddleware.authenticateToken, chatbotController.getChatbots)
+router.post('/:chatbotId', authMiddleware.authenticateToken, chatbotController.getChatbot)
 router.post(
   '/upload-url',
   authMiddleware.authenticateToken,
@@ -17,11 +18,6 @@ router.post(
   authMiddleware.authenticateToken,
   uploadMiddleware.uploadMultipleDocuments,
   chatbotController.uploadDocument
-)
-router.post(
-  '/:chatbotId/documents',
-  authMiddleware.authenticateToken,
-  chatbotController.getDocuments
 )
 router.delete(
   '/documents/:documentId',

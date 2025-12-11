@@ -24,7 +24,7 @@ export const UploadFile: React.FC = () => {
     deleteMultipleDocuments,
     setDocumentFilters,
     documentFilters,
-    getChatbotDocuments,
+    getChatbot,
   } = useChatbotStore()
   const { bytesToKB } = useFormat()
   const [documentToDelete, setDocumentsToDelete] = useState<string[]>([])
@@ -42,7 +42,7 @@ export const UploadFile: React.FC = () => {
     if (currentChatbot) {
       const resp = await excuteUploadDocument(files, currentChatbot.id)
       if (resp.status === 'success' && resp.data) {
-        addDocument(resp.data)
+        await addDocument()
         notification.success('File Uploaded Successfully')
       } else {
         notification.error('Failed to upload file')
@@ -132,13 +132,13 @@ export const UploadFile: React.FC = () => {
 
   const handleSearch = (query: string) => {
     setDocumentFilters({ ...documentFilters, searchParam: query })
-    getChatbotDocuments()
+    getChatbot()
   }
 
   const handleSortChange = (value: string | null) => {
     if (value) {
       setDocumentFilters({ ...documentFilters, sortBy: value as SortOption })
-      getChatbotDocuments()
+      getChatbot()
     }
   }
 
