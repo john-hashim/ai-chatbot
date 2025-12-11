@@ -1,11 +1,11 @@
 /* Button styles */
-.buttonRoot {
+.buttonRoot:not([data-variant="filled"]):not([data-variant="light"]):not([data-variant="outline"]) {
   border: 1px solid var(--color-border-week) !important;
   background-color: transparent !important;
   color: var(--color-text-weak) !important;
 }
 
-.buttonRoot:hover {
+.buttonRoot:not([data-variant="filled"]):not([data-variant="light"]):not([data-variant="outline"]):hover {
   border: 1px solid var(--color-border-strong) !important;
   background-color: transparent !important;
 }
@@ -25,6 +25,9 @@
 
 .buttonLabel {
   font-size: 13px !important;
+}
+
+.buttonRoot:not([data-variant="filled"]):not([data-variant="light"]):not([data-variant="outline"]) .buttonLabel {
   color: var(--color-text-weak) !important;
 }
 
@@ -34,8 +37,11 @@
 
 .buttonSection {
   font-size: 11px !important;
-  color: var(--color-text-weak) !important;
   margin-inline-end: 2px !important;
+}
+
+.buttonRoot:not([data-variant="filled"]):not([data-variant="light"]):not([data-variant="outline"]) .buttonSection {
+  color: var(--color-text-weak) !important;
 }
 
 /* Input styles */

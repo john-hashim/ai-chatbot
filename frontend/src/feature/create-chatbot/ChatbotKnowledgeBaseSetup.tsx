@@ -19,7 +19,7 @@ export const ChatbotKnowledgeBaseSetup: React.FC = () => {
     { name: 'Links', icon: Link, count: 0, isSelected: false },
   ])
   const { id } = useParams()
-  const { getChatbotDocuments, setCurrentChatbot } = useChatbotStore()
+  const { getChatbotDocuments, setCurrentChatbot, currentChatbot } = useChatbotStore()
 
   useEffect(() => {
     if (hasFetched.current) return

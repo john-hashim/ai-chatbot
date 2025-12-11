@@ -47,10 +47,8 @@ export const UploadFile: React.FC = () => {
     let updated: string[]
     if (documentToDelete.includes(id)) {
       updated = documentToDelete.filter(docId => docId !== id)
-      console.log('After removing:', updated)
     } else {
       updated = [...documentToDelete, id]
-      console.log('After adding:', updated)
     }
     setDocumentsToDelete(updated)
 
@@ -82,7 +80,7 @@ export const UploadFile: React.FC = () => {
         </Text>
       ),
       labels: { confirm: 'Delete Document', cancel: 'Cancel' },
-      confirmProps: { color: 'red' },
+      confirmProps: { color: 'red', variant: 'filled' },
       onConfirm: async () => {
         const notification = showLoadingNotification('Deleting File', 'Please wait...')
         try {
@@ -106,7 +104,7 @@ export const UploadFile: React.FC = () => {
         </Text>
       ),
       labels: { confirm: 'Delete Documents', cancel: 'Cancel' },
-      confirmProps: { color: 'red' },
+      confirmProps: { color: 'red', variant: 'filled' },
       onConfirm: async () => {
         const notification = showLoadingNotification(
           'Deleting Files',
