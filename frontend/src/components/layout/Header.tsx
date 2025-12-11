@@ -5,19 +5,20 @@ import {
   // Info
 } from 'lucide-react'
 import { Tooltip } from '@mantine/core'
-import { useStore } from '@/store'
+import { useChatbotStore, useUserStore } from '@/store'
 import { authService } from '@/api/services/auth'
 import { useApi } from '@/hooks/useApi'
 import type { ApiResponse } from '@/types/api'
 
 export const Header: React.FC = () => {
-  const clearStore = useStore(state => state.logout)
-
+  const { logout } = useUserStore()
+  const { clearChatbotState } = useChatbotStore()
   const { execute: excuteLogout } = useApi<ApiResponse, []>(authService.logout)
 
   const onLogout = async () => {
     await excuteLogout()
-    clearStore()
+    clearChatbotState()
+    logout()
   }
   return (
     <div className="px-5 py-2 bg-nav-topbar flex items-center">

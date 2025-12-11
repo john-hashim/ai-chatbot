@@ -9,14 +9,15 @@ import { useEffect } from 'react'
 export const Landing: React.FC = () => {
   const day = format(new Date(), 'eeee')
   const date = format(new Date(), 'MMMM dd')
-  const { getChatbots, clearCurrentChatbot } = useChatbotStore()
+  const { getChatbots, clearCurrentChatbot, resetDocumentFilters } = useChatbotStore()
   const { user } = useUserStore()
   const navigate = useNavigate()
 
   useEffect(() => {
+    resetDocumentFilters()
     getChatbots()
     clearCurrentChatbot()
-  }, [clearCurrentChatbot, getChatbots])
+  }, [clearCurrentChatbot, getChatbots, resetDocumentFilters])
 
   const firstName = user?.name.split(' ')[0]
   const formattedFirstName = firstName

@@ -23,7 +23,9 @@ export interface ChatbotSlice {
   deleteMultipleDocuments: (documentIds: string[]) => Promise<number>
 
   setDocumentFilters: (filters: Partial<DocumentFilters>) => void
-  // resetDocumentFilters: () => void
+  resetDocumentFilters: () => void
+
+  clearChatbotState: () => void
 }
 
 const defaultFilters: DocumentFilters = {
@@ -111,4 +113,9 @@ export const createChatbotSlice: StateCreator<ChatbotSlice> = (set, get) => ({
 
   setDocumentFilters: filter =>
     set(state => ({ documentFilters: { ...state.documentFilters, ...filter } })),
+
+  resetDocumentFilters: () => set({ documentFilters: defaultFilters }),
+
+  clearChatbotState: () =>
+    set({ chatbots: [], currentChatbot: null, documentFilters: defaultFilters }),
 })
