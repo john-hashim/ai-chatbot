@@ -1,0 +1,30 @@
+/* React Quill Editor Styles */
+.editor :global(.ql-container) {
+  border: 1px solid var(--color-border-week) !important;
+  border-top: none !important;
+  border-bottom-left-radius: 8px !important;
+  border-bottom-right-radius: 8px !important;
+  height: inherit !important;
+}
+
+.editor :global(.ql-editor) {
+  min-height: inherit !important;
+  max-height: inherit !important;
+  overflow-y: auto !important;
+}
+
+.editor :global(.ql-toolbar) {
+  border: 1px solid var(--color-border-week) !important;
+  border-top-left-radius: 8px !important;
+  border-top-right-radius: 8px !important;
+}
+
+.editor:hover :global(.ql-container),
+.editor:hover :global(.ql-toolbar) {
+  border-color: var(--color-border-strong) !important;
+}
+
+.editor:focus-within :global(.ql-container),
+.editor:focus-within :global(.ql-toolbar) {
+  border-color: var(--color-border-strong) !important;
+}

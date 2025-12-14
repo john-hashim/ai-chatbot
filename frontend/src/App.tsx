@@ -4,6 +4,7 @@ import '@mantine/core/styles.css'
 import '@mantine/dropzone/styles.css'
 import '@mantine/notifications/styles.css'
 import './styles/mantine-overrides.css'
+import 'react-quill-new/dist/quill.snow.css'
 import classes from './theme.module.css'
 import {
   createTheme,

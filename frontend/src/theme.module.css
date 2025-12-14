@@ -1,11 +1,13 @@
 /* Button styles */
-.buttonRoot:not([data-variant="filled"]):not([data-variant="light"]):not([data-variant="outline"]) {
+.buttonRoot:not([data-variant='filled']):not([data-variant='light']):not([data-variant='outline']) {
   border: 1px solid var(--color-border-week) !important;
   background-color: transparent !important;
   color: var(--color-text-weak) !important;
 }
 
-.buttonRoot:not([data-variant="filled"]):not([data-variant="light"]):not([data-variant="outline"]):hover {
+.buttonRoot:not([data-variant='filled']):not([data-variant='light']):not(
+    [data-variant='outline']
+  ):hover {
   border: 1px solid var(--color-border-strong) !important;
   background-color: transparent !important;
 }
@@ -27,7 +29,8 @@
   font-size: 13px !important;
 }
 
-.buttonRoot:not([data-variant="filled"]):not([data-variant="light"]):not([data-variant="outline"]) .buttonLabel {
+.buttonRoot:not([data-variant='filled']):not([data-variant='light']):not([data-variant='outline'])
+  .buttonLabel {
   color: var(--color-text-weak) !important;
 }
 
@@ -40,7 +43,8 @@
   margin-inline-end: 2px !important;
 }
 
-.buttonRoot:not([data-variant="filled"]):not([data-variant="light"]):not([data-variant="outline"]) .buttonSection {
+.buttonRoot:not([data-variant='filled']):not([data-variant='light']):not([data-variant='outline'])
+  .buttonSection {
   color: var(--color-text-weak) !important;
 }
 
