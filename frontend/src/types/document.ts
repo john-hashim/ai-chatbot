@@ -19,7 +19,4 @@ export interface DocumentFilters {
 
 export type SortOption = 'Default' | 'Oldest' | 'Newest' | 'Alphabetical(A-Z)' | 'Alphabetical(Z-A)'
 
-export type TextDocumentUploadParams = Pick<
-  Document,
-  'name' | 'type' | 'subtype' | 'content' | 'size'
->
+export type TextDocumentUploadParams = Pick<Document, 'name' | 'type' | 'subtype' | 'content'>

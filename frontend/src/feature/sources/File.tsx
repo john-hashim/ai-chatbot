@@ -26,7 +26,7 @@ export const UploadFile: React.FC = () => {
     documentFilters,
     getChatbot,
   } = useChatbotStore()
-  const { bytesToKB } = useFormat()
+  const { formatFileSize } = useFormat()
   const [documentToDelete, setDocumentsToDelete] = useState<string[]>([])
   const [selectAll, setSelectAll] = useState(false)
 
@@ -237,7 +237,7 @@ export const UploadFile: React.FC = () => {
                           onChange={() => handleSelectedDocuments(document.id)}
                         />
                         <p className="text-text-weak font-normal ml-8 text-xs">
-                          {bytesToKB(document.size)} KB
+                          {formatFileSize(document.size)}
                         </p>
                       </div>
                       <Tooltip label="Not Trained yet" position="bottom-end">
