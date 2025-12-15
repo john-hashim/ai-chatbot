@@ -8,6 +8,7 @@ import type { Document, SortOption, TextDocumentUploadParams } from '@/types/doc
 import { ChevronDown, Ellipsis, Loader2, Search, SearchX, Trash } from 'lucide-react'
 import { useChatbotStore } from '@/store'
 import { showLoadingNotification } from '@/utils/notifications'
+import { htmlToPlainText, calculateTextSize } from '@/utils/textFormatting'
 import { useFormat } from '@/hooks/useFormats'
 import classes from '@/theme.module.css'
 import { modals } from '@mantine/modals'
@@ -39,12 +40,26 @@ export const UploadText: React.FC = () => {
   }
 
   const handleTextSnippetUpload = async () => {
+    // Format content
+    const plainText = htmlToPlainText(value)
+    const formattedContent = `Title: ${title}
+
+${plainText}`
+    const size = calculateTextSize(formattedContent)
+    const metadata = {
+      title: title,
+      originalHtml: value,
+    }
+
     const textData: TextDocumentUploadParams = {
       name: title,
       type: 'text',
       subtype: 'text-snippet',
-      content: value,
+      content: formattedContent,
+      size,
+      metadata,
     }
+
     if (currentChatbot) {
       const notification = showLoadingNotification(
         'Uploading File',
@@ -194,7 +209,7 @@ export const UploadText: React.FC = () => {
         <div>
           <div className="mt-6">
             <div className="flex items-center justify-between">
-              <p className="text-md font-semibold text-center sm:text-left">File sources</p>
+              <p className="text-md font-semibold text-center sm:text-left">Text sources</p>
               <div>
                 {' '}
                 <TextInput

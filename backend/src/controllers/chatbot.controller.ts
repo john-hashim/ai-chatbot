@@ -208,19 +208,9 @@ export const getPresignedUploadUrl = async (req: Request, res: Response, next: N
   }
 }
 
-/**
- * Helper function to convert HTML to plain text
- */
-const htmlToPlainText = (html: string): string => {
-  return html
-    .replace(/<[^>]*>/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-}
-
 export const uploadText = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { name, type, subtype, content } = req.body
+    const { name, type, subtype, content, size, metadata } = req.body
     const { chatbotId } = req.params
 
     if (!chatbotId) {
@@ -230,7 +220,7 @@ export const uploadText = async (req: Request, res: Response, next: NextFunction
       } satisfies ApiResponse)
     }
 
-    if (!name || !type || !content || !subtype) {
+    if (!name || !type || !content || !subtype || size === undefined || !metadata) {
       return res.status(400).json({
         status: ApiStatus.FAILURE,
         message: 'Fields are missing',
@@ -248,31 +238,22 @@ export const uploadText = async (req: Request, res: Response, next: NextFunction
       } satisfies ApiResponse)
     }
 
-    const plainText = htmlToPlainText(content)
-    const formattedContent = `Title: ${name}
-
-${plainText}`
-    const size = Buffer.byteLength(formattedContent, 'utf8')
-
     const document = await prisma.document.create({
       data: {
         name,
         type,
         subtype,
         size,
-        content: formattedContent,
+        content,
         chatbotId,
-        metadata: {
-          title: name,
-          originalHtml: content,
-        },
+        metadata,
       },
     })
 
     res.status(200).json({
       status: ApiStatus.SUCCESS,
       data: document,
-      message: `text document created successfully`,
+      message: `${type} document created successfully`,
     } satisfies ApiResponse)
   } catch (error) {
     next(error)
