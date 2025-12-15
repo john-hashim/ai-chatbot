@@ -72,7 +72,9 @@ export const UploadFile: React.FC = () => {
       setSelectAll(false)
     } else {
       if (currentChatbot) {
-        const allIds = currentChatbot.documents.map(doc => doc.id)
+        const allIds = currentChatbot.documents
+          .filter(doc => doc.type === 'document')
+          .map(doc => doc.id)
         setDocumentsToDelete(allIds)
         setSelectAll(true)
       }
@@ -155,7 +157,7 @@ export const UploadFile: React.FC = () => {
       <div className="mt-8">
         <DropzoneUpload onFilesSelected={onFileDrop} />
       </div>
-      {currentChatbot && currentChatbot.documentsCount && currentChatbot.documentsCount > 0 ? (
+      {currentChatbot && currentChatbot.fileCount && currentChatbot.fileCount > 0 ? (
         <div>
           <div className="mt-6">
             <div className="flex items-center justify-between">
@@ -219,48 +221,50 @@ export const UploadFile: React.FC = () => {
           </div>
           <div className="border-b mt-2 border-border-week"></div>
           {currentChatbot.documents && currentChatbot.documents.length > 0 ? (
-            currentChatbot.documents.map(document => (
-              <div>
-                <div
-                  key={document.id}
-                  className="py-4 font-semibold flex justify-between items-center"
-                >
-                  <div className="flex">
-                    <div>
-                      <Checkbox
-                        label={document.name}
-                        checked={documentToDelete.includes(document.id)}
-                        onChange={() => handleSelectedDocuments(document.id)}
-                      />
-                      <p className="text-text-weak font-normal ml-8 text-xs">
-                        {bytesToKB(document.size)} KB
-                      </p>
-                    </div>
-                    <Tooltip label="Not Trained yet" position="bottom-end">
-                      <div className="ml-2">
-                        <TagComponent text="new" className="cursor-pointer" color="#97f4b9" />
+            currentChatbot.documents
+              .filter(document => document.type === 'document')
+              .map(document => (
+                <div>
+                  <div
+                    key={document.id}
+                    className="py-4 font-semibold flex justify-between items-center"
+                  >
+                    <div className="flex">
+                      <div>
+                        <Checkbox
+                          label={document.name}
+                          checked={documentToDelete.includes(document.id)}
+                          onChange={() => handleSelectedDocuments(document.id)}
+                        />
+                        <p className="text-text-weak font-normal ml-8 text-xs">
+                          {bytesToKB(document.size)} KB
+                        </p>
                       </div>
-                    </Tooltip>
-                  </div>
-                  <Menu shadow="md" width={200}>
-                    <Menu.Target>
-                      <Ellipsis className="h-4 w-4 text-icon cursor-pointer" />
-                    </Menu.Target>
+                      <Tooltip label="Not Trained yet" position="bottom-end">
+                        <div className="ml-2">
+                          <TagComponent text="new" className="cursor-pointer" color="#97f4b9" />
+                        </div>
+                      </Tooltip>
+                    </div>
+                    <Menu shadow="md" width={200}>
+                      <Menu.Target>
+                        <Ellipsis className="h-4 w-4 text-icon cursor-pointer" />
+                      </Menu.Target>
 
-                    <Menu.Dropdown>
-                      <Menu.Item
-                        color="red"
-                        onClick={() => handleDeleteSingle(document.id, document.name)}
-                        leftSection={<Trash size={14} />}
-                      >
-                        Delete
-                      </Menu.Item>
-                    </Menu.Dropdown>
-                  </Menu>
+                      <Menu.Dropdown>
+                        <Menu.Item
+                          color="red"
+                          onClick={() => handleDeleteSingle(document.id, document.name)}
+                          leftSection={<Trash size={14} />}
+                        >
+                          Delete
+                        </Menu.Item>
+                      </Menu.Dropdown>
+                    </Menu>
+                  </div>
+                  <div className="border-b mt-2 border-border-week"></div>
                 </div>
-                <div className="border-b mt-2 border-border-week"></div>
-              </div>
-            ))
+              ))
           ) : (
             <div className="flex flex-col items-center justify-center py-12 text-text-weak">
               <SearchX className="h-6 w-6 mb-3 opacity-50" />

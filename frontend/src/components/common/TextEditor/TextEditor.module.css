@@ -5,6 +5,7 @@
   border-bottom-left-radius: 8px !important;
   border-bottom-right-radius: 8px !important;
   height: inherit !important;
+  min-height: 200px;
 }
 
 .editor :global(.ql-editor) {

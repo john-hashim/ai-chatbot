@@ -4,7 +4,7 @@ import apiClient from '../index'
 import { ENDPOINTS } from '../endpoints'
 import type { Chatbot, ChatbotFormData } from '@/types/chatbot'
 import type { ApiResponse } from '@/types/api'
-import type { Document, DocumentFilters } from '@/types/document'
+import type { Document, DocumentFilters, TextDocumentUploadParams } from '@/types/document'
 
 interface PresignedUrlData {
   uploadUrl: string
@@ -76,6 +76,17 @@ export const chatbotService = {
         },
       }
     )
+  },
+  /**
+   * Upload documents text snipper to backend for processing
+   * @param textData - Text snipper document model values
+   * @returns Promise with upload response
+   */
+  uploadTextSnippet: (
+    textData: TextDocumentUploadParams,
+    chatbotId: string
+  ): Promise<AxiosResponse<ApiResponse<Document>>> => {
+    return apiClient.post(ENDPOINTS.CHATBOT.UPLOAD_TEXT.replace(':chatbotId', chatbotId), textData)
   },
   /**
    * Delete a single document

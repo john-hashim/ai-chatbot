@@ -19,6 +19,11 @@ router.post(
   uploadMiddleware.uploadMultipleDocuments,
   chatbotController.uploadDocument
 )
+router.post(
+  '/:chatbotId/upload-text',
+  authMiddleware.authenticateToken,
+  chatbotController.uploadText
+)
 router.delete(
   '/documents/:documentId',
   authMiddleware.authenticateToken,

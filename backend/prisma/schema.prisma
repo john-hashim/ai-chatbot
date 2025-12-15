@@ -64,7 +64,7 @@ model Document {
   chatbotId   String 
   name        String
   type        String   // 'document', 'text', 'q&a', 'website'
-  subtype     String?  // 'pdf', 'doc', 'txt', 'docx', 'crawled', 'sitemap'
+  subtype     String?  // 'pdf', 'doc', 'txt', 'docx', 'crawled', 'sitemap', 'text-snippet'
   content     String   @db.Text  // Original full text
   size        Int      // Size in bytes
   metadata    Json?    // Store source URL, Q&A pairs, page titles, etc.

@@ -208,6 +208,53 @@ export const getPresignedUploadUrl = async (req: Request, res: Response, next: N
   }
 }
 
+export const uploadText = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { name, type, subtype, content, size } = req.body
+    const { chatbotId } = req.params
+    if (!chatbotId) {
+      return res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'Chatbot ID is required',
+      } satisfies ApiResponse)
+    }
+    if (!name && !type && !content && !size && !subtype) {
+      return res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'Fields are missing',
+      } satisfies ApiResponse)
+    }
+
+    const chatbot = await prisma.chatbot.findUnique({
+      where: { id: chatbotId },
+    })
+
+    if (!chatbot) {
+      return res.status(404).json({
+        status: ApiStatus.FAILURE,
+        message: 'Chatbot not found',
+      } satisfies ApiResponse)
+    }
+    const document = await prisma.document.create({
+      data: {
+        name,
+        type,
+        subtype,
+        size,
+        content,
+        chatbotId,
+      },
+    })
+    res.status(200).json({
+      status: ApiStatus.SUCCESS,
+      data: document,
+      message: `text document created successfully`,
+    } satisfies ApiResponse)
+  } catch (error) {
+    next(error)
+  }
+}
+
 export const uploadDocument = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const files = req.files as Express.Multer.File[]
