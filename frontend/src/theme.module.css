@@ -141,3 +141,15 @@
 .selectInputBorderless:focus {
   border: 1px solid var(--color-border-strong) !important;
 }
+
+.tabsTab {
+  border-bottom: 2px solid transparent !important;
+}
+
+.tabsTab:hover {
+  background-color: transparent !important;
+}
+
+.tabsTab[data-active='true'] {
+  border-bottom: 2px solid var(--color-border-strong) !important;
+}

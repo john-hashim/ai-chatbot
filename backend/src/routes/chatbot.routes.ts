@@ -24,6 +24,11 @@ router.post(
   authMiddleware.authenticateToken,
   chatbotController.uploadText
 )
+router.post(
+  '/:chatbotId/crawl-website',
+  authMiddleware.authenticateToken,
+  chatbotController.crawlWebsite
+)
 router.delete(
   '/documents/:documentId',
   authMiddleware.authenticateToken,

@@ -15,6 +15,7 @@ import {
   Tooltip,
   Checkbox,
   Select,
+  Tabs,
 } from '@mantine/core'
 import { Notifications } from '@mantine/notifications'
 import { ModalsProvider } from '@mantine/modals'
@@ -93,6 +94,11 @@ const theme = createTheme({
     Select: Select.extend({
       classNames: {
         input: classes.selectInput,
+      },
+    }),
+    Tabs: Tabs.extend({
+      classNames: {
+        tab: classes.tabsTab,
       },
     }),
   },

@@ -89,6 +89,18 @@ export const chatbotService = {
     return apiClient.post(ENDPOINTS.CHATBOT.UPLOAD_TEXT.replace(':chatbotId', chatbotId), textData)
   },
   /**
+   * Crawl website URL and add to knowledge base
+   * @param data - URL and subtype (url or sitemap)
+   * @param chatbotId - ID of the chatbot
+   * @returns Promise with crawled document
+   */
+  uploadWebsiteUrl: (
+    data: { url: string; subtype: 'url' | 'sitemap' },
+    chatbotId: string
+  ): Promise<AxiosResponse<ApiResponse<Document>>> => {
+    return apiClient.post(ENDPOINTS.CHATBOT.CRAWL_WEBSITE.replace(':chatbotId', chatbotId), data)
+  },
+  /**
    * Delete a single document
    * @param documentId - ID of the document to delete
    * @returns Promise with delete response

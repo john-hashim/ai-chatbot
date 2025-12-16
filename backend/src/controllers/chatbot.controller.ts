@@ -260,6 +260,76 @@ export const uploadText = async (req: Request, res: Response, next: NextFunction
   }
 }
 
+export const crawlWebsite = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { url, subtype } = req.body
+    const { chatbotId } = req.params
+
+    if (!chatbotId) {
+      return res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'Chatbot ID is required',
+      } satisfies ApiResponse)
+    }
+
+    if (!url || !subtype) {
+      return res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'URL and subtype are required',
+      } satisfies ApiResponse)
+    }
+
+    if (subtype !== 'url' && subtype !== 'sitemap') {
+      return res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'Subtype must be either "url" or "sitemap"',
+      } satisfies ApiResponse)
+    }
+
+    const chatbot = await prisma.chatbot.findUnique({
+      where: { id: chatbotId },
+    })
+
+    if (!chatbot) {
+      return res.status(404).json({
+        status: ApiStatus.FAILURE,
+        message: 'Chatbot not found',
+      } satisfies ApiResponse)
+    }
+
+    // TODO: Implement actual web crawling logic here
+    // For now, returning dummy data
+    const dummyContent =
+      subtype === 'url'
+        ? `Dummy content from ${url}\n\nThis is sample text that would be extracted from the webpage. It includes headings, paragraphs, and other content that would normally be scraped from the website.`
+        : `Dummy sitemap content from ${url}\n\nThis would contain content from multiple pages:\n\nPage 1: Home page content\nPage 2: About page content\nPage 3: Services page content`
+
+    const document = await prisma.document.create({
+      data: {
+        name: url,
+        type: 'website',
+        subtype,
+        size: Buffer.byteLength(dummyContent, 'utf8'),
+        content: dummyContent,
+        chatbotId,
+        metadata: {
+          url,
+          crawledAt: new Date().toISOString(),
+          pageCount: subtype === 'sitemap' ? 3 : 1,
+        },
+      },
+    })
+
+    res.status(200).json({
+      status: ApiStatus.SUCCESS,
+      data: document,
+      message: `Website ${subtype === 'url' ? 'page' : 'sitemap'} crawled successfully`,
+    } satisfies ApiResponse)
+  } catch (error) {
+    next(error)
+  }
+}
+
 export const uploadDocument = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const files = req.files as Express.Multer.File[]
