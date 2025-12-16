@@ -18,14 +18,5 @@
   border: 1px solid var(--color-border-week) !important;
   border-top-left-radius: 8px !important;
   border-top-right-radius: 8px !important;
-}
-
-.editor:hover :global(.ql-container),
-.editor:hover :global(.ql-toolbar) {
-  border-color: var(--color-border-strong) !important;
-}
-
-.editor:focus-within :global(.ql-container),
-.editor:focus-within :global(.ql-toolbar) {
-  border-color: var(--color-border-strong) !important;
+  background: var(--color-background-dark-week) !important;
 }
