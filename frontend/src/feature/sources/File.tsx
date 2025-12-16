@@ -97,8 +97,10 @@ export const UploadFile: React.FC = () => {
         try {
           await deleteDocument(documentId)
           notification.success('File deleted successfully')
+          setDocumentsToDelete([])
         } catch (e) {
           notification.error(`Failed to delete file: ${e}`)
+          setDocumentsToDelete([])
         }
       },
       onCancel: () => console.log('canceld'),

@@ -186,9 +186,11 @@ ${answerPlain}`
         const notification = showLoadingNotification('Deleting File', 'Please wait...')
         try {
           await deleteDocument(documentId)
+          setDocumentsToDelete([])
           notification.success('File deleted successfully')
         } catch (e) {
           notification.error(`Failed to delete file: ${e}`)
+          setDocumentsToDelete([])
         }
       },
       onCancel: () => console.log('canceld'),
