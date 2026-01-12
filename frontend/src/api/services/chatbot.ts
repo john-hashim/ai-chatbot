@@ -22,6 +22,15 @@ export const chatbotService = {
     return apiClient.post(ENDPOINTS.CHATBOT.CREATE, data)
   },
   /**
+   * delete Chatbot
+   * @param id - chatbot id
+   * @returns Promise with chatbot data
+   */
+  deleteChatbot: (id: string): Promise<AxiosResponse<ApiResponse<null>>> => {
+    return apiClient.delete(ENDPOINTS.CHATBOT.DELETE.replace(':chatbotId', id))
+  },
+
+  /**
    * Get Chatbots list
    * @returns Promise with chatbot data
    */

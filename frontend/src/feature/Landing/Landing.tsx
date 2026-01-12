@@ -1,17 +1,27 @@
 import { ChatbotSkeleton } from '@/components/common/ChatbotSkeleton'
-import { Button } from '@mantine/core'
+import { Button, Menu, Text } from '@mantine/core'
 import { useChatbotStore, useUserStore } from '@/store'
 import { format, getHours } from 'date-fns'
-import { Plus, TrendingUp } from 'lucide-react'
+import { Plus, TrendingUp, Ellipsis, Trash } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useEffect } from 'react'
+import { useApi } from '@/hooks/useApi'
+import type { ApiResponse } from '@/types/api'
+import { chatbotService } from '@/api/services/chatbot'
+import { modals } from '@mantine/modals'
+import { showNotification } from '@/utils/notifications'
 
 export const Landing: React.FC = () => {
   const day = format(new Date(), 'eeee')
   const date = format(new Date(), 'MMMM dd')
-  const { getChatbots, clearCurrentChatbot, resetDocumentFilters } = useChatbotStore()
+  const { getChatbots, clearCurrentChatbot, resetDocumentFilters, currentChatbot, chatbots } =
+    useChatbotStore()
   const { user } = useUserStore()
   const navigate = useNavigate()
+
+  const { execute: excuteDeleteChatbot } = useApi<ApiResponse<null>, [string]>(
+    chatbotService.deleteChatbot
+  )
 
   useEffect(() => {
     resetDocumentFilters()
@@ -32,38 +42,130 @@ export const Landing: React.FC = () => {
     greeting = 'Good afternoon'
   }
 
+  const handleDeleteChatbot = async (id: string, name: string) => {
+    modals.openConfirmModal({
+      title: 'Delete Chatbot',
+      centered: true,
+      children: (
+        <Text size="sm">
+          Are you sure you want to delete "{name}"? This action will permanently delete the chatbot
+          and all its documents. This cannot be undone.
+        </Text>
+      ),
+      labels: { confirm: 'Delete Chatbot', cancel: 'Cancel' },
+      confirmProps: { color: 'red', variant: 'filled' },
+      onConfirm: async () => {
+        try {
+          const response = await excuteDeleteChatbot(id)
+          if (response?.status === 'success') {
+            // Clear current chatbot if it's the one being deleted
+            if (currentChatbot?.id === id) {
+              clearCurrentChatbot()
+            }
+            // Refresh the chatbot list from server
+            getChatbots()
+            showNotification('success', 'Chatbot deleted successfully')
+          } else {
+            showNotification('error', 'Failed to delete chatbot')
+          }
+        } catch (error) {
+          showNotification('error', `Failed to delete chatbot: ${error}`)
+        }
+      },
+    })
+  }
+
   return (
     <main className="px-5 py-6 lg:px-40 border-t border-t-border-week">
-      <time className="text-sm font-medium block">
-        <span>{day}</span>, <span>{date}</span>
-      </time>
-      <h1 className="text-3xl mt-2">
-        {greeting}, {formattedFirstName}
-      </h1>
-      <div className="h-[50vh] mt-6 flex flex-wrap">
-        <article className="border border-purple-strong bg-purple-week cursor-pointer hover:bg-purple-strong sm:w-full lg:w-1/4 lg:mr-6 h-full rounded-2xl flex items-center justify-center flex-col p-6 overflow-visible">
-          <div className="w-32 aspect-375/667 mb-4 shadow-[0_0_18px_0_var(--color-purple-glow)] rounded-2xl overflow-hidden bg-[#F8F9FA]">
-            <ChatbotSkeleton />
-          </div>
-          <h3 className="text-lg font-semibold text-center mb-2">Build your first AI chatbot</h3>
-          <p className="text-sm text-center text-gray-600">
-            Connect your data, choose your tone, and go live in minutes
-          </p>
-        </article>
+      {chatbots && chatbots.length > 0 ? (
+        <div>
+          <p className="mt-10 text-3xl font-semibold">Chatbots</p>
+          <div className="flex flex-wrap gap-12 mt-6">
+            {/* Add New Chatbot Tile */}
+            <div
+              onClick={() => navigate('/chatbot/new')}
+              className="w-full sm:w-[400px] border border-purple-strong bg-purple-week hover:cursor-pointer div-fade-animation hover:bg-purple-strong rounded-lg overflow-hidden flex items-center justify-center transition-colors"
+              style={{ minHeight: '240px' }}
+            >
+              <div className="flex flex-col items-center justify-center gap-3">
+                <Plus size={32} />
+                <p className="text-sm font-semibold">Add New Chatbot</p>
+              </div>
+            </div>
 
-        <section className="border h-full flex-1 border-border-week mt-4 lg:mt-0 rounded-2xl flex items-center justify-center flex-col">
-          <TrendingUp size={50} className="mb-1" />
-          <p className="text-s">Let's get started! Create your first AI chatbot</p>
-          <Button
-            className="cursor-pointer mt-2"
-            onClick={() => navigate('/chatbot/new')}
-            leftSection={<Plus size={18} />}
-            variant="default"
-          >
-            Add New Chatbot
-          </Button>
-        </section>
-      </div>
+            {chatbots.map(chatbot => (
+              <div
+                onClick={() => navigate(`/chatbot/${chatbot.id}/setup-knowledgebase`)}
+                key={chatbot.id}
+                className="w-full sm:w-[400px] border border-border-week hover:cursor-pointer div-fade-animation hover:border-border-strong rounded-lg overflow-hidden relative"
+              >
+                <div className="h-40"></div>
+
+                <div className="p-4 flex items-center justify-between">
+                  <h3 className="text-sm font-semibold">{chatbot.name}</h3>
+                  <Menu shadow="md" width={200}>
+                    <Menu.Target>
+                      <button
+                        onClick={e => e.stopPropagation()}
+                        className="hover:bg-gray-100 rounded p-1 transition-colors"
+                      >
+                        <Ellipsis className="h-4 w-4 text-gray-700 cursor-pointer" />
+                      </button>
+                    </Menu.Target>
+                    <Menu.Dropdown>
+                      <Menu.Item
+                        color="red"
+                        onClick={e => {
+                          e.stopPropagation()
+                          handleDeleteChatbot(chatbot.id, chatbot.name)
+                        }}
+                        leftSection={<Trash size={14} />}
+                      >
+                        Delete
+                      </Menu.Item>
+                    </Menu.Dropdown>
+                  </Menu>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div>
+          <time className="text-sm font-medium block">
+            <span>{day}</span>, <span>{date}</span>
+          </time>
+          <h1 className="text-3xl mt-2">
+            {greeting}, {formattedFirstName}
+          </h1>
+          <div className="h-[50vh] mt-6 flex flex-wrap">
+            <article className="border border-purple-strong bg-purple-week cursor-pointer hover:bg-purple-strong sm:w-full lg:w-1/4 lg:mr-6 h-full rounded-2xl flex items-center justify-center flex-col p-6 overflow-visible">
+              <div className="w-32 aspect-375/667 mb-4 shadow-[0_0_18px_0_var(--color-purple-glow)] rounded-2xl overflow-hidden bg-[#F8F9FA]">
+                <ChatbotSkeleton />
+              </div>
+              <h3 className="text-lg font-semibold text-center mb-2">
+                Build your first AI chatbot
+              </h3>
+              <p className="text-sm text-center text-gray-600">
+                Connect your data, choose your tone, and go live in minutes
+              </p>
+            </article>
+
+            <section className="border h-full flex-1 border-border-week mt-4 lg:mt-0 rounded-2xl flex items-center justify-center flex-col">
+              <TrendingUp size={50} className="mb-1" />
+              <p className="text-s">Let's get started! Create your first AI chatbot</p>
+              <Button
+                className="cursor-pointer mt-2"
+                onClick={() => navigate('/chatbot/new')}
+                leftSection={<Plus size={18} />}
+                variant="default"
+              >
+                Add New Chatbot
+              </Button>
+            </section>
+          </div>
+        </div>
+      )}
     </main>
   )
 }

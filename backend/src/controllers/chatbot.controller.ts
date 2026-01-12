@@ -33,6 +33,60 @@ export const createChatbot = async (req: Request, res: Response, next: NextFunct
   }
 }
 
+export const deleteChatbot = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { chatbotId } = req.params
+    const user = req.user
+
+    if (!chatbotId) {
+      return res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'Chatbot ID is required',
+      } satisfies ApiResponse)
+    }
+
+    const chatbot = await prisma.chatbot.findUnique({
+      where: { id: chatbotId, userId: user.id },
+    })
+
+    if (!chatbot) {
+      return res.status(404).json({
+        status: ApiStatus.FAILURE,
+        message: 'Chatbot not found or you do not have permission to delete it',
+      } satisfies ApiResponse)
+    }
+
+    // Delete profile picture from R2 if it exists
+    if (chatbot.profilePicture) {
+      try {
+        await r2Service.deleteFile(chatbot.profilePicture)
+      } catch (error) {
+        // Log error but don't fail the deletion
+        console.error('Failed to delete profile picture from R2:', error)
+      }
+    }
+
+    const result = await prisma.chatbot.delete({
+      where: { id: chatbotId },
+    })
+
+    if (result) {
+      return res.status(200).json({
+        status: ApiStatus.SUCCESS,
+        data: null,
+        message: 'Chatbot deleted successfully',
+      } satisfies ApiResponse)
+    } else {
+      return res.status(500).json({
+        status: ApiStatus.FAILURE,
+        message: 'Failed to delete chatbot',
+      } satisfies ApiResponse)
+    }
+  } catch (error) {
+    next(error)
+  }
+}
+
 export const getChatbots = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const user = req.user

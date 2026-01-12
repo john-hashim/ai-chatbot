@@ -10,6 +10,11 @@ import { notifications } from '@mantine/notifications'
 
 const BASE_URL = import.meta.env.VITE_API_URL
 
+// ⚠️ TESTING ONLY: Set to true to add 3-second delay to all API responses
+// Remember to set to false before production!
+const ENABLE_API_DELAY = false
+const API_DELAY_MS = 2000
+
 const apiClient: AxiosInstance = axios.create({
   baseURL: BASE_URL,
   timeout: 10000,
@@ -32,8 +37,18 @@ apiClient.interceptors.request.use(
 
 // Response interceptor for handling errors
 apiClient.interceptors.response.use(
-  (response: AxiosResponse): AxiosResponse => response,
-  (error: AxiosError<{ message?: string }>): Promise<AxiosError> => {
+  async (response: AxiosResponse): Promise<AxiosResponse> => {
+    // Add delay for testing loading states (if enabled)
+    if (ENABLE_API_DELAY) {
+      await new Promise(resolve => setTimeout(resolve, API_DELAY_MS))
+    }
+    return response
+  },
+  async (error: AxiosError<{ message?: string }>): Promise<AxiosError> => {
+    // Add delay for error responses too (if enabled)
+    if (ENABLE_API_DELAY) {
+      await new Promise(resolve => setTimeout(resolve, API_DELAY_MS))
+    }
     const { response } = error
 
     // Network error (no response from server)

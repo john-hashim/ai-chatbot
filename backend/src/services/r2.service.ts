@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
+import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import crypto from 'crypto'
 
@@ -42,4 +42,25 @@ export const generatePresignedUploadUrl = async (
     fileUrl,
     key: uniqueFileName,
   }
+}
+
+/**
+ * Delete a file from R2 storage
+ * @param fileUrl - The full URL or key of the file to delete
+ * @returns Promise that resolves when file is deleted
+ */
+export const deleteFile = async (fileUrl: string): Promise<void> => {
+  // Extract the key from the full URL if needed
+  let key = fileUrl
+  if (fileUrl.startsWith('http')) {
+    const url = new URL(fileUrl)
+    key = url.pathname.substring(1) // Remove leading slash
+  }
+
+  const command = new DeleteObjectCommand({
+    Bucket: process.env.R2_BUCKET_NAME!,
+    Key: key,
+  })
+
+  await r2Client.send(command)
 }

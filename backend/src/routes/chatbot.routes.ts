@@ -6,6 +6,7 @@ import * as chatbotController from '../controllers/chatbot.controller.js'
 const router = express.Router()
 
 router.post('/create', authMiddleware.authenticateToken, chatbotController.createChatbot)
+router.delete('/:chatbotId', authMiddleware.authenticateToken, chatbotController.deleteChatbot)
 router.get('/chatbots', authMiddleware.authenticateToken, chatbotController.getChatbots)
 router.post('/:chatbotId', authMiddleware.authenticateToken, chatbotController.getChatbot)
 router.post(
