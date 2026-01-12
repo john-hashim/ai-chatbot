@@ -79,25 +79,23 @@ export const Landing: React.FC = () => {
     <main className="px-5 py-6 lg:px-40 border-t border-t-border-week">
       {chatbots && chatbots.length > 0 ? (
         <div>
-          <p className="mt-10 text-3xl font-semibold">Chatbots</p>
-          <div className="flex flex-wrap gap-12 mt-6">
-            {/* Add New Chatbot Tile */}
-            <div
+          <div className="mt-5 flex items-center justify-between">
+            <p className="text-3xl font-semibold">Chatbots</p>
+            <Button
+              className="cursor-pointer"
               onClick={() => navigate('/chatbot/new')}
-              className="w-full sm:w-[400px] border border-purple-strong bg-purple-week hover:cursor-pointer div-fade-animation hover:bg-purple-strong rounded-lg overflow-hidden flex items-center justify-center transition-colors"
-              style={{ minHeight: '240px' }}
+              leftSection={<Plus size={18} />}
+              variant="default"
             >
-              <div className="flex flex-col items-center justify-center gap-3">
-                <Plus size={32} />
-                <p className="text-sm font-semibold">Add New Chatbot</p>
-              </div>
-            </div>
-
+              Add New Chatbot
+            </Button>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-12 mt-6">
             {chatbots.map(chatbot => (
               <div
                 onClick={() => navigate(`/chatbot/${chatbot.id}/setup-knowledgebase`)}
                 key={chatbot.id}
-                className="w-full sm:w-[400px] border border-border-week hover:cursor-pointer div-fade-animation hover:border-border-strong rounded-lg overflow-hidden relative"
+                className="border border-border-week hover:cursor-pointer div-fade-animation hover:border-border-strong rounded-lg overflow-hidden relative"
               >
                 <div className="h-40"></div>
 
@@ -158,7 +156,7 @@ export const Landing: React.FC = () => {
                 className="cursor-pointer mt-2"
                 onClick={() => navigate('/chatbot/new')}
                 leftSection={<Plus size={18} />}
-                variant="default"
+                variant="filled"
               >
                 Add New Chatbot
               </Button>
