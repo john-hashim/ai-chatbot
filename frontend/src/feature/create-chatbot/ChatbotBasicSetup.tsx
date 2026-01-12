@@ -292,7 +292,11 @@ export const ChatbotBasicSetup: React.FC = () => {
                           resetRef={ProfilePictureResetRef}
                         >
                           {props => (
-                            <Button {...props} leftSection={<ImageUp size={14} />}>
+                            <Button
+                              {...props}
+                              variant="secondary"
+                              leftSection={<ImageUp size={14} />}
+                            >
                               Upload image
                             </Button>
                           )}

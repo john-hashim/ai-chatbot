@@ -1,15 +1,36 @@
 /* Button styles */
-.buttonRoot:not([data-variant='filled']):not([data-variant='light']):not([data-variant='outline']) {
+/* Default variant - Black background with white text */
+.buttonRoot:not([data-variant='filled']):not([data-variant='light']):not([data-variant='outline']):not([data-variant='secondary']) {
+  border: 1px solid black !important;
+  background-color: black !important;
+  color: white !important;
+}
+
+.buttonRoot:not([data-variant='filled']):not([data-variant='light']):not(
+    [data-variant='outline']
+  ):not([data-variant='secondary']):hover {
+  border: 1px solid #333 !important;
+  background-color: #333 !important;
+}
+
+/* Secondary variant - Light style (previous default) */
+.buttonRoot[data-variant='secondary'] {
   border: 1px solid var(--color-border-week) !important;
   background-color: transparent !important;
   color: var(--color-text-weak) !important;
 }
 
-.buttonRoot:not([data-variant='filled']):not([data-variant='light']):not(
-    [data-variant='outline']
-  ):hover {
+.buttonRoot[data-variant='secondary']:hover {
   border: 1px solid var(--color-border-strong) !important;
   background-color: transparent !important;
+}
+
+.buttonRoot[data-variant='secondary'] .buttonLabel {
+  color: var(--color-text-weak) !important;
+}
+
+.buttonRoot[data-variant='secondary'] .buttonSection {
+  color: var(--color-text-weak) !important;
 }
 
 .buttonRoot:disabled {
@@ -29,9 +50,9 @@
   font-size: 13px !important;
 }
 
-.buttonRoot:not([data-variant='filled']):not([data-variant='light']):not([data-variant='outline'])
+.buttonRoot:not([data-variant='filled']):not([data-variant='light']):not([data-variant='outline']):not([data-variant='secondary'])
   .buttonLabel {
-  color: var(--color-text-weak) !important;
+  color: white !important;
 }
 
 .buttonLabel:disabled {
@@ -43,9 +64,9 @@
   margin-inline-end: 2px !important;
 }
 
-.buttonRoot:not([data-variant='filled']):not([data-variant='light']):not([data-variant='outline'])
+.buttonRoot:not([data-variant='filled']):not([data-variant='light']):not([data-variant='outline']):not([data-variant='secondary'])
   .buttonSection {
-  color: var(--color-text-weak) !important;
+  color: white !important;
 }
 
 /* Input styles */
