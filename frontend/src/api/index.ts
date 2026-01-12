@@ -12,8 +12,8 @@ const BASE_URL = import.meta.env.VITE_API_URL
 
 // ⚠️ TESTING ONLY: Set to true to add 3-second delay to all API responses
 // Remember to set to false before production!
-const ENABLE_API_DELAY = false
-const API_DELAY_MS = 2000
+const ENABLE_API_DELAY = true
+const API_DELAY_MS = 1000
 
 const apiClient: AxiosInstance = axios.create({
   baseURL: BASE_URL,

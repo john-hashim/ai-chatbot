@@ -50,6 +50,7 @@ export const useChatbotStore = () =>
       deleteDocument: state.deleteDocument,
       deleteMultipleDocuments: state.deleteMultipleDocuments,
       upsertChatbot: state.upsertChatbot,
+      deleteChatbot: state.deleteChatbot,
       clearChatbots: state.clearChatbots,
       setDocumentFilters: state.setDocumentFilters,
       resetDocumentFilters: state.resetDocumentFilters,

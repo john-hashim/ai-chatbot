@@ -14,8 +14,14 @@ import { showNotification } from '@/utils/notifications'
 export const Landing: React.FC = () => {
   const day = format(new Date(), 'eeee')
   const date = format(new Date(), 'MMMM dd')
-  const { getChatbots, clearCurrentChatbot, resetDocumentFilters, currentChatbot, chatbots } =
-    useChatbotStore()
+  const {
+    getChatbots,
+    clearCurrentChatbot,
+    resetDocumentFilters,
+    currentChatbot,
+    chatbots,
+    deleteChatbot,
+  } = useChatbotStore()
   const { user } = useUserStore()
   const navigate = useNavigate()
 
@@ -56,20 +62,20 @@ export const Landing: React.FC = () => {
       confirmProps: { color: 'red', variant: 'filled' },
       onConfirm: async () => {
         try {
+          deleteChatbot(id)
           const response = await excuteDeleteChatbot(id)
           if (response?.status === 'success') {
-            // Clear current chatbot if it's the one being deleted
             if (currentChatbot?.id === id) {
               clearCurrentChatbot()
             }
-            // Refresh the chatbot list from server
             getChatbots()
-            showNotification('success', 'Chatbot deleted successfully')
           } else {
             showNotification('error', 'Failed to delete chatbot')
+            getChatbots()
           }
         } catch (error) {
           showNotification('error', `Failed to delete chatbot: ${error}`)
+          getChatbots()
         }
       },
     })
@@ -87,7 +93,7 @@ export const Landing: React.FC = () => {
               leftSection={<Plus size={18} />}
               variant="default"
             >
-              Add New Chatbot
+              New AI Chatbot
             </Button>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-12 mt-6">
@@ -156,9 +162,8 @@ export const Landing: React.FC = () => {
                 className="cursor-pointer mt-2"
                 onClick={() => navigate('/chatbot/new')}
                 leftSection={<Plus size={18} />}
-                variant="filled"
               >
-                Add New Chatbot
+                New AI Chatbot
               </Button>
             </section>
           </div>

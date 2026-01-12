@@ -15,6 +15,7 @@ export interface ChatbotSlice {
   getChatbot: (chatbotId?: string) => void
 
   upsertChatbot: (chatbot: Chatbot) => void
+  deleteChatbot: (id: string) => void
   clearChatbots: () => void
 
   addDocument: () => Promise<void>
@@ -107,6 +108,7 @@ export const createChatbotSlice: StateCreator<ChatbotSlice> = (set, get) => ({
         return { chatbots: [...state.chatbots, chatbot] }
       }
     }),
+  deleteChatbot: id => set(state => ({ chatbots: state.chatbots.filter(bot => bot.id !== id) })),
   clearChatbots: () => set({ chatbots: [] }),
 
   setDocumentFilters: filter =>
