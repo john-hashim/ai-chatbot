@@ -105,7 +105,7 @@ export const createChatbotSlice: StateCreator<ChatbotSlice> = (set, get) => ({
         updatedChatbots[existingIndex] = chatbot
         return { chatbots: updatedChatbots }
       } else {
-        return { chatbots: [...state.chatbots, chatbot] }
+        return { chatbots: [chatbot, ...state.chatbots] }
       }
     }),
   deleteChatbot: id => set(state => ({ chatbots: state.chatbots.filter(bot => bot.id !== id) })),
