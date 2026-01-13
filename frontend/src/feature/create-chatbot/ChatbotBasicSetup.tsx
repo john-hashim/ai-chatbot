@@ -186,11 +186,18 @@ export const ChatbotBasicSetup: React.FC = () => {
               <div className="mt-10">
                 <p className="text-text-secondary text-sm">What's your chatbot's name?</p>
                 <TextInput
-                  {...register('name', { required: 'Please provide your chatbot name' })}
+                  {...register('name', {
+                    required: 'Please provide your chatbot name',
+                    maxLength: {
+                      value: 40,
+                      message: 'Chatbot name must be less than 40 characters',
+                    },
+                  })}
                   className="mt-1"
                   type="text"
                   id="chatbotname"
                   placeholder="Luna AI"
+                  maxLength={40}
                   error={errors.name?.message}
                 />
               </div>

@@ -121,7 +121,7 @@ export const Landing: React.FC = () => {
                   />
                 </div>
 
-                <div className="p-4 flex items-center justify-between">
+                <div className="p-4 flex items-center justify-between border-t border-border-week">
                   <h3 className="text-sm font-semibold">{chatbot.name}</h3>
                   <Menu shadow="md" width={200}>
                     <Menu.Target>

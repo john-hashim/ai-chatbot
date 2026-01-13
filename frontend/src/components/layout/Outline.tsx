@@ -101,7 +101,7 @@ export const Outline: React.FC<OutlineProps> = ({
               />
             )}
             <p
-              className="text-sm font-medium transition-all duration-300 ease-in-out"
+              className="text-sm font-medium transition-all duration-300 ease-in-out truncate max-w-[300px]"
               style={{ marginLeft: profilePicture ? '0.5rem' : '0' }}
             >
               {name}
@@ -130,7 +130,7 @@ export const Outline: React.FC<OutlineProps> = ({
                       />
                     )}
                     <p
-                      className=" text-sm font-medium transition-all duration-300 ease-in-out"
+                      className=" text-sm font-medium transition-all duration-300 ease-in-out truncate max-w-[200px]"
                       style={{ marginLeft: profilePicture ? '0.5rem' : '0' }}
                     >
                       {name}
