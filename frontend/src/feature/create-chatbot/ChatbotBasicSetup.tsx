@@ -24,6 +24,7 @@ import { useStore } from '@/store'
 import { showNotification } from '@/utils/notifications'
 import { uploadImageToR2 } from '@/api/services/upload'
 import type { ApiResponse } from '@/types/api'
+import { Outline } from '@/components/layout/Outline'
 
 export const ChatbotBasicSetup: React.FC = () => {
   const navigate = useNavigate()
@@ -41,6 +42,7 @@ export const ChatbotBasicSetup: React.FC = () => {
     handleSubmit,
     control,
     setValue,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<ChatbotFormData>({
     defaultValues: {
@@ -51,6 +53,8 @@ export const ChatbotBasicSetup: React.FC = () => {
       profilePicture: null,
     },
   })
+
+  const formValues = watch()
 
   useEffect(() => {
     return () => {
@@ -319,7 +323,15 @@ export const ChatbotBasicSetup: React.FC = () => {
               </div>
             </form>
           </div>
-          <div className="w-1/2 h-full hidden lg:block bg-[radial-gradient(circle,#ebebeb_2px,#fafafa_0)] bg-size-[30px_30px]"></div>
+          <div className="w-1/2 h-full hidden lg:block bg-[radial-gradient(circle,#ebebeb_2px,#fafafa_0)] bg-size-[30px_30px]">
+            <Outline
+              name={formValues.name}
+              profilePicture={previewUrl}
+              brandColor={formValues.brandColor}
+              appearance={formValues.appearance}
+              brandColorForHeader={formValues.brandColorForHeader}
+            />
+          </div>
         </div>
       </div>
     </div>

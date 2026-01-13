@@ -10,6 +10,7 @@ import type { ApiResponse } from '@/types/api'
 import { chatbotService } from '@/api/services/chatbot'
 import { modals } from '@mantine/modals'
 import { showNotification } from '@/utils/notifications'
+import { Outline } from '@/components/layout/Outline'
 
 export const Landing: React.FC = () => {
   const day = format(new Date(), 'eeee')
@@ -103,7 +104,22 @@ export const Landing: React.FC = () => {
                 key={chatbot.id}
                 className="border border-border-week hover:cursor-pointer div-fade-animation hover:border-border-strong rounded-lg overflow-hidden relative"
               >
-                <div className="h-40"></div>
+                <div
+                  className="h-40 overflow-hidden"
+                  style={{
+                    backgroundImage: `radial-gradient(circle at 100% 50%, ${chatbot.brandColor}33, transparent 90%)`,
+                    paddingTop: '15px',
+                  }}
+                >
+                  <Outline
+                    name={chatbot.name}
+                    profilePicture={chatbot.profilePicture}
+                    brandColor={chatbot.brandColor}
+                    appearance={chatbot.appearance}
+                    brandColorForHeader={chatbot.brandColorForHeader}
+                    isPreview={true}
+                  />
+                </div>
 
                 <div className="p-4 flex items-center justify-between">
                   <h3 className="text-sm font-semibold">{chatbot.name}</h3>
