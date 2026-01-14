@@ -18,6 +18,7 @@ import { UploadLinks } from '../sources/Links'
 import { UploadText } from '../sources/Text'
 import { UploadQandA } from '../sources/QandA'
 import { useChatbotStore } from '@/store'
+import { useFormat } from '@/hooks/useFormats'
 
 export const ChatbotKnowledgeBaseSetup: React.FC = () => {
   const navigate = useNavigate()
@@ -29,6 +30,8 @@ export const ChatbotKnowledgeBaseSetup: React.FC = () => {
   ])
   const { chatbotId } = useParams()
   const { getChatbot, currentChatbot } = useChatbotStore()
+  const { formatFileSize } = useFormat()
+  const MAX_STORAGE_MB = 400
 
   useEffect(() => {
     if (chatbotId) {
@@ -100,6 +103,7 @@ export const ChatbotKnowledgeBaseSetup: React.FC = () => {
             <p className="text-3xl font-semibold text-center sm:text-left">Train your Agent</p>
             <p className="text-xs font-light text-center mt-1 sm:text-left">
               Provide documents or URLs to help your Agent learn and answer accurately.
+              You can always add more later.
             </p>
             <ul className="mt-6 list-none">
               {sources.map((source, index) => {
@@ -138,7 +142,10 @@ export const ChatbotKnowledgeBaseSetup: React.FC = () => {
                 )
               })}
             </ul>
-            <div className="mt-14 flex justify-center items-center">
+            <div className="mt-14 flex flex-col items-center gap-2">
+              <p className="text-xs text-text-secondary">
+                {formatFileSize(currentChatbot?.totalSize || 0)} / {MAX_STORAGE_MB} MB used
+              </p>
               <Button type="submit" variant="default" style={{ width: '75%' }}>
                 Train & Continue
               </Button>

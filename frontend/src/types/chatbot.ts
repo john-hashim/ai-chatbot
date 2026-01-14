@@ -19,4 +19,5 @@ export interface Chatbot extends ChatbotFormData {
   linkCount?: number
   textCount?: number
   QandACount?: number
+  totalSize: number
 }
