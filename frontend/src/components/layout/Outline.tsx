@@ -1,4 +1,5 @@
 import { Ellipsis } from 'lucide-react'
+import { useState, useEffect } from 'react'
 
 export interface OutlineProps {
   name: string
@@ -34,6 +35,18 @@ export const Outline: React.FC<OutlineProps> = ({
   brandColorForHeader = true,
   isPreview = false,
 }) => {
+  const [isAnimated, setIsAnimated] = useState(false)
+
+  useEffect(() => {
+    if (!isPreview) {
+      // Trigger animation after component mounts
+      const timer = setTimeout(() => {
+        setIsAnimated(true)
+      }, 100)
+      return () => clearTimeout(timer)
+    }
+  }, [isPreview])
+
   // Calculate text color for brand color (always needed for user messages)
   const textColorForBrandColor = getTextColorForBackground(brandColor)
 
@@ -46,7 +59,13 @@ export const Outline: React.FC<OutlineProps> = ({
 
   return (
     <div
-      className={`h-full flex justify-center ${isPreview ? 'pt-0 scale-[0.35] origin-top' : 'pt-[100px]'}`}
+      className={`h-full flex justify-center transition-all duration-1000 ease-out ${
+        isPreview
+          ? 'pt-0 scale-[0.35] origin-top'
+          : isAnimated
+            ? 'pt-[100px]'
+            : 'pt-[50%]'
+      }`}
     >
       <div
         className={`w-[400px] ${isPreview ? 'h-[500px]' : 'h-full'} rounded-t-3xl overflow-hidden ${appearance === 'light' ? 'bg-white' : 'bg-black'} border border-border-week`}
