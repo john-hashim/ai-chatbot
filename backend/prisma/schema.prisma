@@ -82,17 +82,17 @@ model Document {
 }
 
 model DocumentChunk {
-  id         String                        @id @default(cuid())
+  id         String                       @id @default(cuid())
   documentId String
-  content    String                        @db.Text  // Chunk text content
-  embedding  Unsupported("vector(1536)")?  // OpenAI embedding vector
-  position   Int                           // Order in document
-  tokens     Int?                          // Token count for this chunk
-  createdAt  DateTime                      @default(now())
-  
+  content    String                       @db.Text  // Chunk text content (cleaned)
+  embedding  Unsupported("vector(384)")?  // BGE-small embedding vector (384 dimensions)
+  position   Int                          // Chunk index/order in document
+  tokens     Int?                         // Token count for this chunk
+  metadata   Json?                        // {source, title, documentType, subtype}
+  createdAt  DateTime                     @default(now())
+
   document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
-  
+
   @@index([documentId])
-  // Vector similarity search index will be created via migration
-  @@index([embedding(ops: raw("vector_cosine_ops"))], name: "embedding_idx")
+  // Note: Vector similarity index created manually in migration using HNSW
 }

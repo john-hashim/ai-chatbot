@@ -10,6 +10,7 @@ import {
   PlusIcon,
   Pencil,
   CheckCircle2,
+  Loader2,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
@@ -19,6 +20,10 @@ import { UploadText } from '../sources/Text'
 import { UploadQandA } from '../sources/QandA'
 import { useChatbotStore } from '@/store'
 import { useFormat } from '@/hooks/useFormats'
+import { useApi } from '@/hooks/useApi'
+import { chatbotService } from '@/api/services/chatbot'
+import type { ApiResponse } from '@/types/api'
+import { showNotification } from '@/utils/notifications'
 
 export const ChatbotKnowledgeBaseSetup: React.FC = () => {
   const navigate = useNavigate()
@@ -32,6 +37,38 @@ export const ChatbotKnowledgeBaseSetup: React.FC = () => {
   const { getChatbot, currentChatbot } = useChatbotStore()
   const { formatFileSize } = useFormat()
   const MAX_STORAGE_MB = 400
+
+  // Training API hook
+  const {
+    execute: executeTraining,
+    loading: isTraining,
+  } = useApi<
+    ApiResponse<{ documentsProcessed: number; chunksCreated: number }>,
+    [string]
+  >(chatbotService.trainDocuments)
+
+  const handleTrainAndContinue = async () => {
+    if (!chatbotId) return
+
+    try {
+      const result = await executeTraining(chatbotId)
+      if (result.data) {
+        const { documentsProcessed, chunksCreated } = result.data
+        if (documentsProcessed > 0) {
+          showNotification(
+            'success',
+            `Training complete! Processed ${documentsProcessed} document(s) into ${chunksCreated} chunks.`
+          )
+        } else {
+          showNotification('success', 'All documents are already trained!')
+        }
+        // Navigate to chatbot dashboard after successful training
+        navigate(`/chatbot/${chatbotId}`)
+      }
+    } catch {
+      showNotification('error', 'Training failed. Please try again.')
+    }
+  }
 
   useEffect(() => {
     if (chatbotId) {
@@ -146,8 +183,21 @@ export const ChatbotKnowledgeBaseSetup: React.FC = () => {
               <p className="text-xs text-text-secondary">
                 {formatFileSize(currentChatbot?.totalSize || 0)} / {MAX_STORAGE_MB} MB used
               </p>
-              <Button type="submit" variant="default" style={{ width: '75%' }}>
-                Train & Continue
+              <Button
+                type="button"
+                variant="default"
+                style={{ width: '75%' }}
+                onClick={handleTrainAndContinue}
+                disabled={isTraining}
+              >
+                {isTraining ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    Training...
+                  </>
+                ) : (
+                  'Train & Continue'
+                )}
               </Button>
             </div>
           </div>

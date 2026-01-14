@@ -18,6 +18,8 @@ export const ENDPOINTS = {
     CRAWL_WEBSITE: 'chatbot/:chatbotId/crawl-website',
     DELETE_DOCUMENT: 'chatbot/documents/:documentId',
     DELETE_MULTIPLE_DOCUMENTS: 'chatbot/documents/delete-multiple',
+    TRAIN: 'chatbot/:chatbotId/train',
+    TRAINING_STATUS: 'chatbot/:chatbotId/training-status',
   },
 } as const
 

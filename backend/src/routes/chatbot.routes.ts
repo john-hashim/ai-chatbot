@@ -41,4 +41,12 @@ router.post(
   chatbotController.deleteMultipleDocuments
 )
 
+// Training routes
+router.post('/:chatbotId/train', authMiddleware.authenticateToken, chatbotController.trainDocuments)
+router.get(
+  '/:chatbotId/training-status',
+  authMiddleware.authenticateToken,
+  chatbotController.getTrainingStatus
+)
+
 export default router

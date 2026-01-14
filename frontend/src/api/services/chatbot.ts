@@ -127,4 +127,37 @@ export const chatbotService = {
   ): Promise<AxiosResponse<ApiResponse<{ deletedCount: number }>>> => {
     return apiClient.post(ENDPOINTS.CHATBOT.DELETE_MULTIPLE_DOCUMENTS, { documentIds })
   },
+  /**
+   * Train all untrained documents for a chatbot
+   * @param chatbotId - ID of the chatbot
+   * @returns Promise with training result
+   */
+  trainDocuments: (
+    chatbotId: string
+  ): Promise<
+    AxiosResponse<ApiResponse<{ documentsProcessed: number; chunksCreated: number }>>
+  > => {
+    return apiClient.post(ENDPOINTS.CHATBOT.TRAIN.replace(':chatbotId', chatbotId))
+  },
+  /**
+   * Get training status for a chatbot
+   * @param chatbotId - ID of the chatbot
+   * @returns Promise with training status
+   */
+  getTrainingStatus: (
+    chatbotId: string
+  ): Promise<
+    AxiosResponse<
+      ApiResponse<{
+        totalDocuments: number
+        trainedDocuments: number
+        untrainedDocuments: number
+        failedDocuments: number
+        totalChunks: number
+        isFullyTrained: boolean
+      }>
+    >
+  > => {
+    return apiClient.get(ENDPOINTS.CHATBOT.TRAINING_STATUS.replace(':chatbotId', chatbotId))
+  },
 }

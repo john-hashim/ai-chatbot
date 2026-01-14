@@ -30,6 +30,7 @@ import { useStore } from '@/store'
 import { Landing } from '@/feature/Landing/Landing'
 import { ChatbotBasicSetup } from './feature/create-chatbot/ChatbotBasicSetup'
 import { ChatbotKnowledgeBaseSetup } from './feature/create-chatbot/ChatbotKnowledgeBaseSetup'
+import { ChatbotDashboard } from './feature/chatbot'
 
 const theme = createTheme({
   colors: {
@@ -143,6 +144,7 @@ function AppRoutes() {
           path="/chatbot/:chatbotId/setup-knowledgebase"
           element={<ChatbotKnowledgeBaseSetup />}
         />
+        <Route path="/chatbot/:chatbotId" element={<ChatbotDashboard />} />
       </Route>
       <Route
         path="/"

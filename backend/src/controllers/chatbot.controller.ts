@@ -6,6 +6,7 @@ import { PDFParse } from 'pdf-parse'
 import mammoth from 'mammoth'
 import WordExtractor from 'word-extractor'
 import * as crawlerService from '../services/crawler.service.js'
+import * as trainingService from '../services/training.service.js'
 
 export const createChatbot = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -675,3 +676,103 @@ export const deleteMultipleDocuments = async (req: Request, res: Response, next:
     next(error)
   }
 }
+
+/**
+ * Train all untrained documents for a chatbot
+ * POST /:chatbotId/train
+ */
+export const trainDocuments = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { chatbotId } = req.params
+    const user = req.user
+
+    if (!chatbotId) {
+      return res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'Chatbot ID is required',
+      } satisfies ApiResponse)
+    }
+
+    // Verify ownership
+    const chatbot = await prisma.chatbot.findUnique({
+      where: { id: chatbotId, userId: user.id },
+    })
+
+    if (!chatbot) {
+      return res.status(404).json({
+        status: ApiStatus.FAILURE,
+        message: 'Chatbot not found or you do not have permission',
+      } satisfies ApiResponse)
+    }
+
+    // Start training
+    const result = await trainingService.trainChatbotDocuments(chatbotId)
+
+    if (result.success) {
+      res.status(200).json({
+        status: ApiStatus.SUCCESS,
+        data: {
+          documentsProcessed: result.documentsProcessed,
+          chunksCreated: result.totalChunksCreated,
+        },
+        message:
+          result.documentsProcessed > 0
+            ? `Successfully trained ${result.documentsProcessed} document(s) with ${result.totalChunksCreated} chunks`
+            : 'No untrained documents to process',
+      } satisfies ApiResponse)
+    } else {
+      res.status(207).json({
+        status: ApiStatus.FAILURE,
+        data: {
+          documentsProcessed: result.documentsProcessed,
+          chunksCreated: result.totalChunksCreated,
+          failedDocuments: result.failedDocuments,
+        },
+        message: result.error || `Training completed with ${result.failedDocuments.length} failed document(s)`,
+      } satisfies ApiResponse)
+    }
+  } catch (error) {
+    next(error)
+  }
+}
+
+/**
+ * Get training status for a chatbot
+ * GET /:chatbotId/training-status
+ */
+export const getTrainingStatus = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { chatbotId } = req.params
+    const user = req.user
+
+    if (!chatbotId) {
+      return res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'Chatbot ID is required',
+      } satisfies ApiResponse)
+    }
+
+    // Verify ownership
+    const chatbot = await prisma.chatbot.findUnique({
+      where: { id: chatbotId, userId: user.id },
+    })
+
+    if (!chatbot) {
+      return res.status(404).json({
+        status: ApiStatus.FAILURE,
+        message: 'Chatbot not found or you do not have permission',
+      } satisfies ApiResponse)
+    }
+
+    const status = await trainingService.getTrainingStatus(chatbotId)
+
+    res.status(200).json({
+      status: ApiStatus.SUCCESS,
+      data: status,
+      message: 'Training status retrieved successfully',
+    } satisfies ApiResponse)
+  } catch (error) {
+    next(error)
+  }
+}
+

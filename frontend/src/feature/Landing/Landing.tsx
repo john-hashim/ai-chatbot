@@ -100,7 +100,7 @@ export const Landing: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-12 mt-6">
             {chatbots.map(chatbot => (
               <div
-                onClick={() => navigate(`/chatbot/${chatbot.id}/setup-knowledgebase`)}
+                onClick={() => navigate(`/chatbot/${chatbot.id}`)}
                 key={chatbot.id}
                 className="border border-border-week hover:cursor-pointer div-fade-animation hover:border-border-strong rounded-lg overflow-hidden relative"
               >
