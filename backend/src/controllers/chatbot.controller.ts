@@ -5,6 +5,7 @@ import * as r2Service from '../services/r2.service.js'
 import { PDFParse } from 'pdf-parse'
 import mammoth from 'mammoth'
 import WordExtractor from 'word-extractor'
+import * as crawlerService from '../services/crawler.service.js'
 
 export const createChatbot = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -304,6 +305,16 @@ export const uploadText = async (req: Request, res: Response, next: NextFunction
       },
     })
 
+    // Update chatbot totalSize
+    await prisma.chatbot.update({
+      where: { id: chatbotId },
+      data: {
+        totalSize: {
+          increment: size,
+        },
+      },
+    })
+
     res.status(200).json({
       status: ApiStatus.SUCCESS,
       data: document,
@@ -351,25 +362,41 @@ export const crawlWebsite = async (req: Request, res: Response, next: NextFuncti
       } satisfies ApiResponse)
     }
 
-    // TODO: Implement actual web crawling logic here
-    // For now, returning dummy data
-    const dummyContent =
-      subtype === 'url'
-        ? `Dummy content from ${url}\n\nThis is sample text that would be extracted from the webpage. It includes headings, paragraphs, and other content that would normally be scraped from the website.`
-        : `Dummy sitemap content from ${url}\n\nThis would contain content from multiple pages:\n\nPage 1: Home page content\nPage 2: About page content\nPage 3: Services page content`
+    // Only handle single URL crawling for now
+    if (subtype === 'sitemap') {
+      return res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'Sitemap crawling is not yet implemented',
+      } satisfies ApiResponse)
+    }
 
+    // Crawl the URL
+    const crawlResult = await crawlerService.crawlUrl(url)
+
+    const documentSize = Buffer.byteLength(crawlResult.content, 'utf8')
     const document = await prisma.document.create({
       data: {
-        name: url,
+        name: crawlResult.title || url,
         type: 'website',
         subtype,
-        size: Buffer.byteLength(dummyContent, 'utf8'),
-        content: dummyContent,
+        size: documentSize,
+        content: crawlResult.content,
         chatbotId,
         metadata: {
-          url,
+          url: crawlResult.url,
+          title: crawlResult.title,
           crawledAt: new Date().toISOString(),
-          pageCount: subtype === 'sitemap' ? 3 : 1,
+          pageCount: 1,
+        },
+      },
+    })
+
+    // Update chatbot totalSize
+    await prisma.chatbot.update({
+      where: { id: chatbotId },
+      data: {
+        totalSize: {
+          increment: documentSize,
         },
       },
     })
@@ -491,6 +518,17 @@ export const uploadDocument = async (req: Request, res: Response, next: NextFunc
       })
     )
 
+    // Update chatbot totalSize atomically
+    const totalNewSize = createdDocuments.reduce((sum, doc) => sum + doc.size, 0)
+    await prisma.chatbot.update({
+      where: { id: chatbotId },
+      data: {
+        totalSize: {
+          increment: totalNewSize,
+        },
+      },
+    })
+
     res.status(200).json({
       status: ApiStatus.SUCCESS,
       data: createdDocuments,
@@ -513,7 +551,8 @@ export const deleteDocument = async (req: Request, res: Response, next: NextFunc
       } satisfies ApiResponse)
     }
 
-    const result = await prisma.document.deleteMany({
+    // First, fetch the document to get its size and chatbotId
+    const document = await prisma.document.findFirst({
       where: {
         id: documentId,
         chatbot: {
@@ -522,12 +561,27 @@ export const deleteDocument = async (req: Request, res: Response, next: NextFunc
       },
     })
 
-    if (result.count === 0) {
+    if (!document) {
       return res.status(404).json({
         status: ApiStatus.FAILURE,
         message: 'Document not found or you do not have permission to delete it',
       } satisfies ApiResponse)
     }
+
+    // Delete the document
+    await prisma.document.delete({
+      where: { id: documentId },
+    })
+
+    // Update chatbot totalSize
+    await prisma.chatbot.update({
+      where: { id: document.chatbotId },
+      data: {
+        totalSize: {
+          decrement: document.size,
+        },
+      },
+    })
 
     res.status(200).json({
       status: ApiStatus.SUCCESS,
@@ -560,14 +614,57 @@ export const deleteMultipleDocuments = async (req: Request, res: Response, next:
       } satisfies ApiResponse)
     }
 
-    const result = await prisma.document.deleteMany({
+    // First, fetch all documents to get their sizes and chatbotIds
+    const documents = await prisma.document.findMany({
       where: {
         id: { in: documentIds },
         chatbot: {
           userId: user.id,
         },
       },
+      select: {
+        id: true,
+        size: true,
+        chatbotId: true,
+      },
     })
+
+    if (documents.length === 0) {
+      return res.status(404).json({
+        status: ApiStatus.FAILURE,
+        message: 'No documents found or you do not have permission to delete them',
+      } satisfies ApiResponse)
+    }
+
+    // Delete the documents
+    const result = await prisma.document.deleteMany({
+      where: {
+        id: { in: documents.map(doc => doc.id) },
+      },
+    })
+
+    // Group documents by chatbotId and calculate total size per chatbot
+    const sizesByChatbot = documents.reduce(
+      (acc, doc) => {
+        acc[doc.chatbotId] = (acc[doc.chatbotId] || 0) + doc.size
+        return acc
+      },
+      {} as Record<string, number>
+    )
+
+    // Update totalSize for each affected chatbot
+    await Promise.all(
+      Object.entries(sizesByChatbot).map(([chatbotId, totalSize]) =>
+        prisma.chatbot.update({
+          where: { id: chatbotId },
+          data: {
+            totalSize: {
+              decrement: totalSize,
+            },
+          },
+        })
+      )
+    )
 
     res.status(200).json({
       status: ApiStatus.SUCCESS,

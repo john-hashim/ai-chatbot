@@ -4,7 +4,7 @@ import { Tabs } from '@mantine/core'
 import {
   Info,
   Link,
-  ListTree,
+  // ListTree,
   Loader2,
   Search,
   ChevronDown,
@@ -51,23 +51,27 @@ export const UploadLinks: React.FC = () => {
       activeTab === 'url' ? 'Crawling Website' : 'Loading Sitemap',
       'Please wait while we fetch and process the content'
     )
+    try {
+      if (currentChatbot) {
+        const data = {
+          url: url.trim(),
+          subtype: activeTab,
+        }
 
-    if (currentChatbot) {
-      const data = {
-        url: url.trim(),
-        subtype: activeTab,
+        const resp = await executeWebsiteCrawl(data, currentChatbot.id)
+        if (resp.status === 'success' && resp.data) {
+          await addDocument()
+          setDocumentsToDelete([])
+          setSelectAll(false)
+          setUrl('')
+          notification.success('Website content added successfully')
+        } else {
+          notification.error('Failed to fetch website content')
+        }
       }
-
-      const resp = await executeWebsiteCrawl(data, currentChatbot.id)
-      if (resp.status === 'success' && resp.data) {
-        await addDocument()
-        setDocumentsToDelete([])
-        setSelectAll(false)
-        setUrl('')
-        notification.success('Website content added successfully')
-      } else {
-        notification.error('Failed to fetch website content')
-      }
+    } catch (e) {
+      console.log(e)
+      notification.error('Failed to fetch website content')
     }
   }
 
@@ -81,9 +85,7 @@ export const UploadLinks: React.FC = () => {
     setDocumentsToDelete(updated)
 
     if (currentChatbot) {
-      const websiteDocsCount = currentChatbot.documents.filter(
-        doc => doc.type === 'website'
-      ).length
+      const websiteDocsCount = currentChatbot.documents.filter(doc => doc.type === 'website').length
       setSelectAll(updated.length === websiteDocsCount)
     }
   }
@@ -178,14 +180,19 @@ export const UploadLinks: React.FC = () => {
           Enter your website URL so the AI can learn from your latest content.
         </p>
       </header>
-      <Tabs value={activeTab} onChange={value => setActiveTab(value as 'url' | 'sitemap')} className="mt-10">
+      <Tabs
+        value={activeTab}
+        onChange={value => setActiveTab(value as 'url' | 'sitemap')}
+        className="mt-10"
+      >
         <Tabs.List>
           <Tabs.Tab value="url" leftSection={<Link size={15} />}>
             Website
           </Tabs.Tab>
-          <Tabs.Tab value="sitemap" leftSection={<ListTree size={15} />}>
+          {/* Phase 2: Sitemap functionality */}
+          {/* <Tabs.Tab value="sitemap" leftSection={<ListTree size={15} />}>
             Sitemap
-          </Tabs.Tab>
+          </Tabs.Tab> */}
         </Tabs.List>
 
         <Tabs.Panel value="url">
