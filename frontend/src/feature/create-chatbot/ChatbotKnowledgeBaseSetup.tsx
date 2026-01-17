@@ -21,11 +21,13 @@ import { UploadQandA } from '../sources/QandA'
 import { useChatbotStore } from '@/store'
 import { useFormat } from '@/hooks/useFormats'
 import { useApi } from '@/hooks/useApi'
+import { usePageTitle } from '@/hooks/usePageTitle'
 import { chatbotService } from '@/api/services/chatbot'
 import type { ApiResponse } from '@/types/api'
 import { showNotification } from '@/utils/notifications'
 
 export const ChatbotKnowledgeBaseSetup: React.FC = () => {
+  usePageTitle('Setup Knowledge Base')
   const navigate = useNavigate()
   const [sources, setSources] = useState([
     { name: 'File', icon: File, count: 0, isSelected: false },

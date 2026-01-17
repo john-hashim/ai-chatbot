@@ -1,7 +1,9 @@
 import { useUserStore } from '@/store'
 import { GoogleLogin, type CredentialResponse } from '@react-oauth/google'
+import { usePageTitle } from '@/hooks/usePageTitle'
 
 const Login: React.FC = () => {
+  usePageTitle('Login')
   const { googleSignIn, loading } = useUserStore()
 
   const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {

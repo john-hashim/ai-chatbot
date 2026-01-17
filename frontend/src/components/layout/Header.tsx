@@ -29,7 +29,7 @@ export const Header: React.FC = () => {
             <span className="hidden md:block text-gray-300 text-md font-semibold mx-4">/</span>
             <span
               onClick={() => navigate('/landing')}
-              className="text-text-primary font-medium cursor-pointer truncate max-w-[150px] md:max-w-[200px]"
+              className="text-text-primary font-semibold cursor-pointer truncate max-w-[150px] md:max-w-[200px]"
             >
               {user.name}'s workspace
             </span>

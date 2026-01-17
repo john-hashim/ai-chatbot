@@ -19,6 +19,7 @@ import { useForm, Controller } from 'react-hook-form'
 import { type Chatbot, type ChatbotFormData } from '@/types/chatbot'
 import { chatbotService } from '@/api/services/chatbot'
 import { useApi } from '@/hooks/useApi'
+import { usePageTitle } from '@/hooks/usePageTitle'
 import { AxiosError } from 'axios'
 import { useStore } from '@/store'
 import { showNotification } from '@/utils/notifications'
@@ -27,6 +28,7 @@ import type { ApiResponse } from '@/types/api'
 import { Outline } from '@/components/layout/Outline'
 
 export const ChatbotBasicSetup: React.FC = () => {
+  usePageTitle('Create Chatbot')
   const navigate = useNavigate()
   const upsertChatbot = useStore(state => state.upsertChatbot)
 

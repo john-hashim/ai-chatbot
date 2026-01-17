@@ -6,6 +6,7 @@ import { Plus, TrendingUp, Ellipsis, Trash } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useEffect } from 'react'
 import { useApi } from '@/hooks/useApi'
+import { usePageTitle } from '@/hooks/usePageTitle'
 import type { ApiResponse } from '@/types/api'
 import { chatbotService } from '@/api/services/chatbot'
 import { modals } from '@mantine/modals'
@@ -13,6 +14,7 @@ import { showNotification } from '@/utils/notifications'
 import { Outline } from '@/components/layout/Outline'
 
 export const Landing: React.FC = () => {
+  usePageTitle('Chatbots')
   const day = format(new Date(), 'eeee')
   const date = format(new Date(), 'MMMM dd')
   const {
