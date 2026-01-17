@@ -43,7 +43,7 @@ export const createChatbotSlice: StateCreator<ChatbotSlice> = (set, get) => ({
     if (!response.data.data) {
       throw new Error('No data received from server')
     }
-    set({ chatbots: response.data.data, currentChatbot: null })
+    set({ chatbots: response.data.data })
   },
   setCurrentChatbot: (chatbotId: string) => {
     set(state => {

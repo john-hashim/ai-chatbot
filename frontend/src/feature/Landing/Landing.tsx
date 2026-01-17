@@ -18,6 +18,7 @@ export const Landing: React.FC = () => {
   const {
     getChatbots,
     clearCurrentChatbot,
+    setCurrentChatbot,
     resetDocumentFilters,
     currentChatbot,
     chatbots,
@@ -83,7 +84,7 @@ export const Landing: React.FC = () => {
   }
 
   return (
-    <main className="px-5 py-6 lg:px-40 border-t border-t-border-week">
+    <main className="px-5 py-6 lg:px-10 border-t border-t-border-week">
       {chatbots && chatbots.length > 0 ? (
         <div>
           <div className="mt-5 flex items-center justify-between">
@@ -100,7 +101,10 @@ export const Landing: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-12 mt-6">
             {chatbots.map(chatbot => (
               <div
-                onClick={() => navigate(`/chatbot/${chatbot.id}`)}
+                onClick={() => {
+                  setCurrentChatbot(chatbot.id)
+                  navigate(`/chatbot/${chatbot.id}`)
+                }}
                 key={chatbot.id}
                 className="border border-border-week hover:cursor-pointer div-fade-animation hover:border-border-strong rounded-lg overflow-hidden relative"
               >
