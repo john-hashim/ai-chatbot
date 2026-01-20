@@ -87,7 +87,7 @@ export const Landing: React.FC = () => {
   }
 
   return (
-    <main className="px-5 py-6 lg:px-10 border-t border-t-border-week">
+    <main className="px-5 py-6 lg:px-10">
       {chatbots && chatbots.length > 0 ? (
         <div>
           <div className="mt-5 flex items-center justify-between">

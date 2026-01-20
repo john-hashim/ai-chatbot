@@ -19,7 +19,7 @@ export const Header: React.FC = () => {
     logout()
   }
   return (
-    <div className="px-5 py-2 bg-nav-topbar flex items-center">
+    <div className="px-5 py-2 bg-nav-topbar flex items-center border-b border-b-border-week">
       <div className="flex items-center ml-3 min-w-0">
         <div className="hidden md:block shrink-0">
           <Logo height={25} width={30} logoIcon={true} />
