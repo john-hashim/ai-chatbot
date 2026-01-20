@@ -7,9 +7,11 @@ export function MainLayout() {
     location.pathname === '/chatbot/new' || location.pathname.includes('setup-knowledgebase')
 
   return (
-    <div>
+    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       {!hideHeader && <Header />}
-      <Outlet />
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
+        <Outlet />
+      </div>
     </div>
   )
 }

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, useLocation, useParams } from 'react-router-dom'
-import { Box, Stack, UnstyledButton, Tooltip, Text, Overlay } from '@mantine/core'
+import { Stack, UnstyledButton, Tooltip, Text, Overlay } from '@mantine/core'
 import { useMediaQuery } from '@mantine/hooks'
 import { Sliders, Database, MessageSquareText, ChartLine, Rocket, Menu } from 'lucide-react'
 
@@ -82,14 +82,9 @@ export const ChatbotSidebar: React.FC = () => {
 
       {/* Overlay for mobile when expanded */}
       {isMobile && expanded && (
-        <Overlay
-          onClick={() => setExpanded(false)}
-          opacity={0.3}
-          color="#000"
-          zIndex={99}
-        />
+        <Overlay onClick={() => setExpanded(false)} opacity={0.3} color="#000" zIndex={99} />
       )}
-      <Box
+      <div
         onMouseEnter={() => !isMobile && setExpanded(true)}
         onMouseLeave={() => !isMobile && setExpanded(false)}
         style={{
@@ -104,98 +99,100 @@ export const ChatbotSidebar: React.FC = () => {
           height: '100%',
         }}
       >
-      <Stack gap={0} h="100%">
-        <Stack
-          gap={4}
-          style={{
-            flex: 1,
-            padding: isMobile ? '16px' : '16px 9px 8px 9px',
-            position: 'relative',
-          }}
-        >
-          {/* Sliding indicator */}
-          {activeIndex >= 0 && (
-            <Box
-              style={{
-                position: 'absolute',
-                top: `calc(${isMobile ? '16px' : '16px'} + ${activeIndex * itemHeight}px)`,
-                left: isMobile ? 16 : 9,
-                right: isMobile ? 16 : 9,
-                height: itemHeight - 4, // subtract gap
-                backgroundColor: '#fff',
-                border: '1px solid var(--color-border-week)',
-                borderRadius: 10,
-                transition: 'top 250ms ease-out',
-                zIndex: 0,
-              }}
-            />
-          )}
-          {navItems.map(item => {
-            const isActive = activePath === item.path
-            const isHovered = hoveredItem === item.path
-            return (
-              <Tooltip
-                key={item.path}
-                label={
-                  <div>
-                    <Text size="sm" fw={500}>
-                      {item.label}
-                    </Text>
-                    <Text size="xs" c="dimmed">
-                      {item.description}
-                    </Text>
-                  </div>
-                }
-                position="right"
-                disabled={expanded}
-                transitionProps={{ duration: 150 }}
-                multiline
-                w={200}
-              >
-                <UnstyledButton
-                  onClick={() => handleNavClick(item.path)}
-                  onMouseEnter={() => setHoveredItem(item.path)}
-                  onMouseLeave={() => setHoveredItem(null)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 10,
-                    padding: '6px 8px',
-                    borderRadius: 6,
-                    backgroundColor: isHovered && !isActive ? 'rgba(0, 0, 0, 0.04)' : 'transparent',
-                    color: isActive || isHovered ? '#000' : 'var(--mantine-color-gray-7)',
-                    position: 'relative',
-                    zIndex: 1,
-                    opacity: isActive || isHovered ? 1 : 0.85,
-                    transition: 'background-color 200ms ease, opacity 200ms ease, color 200ms ease',
-                  }}
+        <Stack gap={0} h="100%">
+          <Stack
+            gap={4}
+            style={{
+              flex: 1,
+              padding: isMobile ? '16px' : '16px 9px 8px 9px',
+              position: 'relative',
+            }}
+          >
+            {/* Sliding indicator */}
+            {activeIndex >= 0 && (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: `calc(${isMobile ? '16px' : '16px'} + ${activeIndex * itemHeight}px)`,
+                  left: isMobile ? 16 : 9,
+                  right: isMobile ? 16 : 9,
+                  height: itemHeight - 4, // subtract gap
+                  backgroundColor: '#fff',
+                  border: '1px solid var(--color-border-week)',
+                  borderRadius: 10,
+                  transition: 'top 250ms ease-out',
+                  zIndex: 0,
+                }}
+              />
+            )}
+            {navItems.map(item => {
+              const isActive = activePath === item.path
+              const isHovered = hoveredItem === item.path
+              return (
+                <Tooltip
+                  key={item.path}
+                  label={
+                    <div>
+                      <Text size="sm" fw={500}>
+                        {item.label}
+                      </Text>
+                      <Text size="xs" c="dimmed">
+                        {item.description}
+                      </Text>
+                    </div>
+                  }
+                  position="right"
+                  disabled={expanded}
+                  transitionProps={{ duration: 150 }}
+                  multiline
+                  w={200}
                 >
-                  <item.icon
-                    size={18}
-                    strokeWidth={isActive ? 2 : 1.5}
-                    style={{ flexShrink: 0 }}
-                  />
-                  <Text
-                    size="sm"
-                    fw={500}
+                  <UnstyledButton
+                    onClick={() => handleNavClick(item.path)}
+                    onMouseEnter={() => setHoveredItem(item.path)}
+                    onMouseLeave={() => setHoveredItem(null)}
                     style={{
-                      whiteSpace: 'nowrap',
-                      opacity: expanded ? 1 : 0,
-                      transform: expanded ? 'translateX(0)' : 'translateX(-10px)',
-                      transition: expanded
-                        ? 'opacity 150ms ease 80ms, transform 250ms cubic-bezier(0.34, 1.56, 0.64, 1) 80ms'
-                        : 'opacity 150ms ease, transform 150ms ease',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 10,
+                      padding: '6px 10px',
+                      borderRadius: 6,
+                      backgroundColor:
+                        isHovered && !isActive ? 'rgba(0, 0, 0, 0.04)' : 'transparent',
+                      color: isActive || isHovered ? '#000' : 'var(--mantine-color-gray-7)',
+                      position: 'relative',
+                      zIndex: 1,
+                      opacity: isActive || isHovered ? 1 : 0.85,
+                      transition:
+                        'background-color 200ms ease, opacity 200ms ease, color 200ms ease',
                     }}
                   >
-                    {item.label}
-                  </Text>
-                </UnstyledButton>
-              </Tooltip>
-            )
-          })}
+                    <item.icon
+                      size={18}
+                      strokeWidth={isActive ? 2 : 1.5}
+                      style={{ flexShrink: 0 }}
+                    />
+                    <Text
+                      size="sm"
+                      fw={500}
+                      style={{
+                        whiteSpace: 'nowrap',
+                        opacity: expanded ? 1 : 0,
+                        transform: expanded ? 'translateX(0)' : 'translateX(-10px)',
+                        transition: expanded
+                          ? 'opacity 150ms ease 80ms, transform 250ms cubic-bezier(0.34, 1.56, 0.64, 1) 80ms'
+                          : 'opacity 150ms ease, transform 150ms ease',
+                      }}
+                    >
+                      {item.label}
+                    </Text>
+                  </UnstyledButton>
+                </Tooltip>
+              )
+            })}
+          </Stack>
         </Stack>
-      </Stack>
-      </Box>
+      </div>
     </>
   )
 }

@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { useParams, Outlet } from 'react-router-dom'
 import { useChatbotStore } from '@/store'
 import { usePageTitle } from '@/hooks/usePageTitle'
-import { Box, Flex } from '@mantine/core'
+import { Flex } from '@mantine/core'
 import { useMediaQuery } from '@mantine/hooks'
 import { ChatbotSidebar } from './components/ChatbotSidebar'
 
@@ -20,11 +20,11 @@ export const ChatbotDashboard: React.FC = () => {
   }, [chatbotId, getChatbot])
 
   return (
-    <Flex h="calc(100vh - 60px)" style={{ position: 'relative' }}>
+    <Flex style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
       <ChatbotSidebar />
-      <Box style={{ flex: 1, padding: 24, overflowY: 'auto', marginLeft: isMobile ? 0 : 60 }}>
+      <div className="flex-1 overflow-y-auto" style={{ marginLeft: isMobile ? 0 : 60 }}>
         <Outlet />
-      </Box>
+      </div>
     </Flex>
   )
 }
