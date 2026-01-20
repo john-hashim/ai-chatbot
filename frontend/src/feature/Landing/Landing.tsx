@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom'
 import { useEffect } from 'react'
 import { useApi } from '@/hooks/useApi'
 import { usePageTitle } from '@/hooks/usePageTitle'
+import { formatRelativeDate } from '@/hooks/useRelativeDate'
 import type { ApiResponse } from '@/types/api'
 import { chatbotService } from '@/api/services/chatbot'
 import { modals } from '@mantine/modals'
@@ -108,12 +109,16 @@ export const Landing: React.FC = () => {
                   navigate(`/chatbot/${chatbot.id}`)
                 }}
                 key={chatbot.id}
-                className="border border-border-week hover:cursor-pointer div-fade-animation hover:border-border-strong rounded-lg overflow-hidden relative"
+                className="border border-border-week hover:cursor-pointer div-fade-animation hover:border-border-strong rounded-lg overflow-hidden relative max-w-sm"
               >
                 <div
                   className="h-40 overflow-hidden"
                   style={{
-                    backgroundImage: `radial-gradient(circle at 100% 50%, ${chatbot.brandColor}33, transparent 90%)`,
+                    backgroundImage: `
+                      radial-gradient(ellipse 80% 60% at 90% 20%, ${chatbot.brandColor}40, transparent 70%),
+                      radial-gradient(ellipse 60% 50% at 70% 80%, ${chatbot.brandColor}30, transparent 60%),
+                      radial-gradient(ellipse 50% 40% at 30% 30%, ${chatbot.brandColor}25, transparent 50%)
+                    `,
                     paddingTop: '15px',
                   }}
                 >
@@ -128,7 +133,15 @@ export const Landing: React.FC = () => {
                 </div>
 
                 <div className="p-4 flex items-center justify-between border-t border-border-week">
-                  <h3 className="text-sm font-semibold">{chatbot.name}</h3>
+                  <div>
+                    <h3 className="text-sm font-semibold">{chatbot.name}</h3>
+                    <p className="text-text-weak text-sm mt-1">
+                      {chatbot.last_trained === null
+                        ? 'Not Trained Yet'
+                        : `Last trained ${formatRelativeDate(chatbot.last_trained)}`}
+                    </p>
+                  </div>
+
                   <Menu shadow="md" width={200}>
                     <Menu.Target>
                       <button

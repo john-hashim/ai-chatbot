@@ -20,4 +20,5 @@ export interface Chatbot extends ChatbotFormData {
   textCount?: number
   QandACount?: number
   totalSize: number
+  last_trained: Date | null
 }

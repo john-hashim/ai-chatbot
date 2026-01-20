@@ -55,6 +55,7 @@ model Chatbot {
   user                 User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   documents            Document[]
   totalSize            Int        @default(0)
+  last_trained         DateTime?
 
   @@index([userId])
   @@map("chatbots")

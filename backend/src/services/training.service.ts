@@ -107,7 +107,7 @@ export async function trainChatbotDocuments(
         )
 
         // Step 2b: Generate embeddings for all chunks
-        const chunkTexts = chunks.map((chunk) => chunk.content)
+        const chunkTexts = chunks.map(chunk => chunk.content)
         const embeddingResults = await generateEmbeddings(chunkTexts)
 
         // Step 2c: Store chunks with embeddings in database
@@ -145,6 +145,12 @@ export async function trainChatbotDocuments(
 
     result.success = result.failedDocuments.length === 0
 
+    // Update chatbot's last_trained timestamp
+    await prisma.chatbot.update({
+      where: { id: chatbotId },
+      data: { last_trained: new Date() },
+    })
+
     return result
   } catch (error) {
     progress.status = 'failed'
@@ -177,7 +183,7 @@ async function storeChunksWithEmbeddings(
   // Prisma doesn't support vector type directly, so we use $executeRaw
   for (let i = 0; i < chunks.length; i++) {
     const chunk = chunks[i]!
-    const embedding = embeddings.find((e) => e.index === i)?.embedding
+    const embedding = embeddings.find(e => e.index === i)?.embedding
 
     if (!embedding) {
       throw new Error(`Missing embedding for chunk ${i}`)
@@ -230,9 +236,9 @@ export async function getTrainingStatus(chatbotId: string) {
   })
 
   const totalDocuments = documents.length
-  const trainedDocuments = documents.filter((d) => d.status === 'trained').length
-  const untrainedDocuments = documents.filter((d) => d.status === 'untrained').length
-  const failedDocuments = documents.filter((d) => d.status === 'failed').length
+  const trainedDocuments = documents.filter(d => d.status === 'trained').length
+  const untrainedDocuments = documents.filter(d => d.status === 'untrained').length
+  const failedDocuments = documents.filter(d => d.status === 'failed').length
 
   const totalChunks = await prisma.documentChunk.count({
     where: {
@@ -247,7 +253,7 @@ export async function getTrainingStatus(chatbotId: string) {
     failedDocuments,
     totalChunks,
     isFullyTrained: untrainedDocuments === 0 && failedDocuments === 0,
-    documents: documents.map((d) => ({ id: d.id, name: d.name, status: d.status })),
+    documents: documents.map(d => ({ id: d.id, name: d.name, status: d.status })),
   }
 }
 
