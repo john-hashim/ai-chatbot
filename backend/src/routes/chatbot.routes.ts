@@ -6,14 +6,15 @@ import * as chatbotController from '../controllers/chatbot.controller.js'
 const router = express.Router()
 
 router.post('/create', authMiddleware.authenticateToken, chatbotController.createChatbot)
-router.delete('/:chatbotId', authMiddleware.authenticateToken, chatbotController.deleteChatbot)
 router.get('/chatbots', authMiddleware.authenticateToken, chatbotController.getChatbots)
+router.get('/:chatbotId', authMiddleware.authenticateToken, chatbotController.getChatbot)
+router.patch('/:chatbotId', authMiddleware.authenticateToken, chatbotController.updateChatbot)
+router.delete('/:chatbotId', authMiddleware.authenticateToken, chatbotController.deleteChatbot)
 router.post(
   '/upload-url',
   authMiddleware.authenticateToken,
   chatbotController.getPresignedUploadUrl
 )
-router.post('/:chatbotId', authMiddleware.authenticateToken, chatbotController.getChatbot)
 router.post(
   '/:chatbotId/upload-document',
   authMiddleware.authenticateToken,

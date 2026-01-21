@@ -22,6 +22,18 @@ export const chatbotService = {
     return apiClient.post(ENDPOINTS.CHATBOT.CREATE, data)
   },
   /**
+   * Update Chatbot (partial update)
+   * @param id - chatbot id
+   * @param data - partial chatbot data to update
+   * @returns Promise with updated chatbot data
+   */
+  updateChatbot: (
+    id: string,
+    data: Partial<Chatbot>
+  ): Promise<AxiosResponse<ApiResponse<Chatbot>>> => {
+    return apiClient.patch(ENDPOINTS.CHATBOT.UPDATE.replace(':chatbotId', id), data)
+  },
+  /**
    * delete Chatbot
    * @param id - chatbot id
    * @returns Promise with chatbot data
@@ -45,9 +57,11 @@ export const chatbotService = {
    */
   getChatbot: (
     chatbotId: string,
-    filter: DocumentFilters
+    filter?: DocumentFilters
   ): Promise<AxiosResponse<ApiResponse<Chatbot>>> => {
-    return apiClient.post(ENDPOINTS.CHATBOT.GET_BY_ID.replace(':chatbotId', chatbotId), filter)
+    return apiClient.get(ENDPOINTS.CHATBOT.GET_BY_ID.replace(':chatbotId', chatbotId), {
+      params: filter,
+    })
   },
   /**
    * Get presigned URL for uploading profile picture to R2

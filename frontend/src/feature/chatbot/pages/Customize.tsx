@@ -48,7 +48,7 @@ export const Customize: React.FC = () => {
             )}
           </div>
           <div className="flex-1 min-h-0 overflow-auto">
-            {activeTab === 'content' && <div className="bg-amber-300"></div>}
+            {activeTab === 'content' && <div className="p-6">hello</div>}
             {activeTab === 'style' && (
               <div className="h-full">
                 Style panel Lorem Ipsum is simply dummy text of the printing and typesetting

@@ -8,11 +8,12 @@ export interface ChatbotSlice {
   currentChatbot: Chatbot | null
   documentFilters: DocumentFilters
 
-  getChatbots: () => void
+  getChatbots: () => Promise<void>
 
   setCurrentChatbot: (chatbotId: string) => void
   clearCurrentChatbot: () => void
-  getChatbot: (chatbotId?: string) => void
+  getChatbot: (chatbotId?: string) => Promise<void>
+  updateChatbot: (data: Partial<Chatbot>) => Promise<Chatbot>
 
   upsertChatbot: (chatbot: Chatbot) => void
   deleteChatbot: (id: string) => void
@@ -69,11 +70,32 @@ export const createChatbotSlice: StateCreator<ChatbotSlice> = (set, get) => ({
     }
     set({ currentChatbot: chatbot })
   },
+  updateChatbot: async (data: Partial<Chatbot>) => {
+    const state = get()
+    const id = state.currentChatbot?.id
+
+    if (!id) {
+      throw new Error('No current chatbot set')
+    }
+
+    const response = await chatbotService.updateChatbot(id, data)
+    const updatedChatbot = response.data.data
+
+    if (!updatedChatbot) {
+      throw new Error('Failed to update chatbot')
+    }
+
+    set(state => ({
+      currentChatbot: updatedChatbot,
+      chatbots: state.chatbots.map(bot => (bot.id === id ? updatedChatbot : bot)),
+    }))
+
+    return updatedChatbot
+  },
   addDocument: async () => {
     const state = get()
     if (!state.currentChatbot) return
 
-    // Refresh chatbot data from server to get updated state
     await state.getChatbot()
   },
   deleteDocument: async (documentId: string) => {
@@ -81,8 +103,6 @@ export const createChatbotSlice: StateCreator<ChatbotSlice> = (set, get) => ({
     if (!state.currentChatbot) return
 
     await chatbotService.deleteDocument(documentId)
-
-    // Refresh chatbot data from server to get updated state
     await state.getChatbot()
   },
   deleteMultipleDocuments: async (documentIds: string[]) => {
@@ -91,8 +111,6 @@ export const createChatbotSlice: StateCreator<ChatbotSlice> = (set, get) => ({
 
     const response = await chatbotService.deleteMultipleDocuments(documentIds)
     const deletedCount = response.data.data?.deletedCount || 0
-
-    // Refresh chatbot data from server to get updated state
     await state.getChatbot()
 
     return deletedCount

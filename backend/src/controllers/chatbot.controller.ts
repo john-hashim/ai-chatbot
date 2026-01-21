@@ -35,6 +35,79 @@ export const createChatbot = async (req: Request, res: Response, next: NextFunct
   }
 }
 
+export const updateChatbot = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const user = req.user
+    const { chatbotId } = req.params
+
+    if (!chatbotId) {
+      return res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'Chatbot ID is required',
+      } satisfies ApiResponse)
+    }
+
+    // Verify ownership
+    const existingChatbot = await prisma.chatbot.findUnique({
+      where: { id: chatbotId, userId: user.id },
+    })
+
+    if (!existingChatbot) {
+      return res.status(404).json({
+        status: ApiStatus.FAILURE,
+        message: 'Chatbot not found or you do not have permission',
+      } satisfies ApiResponse)
+    }
+
+    const allowedFields = [
+      'name',
+      'appearance',
+      'brandColor',
+      'brandColorForHeader',
+      'profilePicture',
+      'initialMessages',
+      'suggestedMessages',
+      'showSuggestedAfterFirst',
+      'messagePlaceholder',
+      'dismissibleNotice',
+      'footer',
+      'autoshowDelaySeconds',
+    ] as const
+
+    const updateData: Record<string, unknown> = {}
+
+    for (const field of allowedFields) {
+      if (req.body[field] !== undefined) {
+        if (field === 'name' && typeof req.body[field] === 'string') {
+          updateData[field] = req.body[field].trim()
+        } else {
+          updateData[field] = req.body[field]
+        }
+      }
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'No valid fields provided for update',
+      } satisfies ApiResponse)
+    }
+
+    const chatbot = await prisma.chatbot.update({
+      where: { id: chatbotId },
+      data: updateData,
+    })
+
+    res.status(200).json({
+      status: ApiStatus.SUCCESS,
+      data: chatbot,
+      message: 'Chatbot updated successfully',
+    } satisfies ApiResponse)
+  } catch (error) {
+    next(error)
+  }
+}
+
 export const deleteChatbot = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { chatbotId } = req.params
@@ -152,7 +225,7 @@ export const getChatbot = async (req: Request, res: Response, next: NextFunction
   try {
     const user = req.user
     const { chatbotId } = req.params
-    const { searchParam, sortBy } = req.body
+    const { searchParam, sortBy } = req.query as { searchParam?: string; sortBy?: string }
 
     if (!chatbotId) {
       return res.status(400).json({
@@ -728,7 +801,9 @@ export const trainDocuments = async (req: Request, res: Response, next: NextFunc
           chunksCreated: result.totalChunksCreated,
           failedDocuments: result.failedDocuments,
         },
-        message: result.error || `Training completed with ${result.failedDocuments.length} failed document(s)`,
+        message:
+          result.error ||
+          `Training completed with ${result.failedDocuments.length} failed document(s)`,
       } satisfies ApiResponse)
     }
   } catch (error) {
@@ -775,4 +850,3 @@ export const getTrainingStatus = async (req: Request, res: Response, next: NextF
     next(error)
   }
 }
-

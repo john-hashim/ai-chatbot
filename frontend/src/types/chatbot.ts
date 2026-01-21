@@ -20,5 +20,12 @@ export interface Chatbot extends ChatbotFormData {
   textCount?: number
   QandACount?: number
   totalSize: number
-  last_trained: Date | null
+  lastTrained: Date | null
+  initialMessages: string[]
+  suggestedMessages: string[]
+  showSuggestedAfterFirst: boolean
+  messagePlaceholder: string | null
+  dismissibleNotice: string | null
+  footer: string | null
+  autoshowDelaySeconds: number
 }

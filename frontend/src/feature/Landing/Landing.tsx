@@ -136,9 +136,9 @@ export const Landing: React.FC = () => {
                   <div>
                     <h3 className="text-sm font-semibold">{chatbot.name}</h3>
                     <p className="text-text-weak text-sm mt-1">
-                      {chatbot.last_trained === null
+                      {chatbot.lastTrained === null
                         ? 'Not Trained Yet'
-                        : `Last trained ${formatRelativeDate(chatbot.last_trained)}`}
+                        : `Last trained ${formatRelativeDate(chatbot.lastTrained)}`}
                     </p>
                   </div>
 
