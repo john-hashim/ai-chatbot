@@ -60,9 +60,13 @@ model Chatbot {
   suggestedMessages        String[]
   showSuggestedAfterFirst  Boolean    @default(false)
   messagePlaceholder       String?
-  dismissibleNotice        String?
-  footer                   String?
-  autoshowDelaySeconds     Int        @default(0)
+  dismissibleNotice          String?
+  footer                     String?
+  autoshowDelaySeconds       Int        @default(0)
+  autoshowInitialPopup       Boolean    @default(false)
+  chatIcon                   String?
+  chatBubbleButtonColor      String     @default("#000000")
+  chatBubbleButtonPosition   String     @default("right")
 
 
   @@index([userId])

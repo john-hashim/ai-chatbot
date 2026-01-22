@@ -1,7 +1,7 @@
 import type React from 'react'
-import { useFormContext, Controller, useFieldArray } from 'react-hook-form'
+import { useFormContext, Controller, useFieldArray, useWatch } from 'react-hook-form'
 import type { ChatbotFormValues } from '../pages/Customize'
-import { ActionIcon, Button, HoverCard, TextInput, Text, Switch } from '@mantine/core'
+import { ActionIcon, Button, HoverCard, TextInput, Text, Switch, NumberInput } from '@mantine/core'
 import { InfoIcon, X } from 'lucide-react'
 import { TextEditor } from '@/components/common/TextEditor'
 
@@ -10,6 +10,8 @@ export const Content: React.FC = () => {
     control,
     formState: { errors },
   } = useFormContext<ChatbotFormValues>()
+
+  const autoshowInitialPopup = useWatch({ control, name: 'autoshowInitialPopup' })
 
   const {
     fields: initialMessagesFields,
@@ -248,6 +250,41 @@ export const Content: React.FC = () => {
             />
           )}
         />
+      </div>
+      <div className="py-6">
+        <div className="flex justify-between items-center">
+          <p className="text-text-secondary w-3/4 font-medium text-sm">
+            Auto show initial messages pop-ups after set duration ( in seconds )
+          </p>
+          <Controller
+            name="autoshowInitialPopup"
+            control={control}
+            render={({ field: { value, onChange } }) => (
+              <div className="flex items-center gap-2">
+                <Switch
+                  checked={value}
+                  onChange={event => onChange(event.currentTarget.checked)}
+                  color="teal"
+                />
+              </div>
+            )}
+          />
+        </div>
+        {autoshowInitialPopup && (
+          <Controller
+            name="autoshowDelaySeconds"
+            control={control}
+            render={({ field }) => (
+              <NumberInput
+                value={field.value ?? 0}
+                onChange={value => field.onChange(value === '' ? 0 : value)}
+                className="mt-4"
+                min={0}
+                placeholder="0"
+              />
+            )}
+          />
+        )}
       </div>
     </div>
   )

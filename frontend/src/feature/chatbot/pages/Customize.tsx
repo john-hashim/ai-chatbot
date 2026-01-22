@@ -19,6 +19,7 @@ export type ChatbotFormValues = Pick<
   | 'dismissibleNotice'
   | 'footer'
   | 'autoshowDelaySeconds'
+  | 'autoshowInitialPopup'
 >
 
 export const Customize: React.FC = () => {
@@ -41,6 +42,7 @@ export const Customize: React.FC = () => {
       dismissibleNotice: currentChatbot?.dismissibleNotice ?? '',
       footer: currentChatbot?.footer ?? '',
       autoshowDelaySeconds: currentChatbot?.autoshowDelaySeconds ?? 0,
+      autoshowInitialPopup: currentChatbot?.autoshowInitialPopup ?? false,
     },
   })
 
@@ -68,6 +70,7 @@ export const Customize: React.FC = () => {
         dismissibleNotice: currentChatbot?.dismissibleNotice ?? '',
         footer: currentChatbot?.footer ?? '',
         autoshowDelaySeconds: currentChatbot?.autoshowDelaySeconds ?? 0,
+        autoshowInitialPopup: currentChatbot?.autoshowInitialPopup ?? false,
       })
     }
   }, [currentChatbot, reset])

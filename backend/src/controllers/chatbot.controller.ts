@@ -72,6 +72,10 @@ export const updateChatbot = async (req: Request, res: Response, next: NextFunct
       'dismissibleNotice',
       'footer',
       'autoshowDelaySeconds',
+      'autoshowInitialPopup',
+      'chatIcon',
+      'chatBubbleButtonColor',
+      'chatBubbleButtonPosition',
     ] as const
 
     const updateData: Record<string, unknown> = {}

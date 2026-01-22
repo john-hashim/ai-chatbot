@@ -16,6 +16,7 @@ import {
   Checkbox,
   Select,
   Tabs,
+  NumberInput,
 } from '@mantine/core'
 import { Notifications } from '@mantine/notifications'
 import { ModalsProvider } from '@mantine/modals'
@@ -74,6 +75,11 @@ const theme = createTheme({
       },
     }),
     TextInput: TextInput.extend({
+      classNames: {
+        input: classes.input,
+      },
+    }),
+    NumberInput: NumberInput.extend({
       classNames: {
         input: classes.input,
       },

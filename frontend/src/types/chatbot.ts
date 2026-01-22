@@ -28,4 +28,8 @@ export interface Chatbot extends ChatbotFormData {
   dismissibleNotice: string | null
   footer: string | null
   autoshowDelaySeconds: number
+  autoshowInitialPopup: boolean
+  chatIcon: string | null
+  chatBubbleButtonColor: string
+  chatBubbleButtonPosition: 'left' | 'right'
 }
