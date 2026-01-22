@@ -1,11 +1,16 @@
 /* React Quill Editor Styles */
+.editor {
+  overflow: visible !important;
+}
+
 .editor :global(.ql-container) {
   border: 1px solid var(--color-border-week) !important;
   border-top: none !important;
   border-bottom-left-radius: 8px !important;
   border-bottom-right-radius: 8px !important;
   height: inherit !important;
-  min-height: 200px;
+  min-height: var(--editor-min-height, 150px);
+  overflow: visible !important;
 }
 
 .editor :global(.ql-editor) {
@@ -19,4 +24,94 @@
   border-top-left-radius: 8px !important;
   border-top-right-radius: 8px !important;
   background: var(--color-background-dark-week) !important;
+  position: relative;
+  overflow: visible !important;
+}
+
+/* Link tooltip popup */
+.editor :global(.ql-tooltip) {
+  z-index: 100 !important;
+}
+
+.editor :global(.ql-snow .ql-tooltip) {
+  left: 0 !important;
+  transform: none !important;
+}
+
+/* Simple variant - add separators between toolbar groups */
+.editorSimple :global(.ql-toolbar .ql-formats) {
+  margin-right: 12px !important;
+  padding-right: 12px !important;
+  border-right: 1px solid var(--color-border-week);
+}
+
+.editorSimple :global(.ql-toolbar .ql-formats:last-of-type) {
+  margin-right: 0 !important;
+  padding-right: 12px !important;
+  border-right: 1px solid var(--color-border-week) !important;
+}
+
+/* Allow toolbar to wrap */
+.editor :global(.ql-toolbar) {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 8px 0 !important;
+}
+
+/* Character count in toolbar */
+.charCount {
+  display: inline-flex;
+  align-items: center;
+  font-size: 12px;
+  color: #6b7280;
+  height: 24px;
+}
+
+.charCountWithBorder {
+  margin-left: 12px;
+  padding-left: 12px;
+  border-left: 1px solid var(--color-border-week);
+}
+
+/* Undo/Redo button icons */
+.editor :global(.ql-undo),
+.editor :global(.ql-redo) {
+  width: 28px !important;
+  height: 24px !important;
+}
+
+.editor :global(.ql-undo::before) {
+  content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23444' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 7v6h6'/%3E%3Cpath d='M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13'/%3E%3C/svg%3E");
+}
+
+.editor :global(.ql-redo::before) {
+  content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23444' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 7v6h-6'/%3E%3Cpath d='M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7'/%3E%3C/svg%3E");
+}
+
+/* Emoji button in toolbar */
+.emojiButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8px;
+  border: none;
+  border-left: 1px solid var(--color-border-week);
+  background: transparent;
+  font-size: 16px;
+  cursor: pointer;
+  height: 24px;
+}
+
+.emojiButton:hover {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
+}
+
+/* Emoji picker wrapper */
+.emojiPickerWrapper {
+  position: absolute;
+  top: 45px;
+  right: 0;
+  z-index: 100;
 }

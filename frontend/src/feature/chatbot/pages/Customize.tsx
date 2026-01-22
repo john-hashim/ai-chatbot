@@ -8,7 +8,16 @@ import type { Chatbot } from '@/types/chatbot'
 import { useStore } from '@/store'
 import { FormProvider, useForm } from 'react-hook-form'
 
-export type ChatbotFormValues = Pick<Chatbot, 'name' | 'brandColor' | 'initialMessages'>
+export type ChatbotFormValues = Pick<
+  Chatbot,
+  | 'name'
+  | 'brandColor'
+  | 'initialMessages'
+  | 'suggestedMessages'
+  | 'showSuggestedAfterFirst'
+  | 'messagePlaceholder'
+  | 'dismissibleNotice'
+>
 
 export const Customize: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'content' | 'style' | 'preview'>('content')
@@ -21,7 +30,13 @@ export const Customize: React.FC = () => {
     defaultValues: {
       name: currentChatbot?.name ?? '',
       brandColor: currentChatbot?.brandColor ?? '#2563eb',
-      initialMessages: currentChatbot?.initialMessages ?? ['Hi! What can I help you with?'],
+      initialMessages: currentChatbot?.initialMessages?.length
+        ? currentChatbot.initialMessages
+        : ['Hi! What can I help you with?'],
+      suggestedMessages: currentChatbot?.suggestedMessages ?? [],
+      showSuggestedAfterFirst: currentChatbot?.showSuggestedAfterFirst ?? false,
+      messagePlaceholder: currentChatbot?.messagePlaceholder ?? '',
+      dismissibleNotice: currentChatbot?.dismissibleNotice ?? '',
     },
   })
 
@@ -40,7 +55,13 @@ export const Customize: React.FC = () => {
       reset({
         name: currentChatbot.name,
         brandColor: currentChatbot.brandColor,
-        initialMessages: currentChatbot.initialMessages ?? ['Hi! What can I help you with?'],
+        initialMessages: currentChatbot.initialMessages?.length
+          ? currentChatbot.initialMessages
+          : ['Hi! What can I help you with?'],
+        suggestedMessages: currentChatbot?.suggestedMessages ?? [],
+        showSuggestedAfterFirst: currentChatbot?.showSuggestedAfterFirst ?? false,
+        messagePlaceholder: currentChatbot?.messagePlaceholder ?? '',
+        dismissibleNotice: currentChatbot?.dismissibleNotice ?? '',
       })
     }
   }, [currentChatbot, reset])
@@ -48,11 +69,12 @@ export const Customize: React.FC = () => {
   const onSave = async (data: ChatbotFormValues) => {
     try {
       setIsSaving(true)
-      // Filter out empty messages
-      const filteredMessages = data.initialMessages.filter(msg => msg.trim())
+      const filteredInitialMessages = data.initialMessages.filter(msg => msg.trim())
+      const filteredSuggestedMessages = data.suggestedMessages.filter(msg => msg.trim())
       await updateChatbot({
         ...data,
-        initialMessages: filteredMessages,
+        initialMessages: filteredInitialMessages,
+        suggestedMessages: filteredSuggestedMessages,
       })
     } catch (error) {
       console.error('Failed to update chatbot:', error)
@@ -68,7 +90,7 @@ export const Customize: React.FC = () => {
   return (
     <FormProvider {...methods}>
       <div className="flex h-full">
-        <div className="lg:w-[500px] border-r border-r-border-week w-full h-full flex flex-col">
+        <div className="lg:w-[500px] border-r border-r-border-week w-full h-full flex flex-col relative">
           <p className="py-5 px-6 font-semibold text-2xl">Customize your chatbot</p>
           <div className="flex-1 flex flex-col min-h-0">
             <div className="flex border-b border-border-week">
@@ -130,7 +152,7 @@ export const Customize: React.FC = () => {
             {styles => (
               <div
                 style={styles}
-                className="px-6 py-4 border-t border-t-border-week rounded-t-2xl bg-background shadow-[0_0_16px_rgb(0_0_0/0.1)]"
+                className="absolute bottom-0 left-0 right-0 px-6 py-4 border-t border-t-border-week rounded-t-2xl bg-white shadow-[0_0_16px_rgb(0_0_0/0.1)]"
               >
                 <p className="text-sm mb-3">You have unsaved changes. Do you wish to save them?</p>
                 <div className="flex gap-2">
