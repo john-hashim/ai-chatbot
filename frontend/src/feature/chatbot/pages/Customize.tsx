@@ -180,7 +180,7 @@ export const Customize: React.FC = () => {
             {styles => (
               <div
                 style={styles}
-                className="absolute bottom-0 left-0 right-0 px-6 py-4 border-t border-t-border-week rounded-t-2xl bg-white shadow-[0_0_16px_rgb(0_0_0/0.1)]"
+                className="absolute z-1 bottom-0 left-0 right-0 px-6 py-4 border-t border-t-border-week rounded-t-2xl bg-white shadow-[0_0_16px_rgb(0_0_0/0.1)]"
               >
                 <p className="text-sm mb-3">You have unsaved changes. Do you wish to save them?</p>
                 <div className="flex gap-2">

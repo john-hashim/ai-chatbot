@@ -168,7 +168,7 @@ export const Style: React.FC = () => {
       </div>
       <div className="py-6 border-b border-border-week">
         <div>
-          <p className="text-text-secondary text-sm">Profile Picture</p>
+          <p className="text-text-secondary font-medium text-sm">Profile Picture</p>
           <div className="flex justify-between items-center mt-4">
             <p className="text-text-weak text-[12px]">JPG, PNG, and SVG up to 1MB</p>
             <div>
@@ -211,7 +211,7 @@ export const Style: React.FC = () => {
           </div>
         </div>
         <div className="mt-6">
-          <p className="text-text-secondary text-sm">Chat Icon</p>
+          <p className="text-text-secondary font-medium text-sm">Chat Icon</p>
           <div className="flex justify-between items-center mt-4">
             <p className="text-text-weak text-[12px]">JPG, PNG, and SVG up to 1MB</p>
             <div>
