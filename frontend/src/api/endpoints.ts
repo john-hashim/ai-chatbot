@@ -14,6 +14,7 @@ export const ENDPOINTS = {
     GET_ALL: 'chatbot/chatbots',
     GET_BY_ID: 'chatbot/:chatbotId',
     UPLOAD_URL: 'chatbot/upload-url',
+    DELETE_FILE: 'chatbot/delete-file',
     UPLOAD_DOCUMENT: 'chatbot/:chatbotId/upload-document',
     UPLOAD_TEXT: 'chatbot/:chatbotId/upload-text',
     CRAWL_WEBSITE: 'chatbot/:chatbotId/crawl-website',

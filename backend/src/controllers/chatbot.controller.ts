@@ -341,6 +341,29 @@ export const getPresignedUploadUrl = async (req: Request, res: Response, next: N
   }
 }
 
+export const deleteFile = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { fileUrl } = req.body
+
+    if (!fileUrl) {
+      return res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'fileUrl is required',
+      } satisfies ApiResponse)
+    }
+
+    await r2Service.deleteFile(fileUrl)
+
+    res.status(200).json({
+      status: ApiStatus.SUCCESS,
+      data: null,
+      message: 'File deleted successfully',
+    } satisfies ApiResponse)
+  } catch (error) {
+    next(error)
+  }
+}
+
 export const uploadText = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { name, type, subtype, content, size, metadata } = req.body

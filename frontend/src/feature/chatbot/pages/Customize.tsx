@@ -7,6 +7,7 @@ import { Content } from '../components/Content'
 import type { Chatbot } from '@/types/chatbot'
 import { useStore } from '@/store'
 import { FormProvider, useForm } from 'react-hook-form'
+import { showLoadingNotification } from '@/utils/notifications'
 
 export type ChatbotFormValues = Pick<
   Chatbot,
@@ -24,6 +25,7 @@ export type ChatbotFormValues = Pick<
   | 'brandColorForHeader'
   | 'chatBubbleButtonColor'
   | 'profilePicture'
+  | 'chatIcon'
 >
 
 export const Customize: React.FC = () => {
@@ -51,6 +53,7 @@ export const Customize: React.FC = () => {
       brandColorForHeader: currentChatbot?.brandColorForHeader ?? true,
       chatBubbleButtonColor: currentChatbot?.chatBubbleButtonColor ?? '#000000',
       profilePicture: currentChatbot?.profilePicture ?? null,
+      chatIcon: currentChatbot?.chatIcon ?? null,
     },
   })
 
@@ -83,11 +86,13 @@ export const Customize: React.FC = () => {
         brandColorForHeader: currentChatbot?.brandColorForHeader ?? true,
         chatBubbleButtonColor: currentChatbot?.chatBubbleButtonColor ?? '#000000',
         profilePicture: currentChatbot?.profilePicture ?? null,
+        chatIcon: currentChatbot?.chatIcon ?? null,
       })
     }
   }, [currentChatbot, reset])
 
   const onSave = async (data: ChatbotFormValues) => {
+    const notification = showLoadingNotification('Saving', 'Saving chatbot...')
     try {
       setIsSaving(true)
       const filteredInitialMessages = data.initialMessages.filter(msg => msg.trim())
@@ -97,8 +102,10 @@ export const Customize: React.FC = () => {
         initialMessages: filteredInitialMessages,
         suggestedMessages: filteredSuggestedMessages,
       })
+      notification.success('Chatbot saved successfully')
     } catch (error) {
       console.error('Failed to update chatbot:', error)
+      notification.error('Failed to save chatbot. Please try again.')
     } finally {
       setIsSaving(false)
     }

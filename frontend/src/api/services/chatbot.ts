@@ -77,6 +77,14 @@ export const chatbotService = {
     return apiClient.post(ENDPOINTS.CHATBOT.UPLOAD_URL, { fileName, fileType, directory })
   },
   /**
+   * Delete a file from R2 storage
+   * @param fileUrl - URL of the file to delete
+   * @returns Promise with delete response
+   */
+  deleteFile: (fileUrl: string): Promise<AxiosResponse<ApiResponse<null>>> => {
+    return apiClient.post(ENDPOINTS.CHATBOT.DELETE_FILE, { fileUrl })
+  },
+  /**
    * Upload documents (PDF, DOC, DOCX, TXT) to backend for processing
    * @param files - Array of files to upload
    * @returns Promise with upload response

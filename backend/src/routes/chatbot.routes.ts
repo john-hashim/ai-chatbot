@@ -15,6 +15,7 @@ router.post(
   authMiddleware.authenticateToken,
   chatbotController.getPresignedUploadUrl
 )
+router.post('/delete-file', authMiddleware.authenticateToken, chatbotController.deleteFile)
 router.post(
   '/:chatbotId/upload-document',
   authMiddleware.authenticateToken,

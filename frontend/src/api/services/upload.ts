@@ -33,3 +33,11 @@ export const uploadImageToR2 = async (file: File, directory: string): Promise<st
 
   return fileUrl
 }
+
+/**
+ * Deletes an image from Cloudflare R2
+ * @param fileUrl - The URL of the file to delete
+ */
+export const deleteImageFromR2 = async (fileUrl: string): Promise<void> => {
+  await chatbotService.deleteFile(fileUrl)
+}
