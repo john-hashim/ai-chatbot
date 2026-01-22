@@ -17,6 +17,8 @@ export type ChatbotFormValues = Pick<
   | 'showSuggestedAfterFirst'
   | 'messagePlaceholder'
   | 'dismissibleNotice'
+  | 'footer'
+  | 'autoshowDelaySeconds'
 >
 
 export const Customize: React.FC = () => {
@@ -37,6 +39,8 @@ export const Customize: React.FC = () => {
       showSuggestedAfterFirst: currentChatbot?.showSuggestedAfterFirst ?? false,
       messagePlaceholder: currentChatbot?.messagePlaceholder ?? '',
       dismissibleNotice: currentChatbot?.dismissibleNotice ?? '',
+      footer: currentChatbot?.footer ?? '',
+      autoshowDelaySeconds: currentChatbot?.autoshowDelaySeconds ?? 0,
     },
   })
 
@@ -62,6 +66,8 @@ export const Customize: React.FC = () => {
         showSuggestedAfterFirst: currentChatbot?.showSuggestedAfterFirst ?? false,
         messagePlaceholder: currentChatbot?.messagePlaceholder ?? '',
         dismissibleNotice: currentChatbot?.dismissibleNotice ?? '',
+        footer: currentChatbot?.footer ?? '',
+        autoshowDelaySeconds: currentChatbot?.autoshowDelaySeconds ?? 0,
       })
     }
   }, [currentChatbot, reset])

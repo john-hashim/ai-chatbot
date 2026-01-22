@@ -44,6 +44,19 @@ export const TextEditor: React.FC<TextEditorProps> = ({
     return temp.textContent?.length || 0
   }
 
+  const isEmptyContent = (html: string) => {
+    if (!html) return true
+    const temp = document.createElement('div')
+    temp.innerHTML = html
+    const text = temp.textContent || ''
+    return text.trim().length === 0
+  }
+
+  const handleChange = (newValue: string) => {
+    // Normalize empty content to empty string to prevent form dirty state issues
+    onChange(isEmptyContent(newValue) ? '' : newValue)
+  }
+
   const charCount = getPlainTextLength(value)
 
   const handleEmojiButtonClick = useCallback(() => {
@@ -149,7 +162,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
           ref={quillRef}
           theme="snow"
           value={value}
-          onChange={onChange}
+          onChange={handleChange}
           modules={modules}
           placeholder={placeholder}
         />

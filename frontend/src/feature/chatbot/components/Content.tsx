@@ -205,7 +205,7 @@ export const Content: React.FC = () => {
         />
       </div>
       <div className="border-b border-border-week"></div>
-      <div className="py-6">
+      <div className="py-6 border-b border-border-week">
         <p className="text-text-secondary font-medium text-sm">Dismissible notice</p>
         <Controller
           name="dismissibleNotice"
@@ -214,7 +214,29 @@ export const Content: React.FC = () => {
             <TextEditor
               value={field.value ?? ''}
               onChange={field.onChange}
-              placeholder="Enter dismissible notice..."
+              variant="simple"
+              showCharCount
+              placeholder=""
+              maxLength={200}
+              showEmoji={false}
+              minHeight="50px"
+              className="mt-2"
+              showUndoRedo
+              infoText="You can use this to show a dismissible notice that automatically disappears after the user sends a message."
+            />
+          )}
+        />
+      </div>
+      <div className="py-6 border-b border-border-week">
+        <p className="text-text-secondary font-medium text-sm">Footer</p>
+        <Controller
+          name="footer"
+          control={control}
+          render={({ field }) => (
+            <TextEditor
+              value={field.value ?? ''}
+              onChange={field.onChange}
+              placeholder=""
               variant="simple"
               showCharCount
               maxLength={200}
@@ -222,7 +244,7 @@ export const Content: React.FC = () => {
               minHeight="50px"
               className="mt-2"
               showUndoRedo
-              infoText="You can use this to show a dismissible notice that automatically disappears after the user sends a message."
+              infoText="You can use this to display a disclaimer or include a link to your privacy policy."
             />
           )}
         />
