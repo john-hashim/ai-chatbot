@@ -20,6 +20,10 @@ export type ChatbotFormValues = Pick<
   | 'footer'
   | 'autoshowDelaySeconds'
   | 'autoshowInitialPopup'
+  | 'appearance'
+  | 'brandColorForHeader'
+  | 'chatBubbleButtonColor'
+  | 'profilePicture'
 >
 
 export const Customize: React.FC = () => {
@@ -43,6 +47,10 @@ export const Customize: React.FC = () => {
       footer: currentChatbot?.footer ?? '',
       autoshowDelaySeconds: currentChatbot?.autoshowDelaySeconds ?? 0,
       autoshowInitialPopup: currentChatbot?.autoshowInitialPopup ?? false,
+      appearance: currentChatbot?.appearance ?? 'light',
+      brandColorForHeader: currentChatbot?.brandColorForHeader ?? true,
+      chatBubbleButtonColor: currentChatbot?.chatBubbleButtonColor ?? '#000000',
+      profilePicture: currentChatbot?.profilePicture ?? null,
     },
   })
 
@@ -71,6 +79,10 @@ export const Customize: React.FC = () => {
         footer: currentChatbot?.footer ?? '',
         autoshowDelaySeconds: currentChatbot?.autoshowDelaySeconds ?? 0,
         autoshowInitialPopup: currentChatbot?.autoshowInitialPopup ?? false,
+        appearance: currentChatbot?.appearance ?? 'light',
+        brandColorForHeader: currentChatbot?.brandColorForHeader ?? true,
+        chatBubbleButtonColor: currentChatbot?.chatBubbleButtonColor ?? '#000000',
+        profilePicture: currentChatbot?.profilePicture ?? null,
       })
     }
   }, [currentChatbot, reset])
