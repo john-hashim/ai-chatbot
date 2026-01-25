@@ -26,6 +26,7 @@ export type ChatbotFormValues = Pick<
   | 'chatBubbleButtonColor'
   | 'profilePicture'
   | 'chatIcon'
+  | 'chatBubbleButtonPosition'
 >
 
 export const Customize: React.FC = () => {
@@ -54,6 +55,7 @@ export const Customize: React.FC = () => {
       chatBubbleButtonColor: currentChatbot?.chatBubbleButtonColor ?? '#000000',
       profilePicture: currentChatbot?.profilePicture ?? null,
       chatIcon: currentChatbot?.chatIcon ?? null,
+      chatBubbleButtonPosition: currentChatbot?.chatBubbleButtonPosition ?? 'left',
     },
   })
 
@@ -87,6 +89,7 @@ export const Customize: React.FC = () => {
         chatBubbleButtonColor: currentChatbot?.chatBubbleButtonColor ?? '#000000',
         profilePicture: currentChatbot?.profilePicture ?? null,
         chatIcon: currentChatbot?.chatIcon ?? null,
+        chatBubbleButtonPosition: currentChatbot?.chatBubbleButtonPosition ?? 'left',
       })
     }
   }, [currentChatbot, reset])
@@ -207,7 +210,9 @@ export const Customize: React.FC = () => {
             )}
           </Transition>
         </div>
-        <div className="flex-1 h-full hidden lg:block bg-[radial-gradient(circle,#ebebeb_2px,#fafafa_0)] bg-size-[30px_30px]"></div>
+        <div className="flex-1 h-full hidden lg:block bg-[radial-gradient(circle,#ebebeb_2px,#fafafa_0)] bg-size-[30px_30px]">
+          <Preview />
+        </div>
       </div>
     </FormProvider>
   )

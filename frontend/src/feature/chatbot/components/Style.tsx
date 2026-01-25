@@ -10,6 +10,7 @@ import {
   SegmentedControl,
   Switch,
   Tooltip,
+  Radio,
 } from '@mantine/core'
 import { ImageUp, Loader2, Moon, Sun, X } from 'lucide-react'
 import { useRef } from 'react'
@@ -135,7 +136,7 @@ export const Style: React.FC = () => {
   }
 
   return (
-    <div className="p-6">
+    <div className="p-6 pb-28">
       <div className="flex justify-between items-center pb-6 border-b border-border-week">
         <p className="text-text-secondary font-medium text-sm">Appearance</p>
         <Controller
@@ -317,6 +318,20 @@ export const Style: React.FC = () => {
             />
           </div>
         </div>
+      </div>
+      <div className="py-6">
+        <Controller
+          name="chatBubbleButtonPosition"
+          control={control}
+          render={({ field }) => (
+            <Radio.Group {...field} name="chatButtonBubble" label="Align chat button bubble">
+              <Group mt="xs">
+                <Radio value="right" label="Right" color="dark.8" className="mt-2" />
+                <Radio value="left" label="Left" color="dark.8" className="mt-2" />
+              </Group>
+            </Radio.Group>
+          )}
+        />
       </div>
     </div>
   )
