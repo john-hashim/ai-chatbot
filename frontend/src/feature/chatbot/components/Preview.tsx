@@ -191,7 +191,7 @@ export const Preview: React.FC = () => {
                   }`}
                 >
                   <div
-                    className={`flex-1 overflow-x-hidden whitespace-pre-wrap wrap-break-word text-xs font-medium leading-5 **:animate-none ${
+                    className={`no-animate flex-1 overflow-x-hidden whitespace-pre-wrap wrap-break-word text-xs font-medium leading-5 ${
                       isDark ? 'text-zinc-400' : 'text-zinc-500'
                     }`}
                     dangerouslySetInnerHTML={{ __html: dismissibleNotice }}
@@ -232,12 +232,12 @@ export const Preview: React.FC = () => {
               {/* Footer */}
               {footer && (
                 <footer
-                  className={`flex min-h-10 w-full max-w-full shrink-0 items-center justify-center overflow-hidden px-4 pb-4 text-xs font-medium leading-[1.4] ${
+                  className={`no-animate flex min-h-10 w-full max-w-full shrink-0 items-center justify-center overflow-hidden px-4 pb-4 text-xs font-medium leading-[1.4] ${
                     isDark ? 'text-zinc-500' : 'text-zinc-400'
                   }`}
                 >
                   <div
-                    className="w-full overflow-x-hidden whitespace-pre-wrap wrap-break-word text-center **:animate-none"
+                    className="w-full overflow-x-hidden whitespace-pre-wrap wrap-break-word text-center"
                     dangerouslySetInnerHTML={{ __html: footer }}
                   />
                 </footer>

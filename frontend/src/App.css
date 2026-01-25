@@ -60,3 +60,10 @@ th {
 .div-fade-animation {
   @apply animate-in fade-in duration-300;
 }
+
+/* Disable animations - use on elements that should not animate */
+.no-animate,
+.no-animate * {
+  animation: none !important;
+  opacity: 1 !important;
+}

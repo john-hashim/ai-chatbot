@@ -106,7 +106,7 @@ export const Landing: React.FC = () => {
               <div
                 onClick={() => {
                   setCurrentChatbot(chatbot.id)
-                  navigate(`/chatbot/${chatbot.id}`)
+                  navigate(`/chatbot/${chatbot.id}/playground`)
                 }}
                 key={chatbot.id}
                 className="border border-border-week hover:cursor-pointer div-fade-animation hover:border-border-strong rounded-lg overflow-hidden relative max-w-sm"
