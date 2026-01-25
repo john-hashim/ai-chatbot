@@ -79,8 +79,8 @@ export const ChatbotSidebar: React.FC = () => {
   const activePath = currentPath === chatbotId ? 'playground' : currentPath
   const activeIndex = navItems.findIndex(item => item.path === activePath)
 
-  // Item height (padding + content + gap) for indicator positioning
-  const itemHeight = 36
+  // Item height (padding 6px*2 + icon 18px = 30px) + gap (4px) for indicator positioning
+  const itemHeight = 36.3
 
   const handleNavClick = (path: string) => {
     navigate(`/chatbot/${chatbotId}/${path}`)
