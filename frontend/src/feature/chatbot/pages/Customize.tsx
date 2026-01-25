@@ -118,6 +118,21 @@ export const Customize: React.FC = () => {
     reset()
   }
 
+  const canSave = nameValue?.trim() && initialMessages?.[0]?.trim()
+
+  // Save on Enter when popup is visible (isDirty)
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Enter' && isDirty && canSave && !isSaving) {
+        event.preventDefault()
+        handleSubmit(onSave)()
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  })
+
   return (
     <FormProvider {...methods}>
       <div className="flex h-full">
@@ -200,7 +215,7 @@ export const Customize: React.FC = () => {
                     size="xs"
                     onClick={handleSubmit(onSave)}
                     loading={isSaving}
-                    disabled={!nameValue?.trim() || !initialMessages?.[0]?.trim()}
+                    disabled={!canSave}
                     className="flex-1"
                   >
                     Save

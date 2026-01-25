@@ -18,6 +18,7 @@ interface TextEditorProps {
   showUndoRedo?: boolean
   variant?: 'full' | 'simple'
   infoText?: string
+  enterEnabled?: boolean // When false, only Shift+Enter creates new line
 }
 
 export const TextEditor: React.FC<TextEditorProps> = ({
@@ -32,6 +33,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
   showUndoRedo = false,
   variant = 'full',
   infoText,
+  enterEnabled = true,
 }) => {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const quillRef = useRef<ReactQuill>(null)
@@ -131,13 +133,25 @@ export const TextEditor: React.FC<TextEditorProps> = ({
           },
         }),
       },
+      keyboard: {
+        bindings: {
+          // When enterEnabled is false, block Enter key (only Shift+Enter works)
+          ...(!enterEnabled && {
+            enter: {
+              key: 'Enter',
+              shiftKey: false,
+              handler: () => false, // Block Enter
+            },
+          }),
+        },
+      },
       history: {
         delay: 1000,
         maxStack: 50,
         userOnly: true,
       },
     }),
-    [variant, showUndoRedo]
+    [variant, showUndoRedo, enterEnabled]
   )
 
   const handleEmojiClick = (emojiData: EmojiClickData) => {

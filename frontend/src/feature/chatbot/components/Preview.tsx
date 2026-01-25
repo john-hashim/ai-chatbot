@@ -93,6 +93,10 @@ export const Preview: React.FC = () => {
               className={`relative flex-1 overflow-y-auto px-5 pt-5 ${
                 isDark ? 'shadow-[inset_0_4px_6px_-1px_rgba(0,0,0,0.3)]' : 'shadow-inner'
               }`}
+              style={{
+                scrollbarColor: isDark ? '#52525b #27272a' : undefined,
+                scrollbarWidth: 'thin',
+              }}
             >
               <div className="flex flex-col gap-5">
                 {/* Initial Messages (Bot) */}

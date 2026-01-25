@@ -224,6 +224,7 @@ export const Content: React.FC = () => {
               minHeight="50px"
               className="mt-2"
               showUndoRedo
+              enterEnabled={false}
               infoText="You can use this to show a dismissible notice that automatically disappears after the user sends a message."
             />
           )}
@@ -246,6 +247,7 @@ export const Content: React.FC = () => {
               minHeight="50px"
               className="mt-2"
               showUndoRedo
+              enterEnabled={false}
               infoText="You can use this to display a disclaimer or include a link to your privacy policy."
             />
           )}
