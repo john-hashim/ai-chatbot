@@ -2,9 +2,25 @@ import { useState } from 'react'
 import { useNavigate, useLocation, useParams } from 'react-router-dom'
 import { Stack, UnstyledButton, Tooltip, Text, Overlay } from '@mantine/core'
 import { useMediaQuery } from '@mantine/hooks'
-import { Sliders, Database, MessageSquareText, ChartLine, Rocket, Menu } from 'lucide-react'
+import {
+  Sliders,
+  Database,
+  MessageSquareText,
+  ChartLine,
+  Rocket,
+  Menu,
+  Play,
+  Users,
+  Zap,
+} from 'lucide-react'
 
 const navItems = [
+  {
+    icon: Play,
+    label: 'Playground',
+    path: 'playground',
+    description: 'Test your chatbot in real-time',
+  },
   {
     icon: Sliders,
     label: 'Customize',
@@ -30,6 +46,18 @@ const navItems = [
     description: 'Check performance',
   },
   {
+    icon: Users,
+    label: 'Contacts',
+    path: 'contacts',
+    description: 'Manage your chatbot contacts',
+  },
+  {
+    icon: Zap,
+    label: 'Automations',
+    path: 'automations',
+    description: 'Set up automated workflows',
+  },
+  {
     icon: Rocket,
     label: 'Deploy',
     path: 'deploy',
@@ -47,8 +75,8 @@ export const ChatbotSidebar: React.FC = () => {
 
   const pathSegments = location.pathname.split('/')
   const currentPath = pathSegments[pathSegments.length - 1]
-  // If we're at /chatbot/:id (no sub-path), default to 'customize'
-  const activePath = currentPath === chatbotId ? 'customize' : currentPath
+  // If we're at /chatbot/:id (no sub-path), default to 'playground'
+  const activePath = currentPath === chatbotId ? 'playground' : currentPath
   const activeIndex = navItems.findIndex(item => item.path === activePath)
 
   // Item height (padding + content + gap) for indicator positioning

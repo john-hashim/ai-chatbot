@@ -1,2 +1,11 @@
 export { ChatbotDashboard } from './ChatbotDashboard'
-export { Customize, KnowledgeBase, Chats, Analytics, Deploy } from './pages'
+export {
+  Playground,
+  Customize,
+  KnowledgeBase,
+  Chats,
+  Analytics,
+  Contacts,
+  Automations,
+  Deploy,
+} from './pages'

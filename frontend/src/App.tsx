@@ -33,10 +33,13 @@ import { ChatbotBasicSetup } from './feature/create-chatbot/ChatbotBasicSetup'
 import { ChatbotKnowledgeBaseSetup } from './feature/create-chatbot/ChatbotKnowledgeBaseSetup'
 import {
   ChatbotDashboard,
+  Playground,
   Customize,
   KnowledgeBase,
   Chats,
   Analytics,
+  Contacts,
+  Automations,
   Deploy,
 } from './feature/chatbot'
 
@@ -158,11 +161,14 @@ function AppRoutes() {
           element={<ChatbotKnowledgeBaseSetup />}
         />
         <Route path="/chatbot/:chatbotId" element={<ChatbotDashboard />}>
-          <Route index element={<Customize />} />
+          <Route index element={<Playground />} />
+          <Route path="playground" element={<Playground />} />
           <Route path="customize" element={<Customize />} />
           <Route path="knowledge-base" element={<KnowledgeBase />} />
           <Route path="chats" element={<Chats />} />
           <Route path="analytics" element={<Analytics />} />
+          <Route path="contacts" element={<Contacts />} />
+          <Route path="automations" element={<Automations />} />
           <Route path="deploy" element={<Deploy />} />
         </Route>
       </Route>
