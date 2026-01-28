@@ -43,34 +43,64 @@ model Session {
 }
 
 model Chatbot {
-  id                   String     @id @default(cuid())
-  userId               String
-  name                 String     @unique
-  appearance           String     @default("light") // 'light' or 'dark'
-  brandColor           String
-  brandColorForHeader  Boolean    @default(false)
-  profilePicture       String?
-  createdAt            DateTime   @default(now())
-  updatedAt            DateTime   @updatedAt
-  user                 User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  documents            Document[]
-  totalSize                Int        @default(0)
+  id                       String        @id @default(cuid())
+  userId                   String
+  name                     String        @unique
+  appearance               String        @default("light") // 'light' or 'dark'
+  brandColor               String
+  brandColorForHeader      Boolean       @default(false)
+  profilePicture           String?
+  createdAt                DateTime      @default(now())
+  updatedAt                DateTime      @updatedAt
+  user                     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  documents                Document[]
+  chatSessions             ChatSession[]
+  totalSize                Int           @default(0)
   lastTrained              DateTime?
   initialMessages          String[]
   suggestedMessages        String[]
-  showSuggestedAfterFirst  Boolean    @default(false)
+  showSuggestedAfterFirst  Boolean       @default(false)
   messagePlaceholder       String?
-  dismissibleNotice          String?
-  footer                     String?
-  autoshowDelaySeconds       Int        @default(0)
-  autoshowInitialPopup       Boolean    @default(false)
-  chatIcon                   String?
-  chatBubbleButtonColor      String     @default("#000000")
-  chatBubbleButtonPosition   String     @default("right")
-
+  dismissibleNotice        String?
+  footer                   String?
+  autoshowDelaySeconds     Int           @default(0)
+  autoshowInitialPopup     Boolean       @default(false)
+  chatIcon                 String?
+  chatBubbleButtonColor    String        @default("#000000")
+  chatBubbleButtonPosition String        @default("right")
 
   @@index([userId])
   @@map("chatbots")
+}
+
+model ChatSession {
+  id        String        @id @default(cuid())
+  chatbotId String
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  chatbot   Chatbot       @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
+  messages  ChatMessage[]
+
+  @@index([chatbotId])
+  @@map("chat_sessions")
+}
+
+model ChatMessage {
+  id           String      @id @default(cuid())
+  sessionId    String
+  role         String      // 'user' or 'assistant'
+  content      String      @db.Text
+  model        String?     // AI model used (null for user)
+  temperature  Float?      // AI temperature (null for user)
+  tokensUsed   Int?        // tokens consumed (null for user)
+  responseTime Int?        // ms to generate (null for user)
+  sources      String[]    // document IDs for RAG
+  feedback     String?     // 'like' or 'dislike'
+  createdAt    DateTime    @default(now())
+  session      ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@map("chat_messages")
 }
 
 model Document {
