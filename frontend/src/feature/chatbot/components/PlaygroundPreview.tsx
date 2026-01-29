@@ -168,182 +168,182 @@ export const PlaygroundPreview: React.FC = () => {
                 scrollbarWidth: 'thin',
               }}
             >
-              <div className="flex flex-col">
-                {currentChatbot?.initialMessages && currentChatbot.initialMessages.length > 0 && (
-                  <div className="flex flex-col gap-1">
-                    {currentChatbot.initialMessages.map((message, index) => (
+              {currentChatbot?.initialMessages && currentChatbot.initialMessages.length > 0 && (
+                <div className="flex flex-col gap-1">
+                  {currentChatbot.initialMessages.map((message, index) => (
+                    <div
+                      key={index}
+                      className={`relative flex w-fit max-w-[85%] flex-col items-start gap-2 px-4 py-3 text-sm leading-normal tracking-tight ${
+                        currentChatbot?.appearance === 'dark'
+                          ? 'bg-zinc-800 text-zinc-100'
+                          : 'bg-zinc-100 text-zinc-900'
+                      } ${
+                        index === 0
+                          ? 'rounded-[20px] rounded-bl'
+                          : index === currentChatbot.initialMessages.length - 1
+                            ? 'rounded-[20px] rounded-tl'
+                            : 'rounded-r-[20px] rounded-l'
+                      }`}
+                    >
+                      {index === 0 && (
+                        <div className="flex items-center gap-2">
+                          {currentChatbot?.profilePicture && (
+                            <img
+                              src={currentChatbot?.profilePicture}
+                              alt="Chatbot Avatar"
+                              className="h-6 w-6 shrink-0 rounded-full object-cover"
+                            />
+                          )}
+                          <span
+                            className={`font-medium text-sm leading-normal tracking-tight ${
+                              currentChatbot?.appearance === 'dark'
+                                ? 'text-zinc-100'
+                                : 'text-zinc-900'
+                            }`}
+                          >
+                            {currentChatbot?.name || 'Chatbot'}
+                          </span>
+                        </div>
+                      )}
+                      <div className="prose h-full w-full max-w-none text-sm leading-normal tracking-tight">
+                        {message}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {dummyChats.length > 0 && (
+                <div className="mt-5 flex flex-col gap-5">
+                  {dummyChats.map(chat => (
+                    <div
+                      key={chat.id}
+                      className={`flex flex-col ${chat.role === 'user' ? 'items-end' : 'items-start'}`}
+                    >
+                      <div
+                        className={`relative flex w-fit max-w-[85%] flex-col items-start gap-2 rounded-[20px] px-4 py-3 text-sm leading-normal tracking-tight ${
+                          chat.role === 'assistant'
+                            ? currentChatbot?.appearance === 'dark'
+                              ? 'bg-zinc-800 text-zinc-100'
+                              : 'bg-zinc-100 text-zinc-900'
+                            : ''
+                        }`}
+                        style={
+                          chat.role === 'user'
+                            ? {
+                                backgroundColor: primaryColor,
+                                color: headerContrast.contrastHex,
+                              }
+                            : undefined
+                        }
+                      >
+                        <div className="prose flex h-full w-full max-w-none flex-col gap-2 text-sm leading-normal tracking-tight">
+                          {chat.role === 'assistant' && (
+                            <div className="flex items-center gap-2">
+                              {currentChatbot?.profilePicture && (
+                                <img
+                                  src={currentChatbot?.profilePicture}
+                                  alt="Chatbot Avatar"
+                                  className="h-6 w-6 shrink-0 rounded-full object-cover"
+                                />
+                              )}
+                              <span
+                                className={`font-medium text-sm leading-normal tracking-tight ${
+                                  currentChatbot?.appearance === 'dark'
+                                    ? 'text-zinc-100'
+                                    : 'text-zinc-900'
+                                }`}
+                              >
+                                {currentChatbot?.name || 'Chatbot'}
+                              </span>
+                            </div>
+                          )}
+                          <div>{chat.content}</div>
+                        </div>
+                      </div>
+                      {chat.role === 'assistant' && (
+                        <div className="relative z-10 ml-6 mt-1 flex flex-row flex-nowrap items-center gap-1">
+                          <Tooltip label="Copy" position="top">
+                            <button
+                              className={`flex h-5 w-5 cursor-pointer items-center justify-center rounded-md transition-all duration-300 ${
+                                currentChatbot?.appearance === 'dark'
+                                  ? 'text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300'
+                                  : 'text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600'
+                              }`}
+                              title="Copy"
+                            >
+                              <Copy className="h-3 w-3" />
+                            </button>
+                          </Tooltip>
+
+                          <Tooltip label="Good responce" position="top">
+                            <button
+                              className={`flex h-5 w-5 cursor-pointer items-center justify-center rounded-md transition-all duration-300 ${
+                                currentChatbot?.appearance === 'dark'
+                                  ? 'text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300'
+                                  : 'text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600'
+                              }`}
+                              title="Like"
+                            >
+                              <ThumbsUp className="h-3 w-3" />
+                            </button>
+                          </Tooltip>
+                          <Tooltip label="Bad responce" position="top">
+                            <button
+                              className={`flex h-5 w-5 cursor-pointer items-center justify-center rounded-md transition-all duration-300 ${
+                                currentChatbot?.appearance === 'dark'
+                                  ? 'text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300'
+                                  : 'text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600'
+                              }`}
+                              title="Dislike"
+                            >
+                              <ThumbsDown className="h-3 w-3" />
+                            </button>
+                          </Tooltip>
+                          <Tooltip label="Retry" position="top">
+                            <button
+                              className={`flex h-5 w-5 cursor-pointer items-center justify-center rounded-md transition-all duration-300 ${
+                                currentChatbot?.appearance === 'dark'
+                                  ? 'text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300'
+                                  : 'text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600'
+                              }`}
+                              title="Regenerate"
+                            >
+                              <RotateCcw className="h-3 w-3" />
+                            </button>
+                          </Tooltip>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="flex-1" />
+              {currentChatbot?.suggestedMessages &&
+                currentChatbot.suggestedMessages.length > 0 &&
+                (currentChatbot?.showSuggestedAfterFirst || dummyChats.length === 0) && (
+                  <div className="flex w-full flex-wrap justify-end gap-2 pt-4">
+                    {currentChatbot.suggestedMessages.map((suggestion, index) => (
                       <div
                         key={index}
-                        className={`relative flex w-fit max-w-[85%] flex-col items-start gap-2 px-4 py-3 text-sm leading-normal tracking-tight ${
+                        className={`h-auto cursor-pointer min-h-10 max-w-[40ch] rounded-[30px] border px-4 py-2 text-sm font-medium shadow-none transition-colors hover:border-(--hover-bg) hover:bg-(--hover-bg) hover:text-(--hover-text) ${
                           currentChatbot?.appearance === 'dark'
-                            ? 'bg-zinc-800 text-zinc-100'
-                            : 'bg-zinc-100 text-zinc-900'
-                        } ${
-                          index === 0
-                            ? 'rounded-[20px] rounded-bl'
-                            : index === currentChatbot.initialMessages.length - 1
-                              ? 'rounded-[20px] rounded-tl'
-                              : 'rounded-r-[20px] rounded-l'
+                            ? 'border-zinc-700 bg-zinc-800 text-zinc-300'
+                            : 'border-border-week bg-white text-text-primary'
                         }`}
+                        style={
+                          {
+                            '--hover-bg': primaryColor,
+                            '--hover-text': headerContrast.contrastHex,
+                          } as React.CSSProperties
+                        }
+                        onClick={() => setMessage(suggestion)}
                       >
-                        {index === 0 && (
-                          <div className="flex items-center gap-2">
-                            {currentChatbot?.profilePicture && (
-                              <img
-                                src={currentChatbot?.profilePicture}
-                                alt="Chatbot Avatar"
-                                className="h-6 w-6 shrink-0 rounded-full object-cover"
-                              />
-                            )}
-                            <span
-                              className={`font-medium text-sm leading-normal tracking-tight ${
-                                currentChatbot?.appearance === 'dark'
-                                  ? 'text-zinc-100'
-                                  : 'text-zinc-900'
-                              }`}
-                            >
-                              {currentChatbot?.name || 'Chatbot'}
-                            </span>
-                          </div>
-                        )}
-                        <div className="prose h-full w-full max-w-none text-sm leading-normal tracking-tight">
-                          {message}
-                        </div>
+                        {suggestion}
                       </div>
                     ))}
                   </div>
                 )}
-                {dummyChats.length > 0 && (
-                  <div className="mt-5 flex flex-col gap-5">
-                    {dummyChats.map(chat => (
-                      <div
-                        key={chat.id}
-                        className={`flex flex-col ${chat.role === 'user' ? 'items-end' : 'items-start'}`}
-                      >
-                        <div
-                          className={`relative flex w-fit max-w-[85%] flex-col items-start gap-2 rounded-[20px] px-4 py-3 text-sm leading-normal tracking-tight ${
-                            chat.role === 'assistant'
-                              ? currentChatbot?.appearance === 'dark'
-                                ? 'bg-zinc-800 text-zinc-100'
-                                : 'bg-zinc-100 text-zinc-900'
-                              : ''
-                          }`}
-                          style={
-                            chat.role === 'user'
-                              ? {
-                                  backgroundColor: primaryColor,
-                                  color: headerContrast.contrastHex,
-                                }
-                              : undefined
-                          }
-                        >
-                          <div className="prose flex h-full w-full max-w-none flex-col gap-2 text-sm leading-normal tracking-tight">
-                            {chat.role === 'assistant' && (
-                              <div className="flex items-center gap-2">
-                                {currentChatbot?.profilePicture && (
-                                  <img
-                                    src={currentChatbot?.profilePicture}
-                                    alt="Chatbot Avatar"
-                                    className="h-6 w-6 shrink-0 rounded-full object-cover"
-                                  />
-                                )}
-                                <span
-                                  className={`font-medium text-sm leading-normal tracking-tight ${
-                                    currentChatbot?.appearance === 'dark'
-                                      ? 'text-zinc-100'
-                                      : 'text-zinc-900'
-                                  }`}
-                                >
-                                  {currentChatbot?.name || 'Chatbot'}
-                                </span>
-                              </div>
-                            )}
-                            <div>{chat.content}</div>
-                          </div>
-                        </div>
-                        {chat.role === 'assistant' && (
-                          <div className="relative z-10 ml-6 mt-1 flex flex-row flex-nowrap items-center gap-1">
-                            <Tooltip label="Copy" position="top">
-                              <button
-                                className={`flex h-5 w-5 cursor-pointer items-center justify-center rounded-md transition-all duration-300 ${
-                                  currentChatbot?.appearance === 'dark'
-                                    ? 'text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300'
-                                    : 'text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600'
-                                }`}
-                                title="Copy"
-                              >
-                                <Copy className="h-3 w-3" />
-                              </button>
-                            </Tooltip>
-
-                            <Tooltip label="Good responce" position="top">
-                              <button
-                                className={`flex h-5 w-5 cursor-pointer items-center justify-center rounded-md transition-all duration-300 ${
-                                  currentChatbot?.appearance === 'dark'
-                                    ? 'text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300'
-                                    : 'text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600'
-                                }`}
-                                title="Like"
-                              >
-                                <ThumbsUp className="h-3 w-3" />
-                              </button>
-                            </Tooltip>
-                            <Tooltip label="Bad responce" position="top">
-                              <button
-                                className={`flex h-5 w-5 cursor-pointer items-center justify-center rounded-md transition-all duration-300 ${
-                                  currentChatbot?.appearance === 'dark'
-                                    ? 'text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300'
-                                    : 'text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600'
-                                }`}
-                                title="Dislike"
-                              >
-                                <ThumbsDown className="h-3 w-3" />
-                              </button>
-                            </Tooltip>
-                            <Tooltip label="Retry" position="top">
-                              <button
-                                className={`flex h-5 w-5 cursor-pointer items-center justify-center rounded-md transition-all duration-300 ${
-                                  currentChatbot?.appearance === 'dark'
-                                    ? 'text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300'
-                                    : 'text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600'
-                                }`}
-                                title="Regenerate"
-                              >
-                                <RotateCcw className="h-3 w-3" />
-                              </button>
-                            </Tooltip>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-                {currentChatbot?.suggestedMessages &&
-                  currentChatbot.suggestedMessages.length > 0 && (
-                    <div className="mt-auto flex w-full flex-wrap justify-end gap-2 pt-4">
-                      {currentChatbot.suggestedMessages.map((suggestion, index) => (
-                        <div
-                          key={index}
-                          className={`h-auto cursor-pointer min-h-10 max-w-[40ch] rounded-[30px] border px-4 py-2 text-sm font-medium shadow-none transition-colors hover:border-(--hover-bg) hover:bg-(--hover-bg) hover:text-(--hover-text) ${
-                            currentChatbot?.appearance === 'dark'
-                              ? 'border-zinc-700 bg-zinc-800 text-zinc-300'
-                              : 'border-border-week bg-white text-text-primary'
-                          }`}
-                          style={
-                            {
-                              '--hover-bg': primaryColor,
-                              '--hover-text': headerContrast.contrastHex,
-                            } as React.CSSProperties
-                          }
-                          onClick={() => setMessage(suggestion)}
-                        >
-                          {suggestion}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                <div ref={messagesEndRef} />
-              </div>
+              <div ref={messagesEndRef} />
             </div>
             {showScrollButton && (
               <button
