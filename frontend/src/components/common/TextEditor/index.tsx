@@ -142,6 +142,17 @@ export const TextEditor: React.FC<TextEditorProps> = ({
               shiftKey: false,
               handler: () => false, // Block Enter
             },
+            shiftEnter: {
+              key: 'Enter',
+              shiftKey: true,
+              handler: function (range: { index: number }) {
+                // @ts-expect-error - quill context
+                this.quill.insertText(range.index, '\n', 'user')
+                // @ts-expect-error - quill context
+                this.quill.setSelection(range.index + 1, 0)
+                return false // Prevent event from bubbling to form
+              },
+            },
           }),
         },
       },
@@ -164,9 +175,15 @@ export const TextEditor: React.FC<TextEditorProps> = ({
     setShowEmojiPicker(false)
   }
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    // When enterEnabled is false, prevent Shift+Enter from bubbling to form
+    if (!enterEnabled && e.key === 'Enter' && e.shiftKey) {
+      e.stopPropagation()
+    }
+  }
 
   return (
-    <div className={`relative ${className}`}>
+    <div className={`relative ${className}`} onKeyDown={handleKeyDown}>
       <div
         ref={editorRef}
         className={`${styles.editor} ${variant === 'simple' ? styles.editorSimple : ''}`}
