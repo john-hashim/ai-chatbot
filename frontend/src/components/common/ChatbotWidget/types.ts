@@ -30,6 +30,9 @@ export interface ChatbotWidgetProps {
   // Chat state
   messages?: ChatMessage[]
 
+  // Behavior
+  readOnly?: boolean
+
   // Callbacks
   onSendMessage?: (message: string) => void
   onFeedback?: (messageId: string, type: 'like' | 'dislike') => void
@@ -72,4 +75,5 @@ export interface ChatInputProps {
   value: string
   onChange: (value: string) => void
   onSubmit: () => void
+  readOnly?: boolean
 }

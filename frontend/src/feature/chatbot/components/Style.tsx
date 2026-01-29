@@ -326,8 +326,8 @@ export const Style: React.FC = () => {
           render={({ field }) => (
             <Radio.Group {...field} name="chatButtonBubble" label="Align chat button bubble">
               <Group mt="xs">
-                <Radio value="right" label="Right" color="dark.8" className="mt-2" />
                 <Radio value="left" label="Left" color="dark.8" className="mt-2" />
+                <Radio value="right" label="Right" color="dark.8" className="mt-2" />
               </Group>
             </Radio.Group>
           )}

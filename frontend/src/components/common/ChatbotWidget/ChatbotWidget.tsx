@@ -18,6 +18,7 @@ export const ChatbotWidget: React.FC<ChatbotWidgetProps> = ({
   dismissibleNotice,
   footer,
   messages = [],
+  readOnly = false,
   onSendMessage,
   onFeedback,
   onRetry,
@@ -89,6 +90,7 @@ export const ChatbotWidget: React.FC<ChatbotWidgetProps> = ({
           value={inputValue}
           onChange={setInputValue}
           onSubmit={handleSubmit}
+          readOnly={readOnly}
         />
       </div>
     </div>
