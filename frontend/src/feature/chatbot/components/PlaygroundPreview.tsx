@@ -1,8 +1,8 @@
 import { useContrastColor } from '@/hooks/useContrastColor'
 import { useStore } from '@/store'
 import { Tooltip } from '@mantine/core'
-import { ArrowUp, Copy, RefreshCw, RotateCcw, ThumbsDown, ThumbsUp } from 'lucide-react'
-import { useState } from 'react'
+import { ArrowDown, ArrowUp, Copy, RefreshCw, RotateCcw, ThumbsDown, ThumbsUp } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 
 interface ChatMessage {
   id: string
@@ -73,8 +73,26 @@ const dummyChats: ChatMessage[] = [
 export const PlaygroundPreview: React.FC = () => {
   const { currentChatbot } = useStore()
   const [message, setMessage] = useState('')
+  const [showScrollButton, setShowScrollButton] = useState(false)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
   const primaryColor = currentChatbot?.brandColor ?? '#000000'
   const headerContrast = useContrastColor(primaryColor)
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }
+
+  const handleScroll = () => {
+    if (!scrollContainerRef.current) return
+    const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current
+    const isAtBottom = scrollHeight - scrollTop - clientHeight < 50
+    setShowScrollButton(!isAtBottom)
+  }
+
+  useEffect(() => {
+    scrollToBottom()
+  }, [])
 
   const headerTextColor = currentChatbot?.brandColorForHeader
     ? headerContrast.contrastHex
@@ -138,7 +156,9 @@ export const PlaygroundPreview: React.FC = () => {
           </header>
           <div className="relative flex-1 overflow-hidden">
             <div
-              className={`absolute inset-0 flex flex-col-reverse overflow-y-auto scroll-smooth px-5 pt-5 pb-20 ${
+              ref={scrollContainerRef}
+              onScroll={handleScroll}
+              className={`absolute inset-0 flex flex-col overflow-y-auto scroll-smooth px-5 pt-5 pb-20 ${
                 currentChatbot?.appearance == 'dark'
                   ? 'shadow-[inset_0_4px_6px_-1px_rgba(0,0,0,0.3)]'
                   : 'shadow-inner'
@@ -322,8 +342,22 @@ export const PlaygroundPreview: React.FC = () => {
                       ))}
                     </div>
                   )}
+                <div ref={messagesEndRef} />
               </div>
             </div>
+            {showScrollButton && (
+              <button
+                onClick={scrollToBottom}
+                className={`absolute bottom-20 right-6 z-20 flex h-8 w-8 items-center justify-center rounded-full shadow-md transition-all duration-200 hover:scale-110 ${
+                  currentChatbot?.appearance === 'dark'
+                    ? 'bg-zinc-700 text-zinc-200 hover:bg-zinc-600'
+                    : 'bg-white text-zinc-600 hover:bg-zinc-100'
+                }`}
+                title="Scroll to bottom"
+              >
+                <ArrowDown className="h-4 w-4" />
+              </button>
+            )}
             <div className="absolute bottom-0 left-0 right-0 z-10">
               <div
                 className={`absolute bottom-0 left-0 right-0 h-10 -z-10 ${
@@ -357,15 +391,16 @@ export const PlaygroundPreview: React.FC = () => {
                   />
                 </div>
                 <button
-                  className="flex items-center justify-center gap-2 whitespace-nowrap font-medium text-sm outline-none transition-all duration-200 disabled:pointer-events-none disabled:opacity-50 p-1.5 h-7 w-7 rounded-full shadow-none"
-                  style={{
-                    backgroundColor: message.trim() ? primaryColor : `${primaryColor}40`,
-                  }}
+                  className={`flex items-center justify-center gap-2 whitespace-nowrap font-medium text-sm outline-none transition-all duration-200 disabled:pointer-events-none disabled:opacity-50 p-1.5 h-7 w-7 rounded-full shadow-none ${
+                    currentChatbot?.appearance === 'dark'
+                      ? 'bg-white text-zinc-900 disabled:bg-zinc-600'
+                      : 'bg-zinc-900 text-white disabled:bg-zinc-300'
+                  }`}
                   type="button"
                   onClick={handleSubmit}
                   disabled={!message.trim()}
                 >
-                  <ArrowUp className="h-4 w-4" style={{ color: headerContrast.contrastHex }} />
+                  <ArrowUp className="h-4 w-4" />
                 </button>
               </div>
             </div>
