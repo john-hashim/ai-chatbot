@@ -193,7 +193,7 @@ export const Preview: React.FC = () => {
                   }`}
                 >
                   <div
-                    className={`no-animate flex-1 overflow-x-hidden whitespace-pre-wrap wrap-break-word text-xs font-medium leading-5 ${
+                    className={`no-animate flex-1 overflow-x-hidden whitespace-pre-wrap wrap-break-word text-xs font-medium leading-5 [&_a]:underline [&_a]:text-inherit [&_.ql-align-center]:text-center [&_.ql-align-right]:text-right [&_.ql-align-left]:text-left [&_.ql-align-justify]:text-justify ${
                       isDark ? 'text-zinc-400' : 'text-zinc-500'
                     }`}
                     dangerouslySetInnerHTML={{ __html: dismissibleNotice }}
@@ -242,7 +242,7 @@ export const Preview: React.FC = () => {
                   }`}
                 >
                   <div
-                    className="w-full overflow-x-hidden whitespace-pre-wrap wrap-break-word text-center"
+                    className="w-full overflow-x-hidden whitespace-pre-wrap wrap-break-word [&_a]:underline [&_a]:text-inherit [&_.ql-align-center]:text-center [&_.ql-align-right]:text-right [&_.ql-align-left]:text-left [&_.ql-align-justify]:text-justify"
                     dangerouslySetInnerHTML={{ __html: footer }}
                   />
                 </footer>
