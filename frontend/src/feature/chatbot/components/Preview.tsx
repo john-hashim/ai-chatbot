@@ -90,7 +90,7 @@ export const Preview: React.FC = () => {
 
             {/* Messages Container */}
             <div
-              className={`relative flex-1 overflow-y-auto px-5 pt-5 ${
+              className={`relative flex flex-col flex-1 overflow-y-auto px-5 pt-5 ${
                 isDark ? 'shadow-[inset_0_4px_6px_-1px_rgba(0,0,0,0.3)]' : 'shadow-inner'
               }`}
               style={{
@@ -156,32 +156,30 @@ export const Preview: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Suggested Messages */}
-                {filteredSuggestedMessages.length > 0 && (
-                  <div className="relative mt-auto w-full pt-2">
-                    <div className="flex w-full flex-wrap justify-end gap-2">
-                      {filteredSuggestedMessages.map((message, index) => (
-                        <button
-                          key={index}
-                          className={`h-auto min-h-10 max-w-[40ch] rounded-[30px] border px-4 py-2 text-sm font-medium shadow-none transition-colors hyphens-auto wrap-break-word ${
-                            isDark
-                              ? 'border-zinc-700 bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
-                              : 'border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50'
-                          }`}
-                          style={
-                            {
-                              '--hover-bg': brandColor,
-                              '--hover-text': '#ffffff',
-                            } as React.CSSProperties
-                          }
-                        >
-                          {message}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
+              {/* Suggested Messages */}
+              {filteredSuggestedMessages.length > 0 && (
+                <div className="mt-auto flex w-full flex-wrap justify-end gap-2 pt-4">
+                  {filteredSuggestedMessages.map((message, index) => (
+                    <div
+                      key={index}
+                      className={`h-auto cursor-pointer min-h-10 max-w-[40ch] rounded-[30px] border px-4 py-2 text-sm font-medium shadow-none transition-colors hover:border-(--hover-bg) hover:bg-(--hover-bg) hover:text-(--hover-text) ${
+                        isDark
+                          ? 'border-zinc-700 bg-zinc-800 text-zinc-300'
+                          : 'border-zinc-200 bg-white text-zinc-700'
+                      }`}
+                      style={
+                        {
+                          '--hover-bg': brandColor,
+                          '--hover-text': brandColorContrast.contrastHex,
+                        } as React.CSSProperties
+                      }
+                    >
+                      {message}
+                    </div>
+                  ))}
+                </div>
+              )}
               <div className="h-4 w-full shrink-0" />
             </div>
 
