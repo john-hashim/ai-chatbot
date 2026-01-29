@@ -1,30 +1,5 @@
-import { useContrastColor } from '@/hooks/useContrastColor'
+import { ChatbotWidget, type ChatMessage } from '@/components/common/ChatbotWidget'
 import { useStore } from '@/store'
-import { Tooltip } from '@mantine/core'
-import {
-  ArrowDown,
-  ArrowUp,
-  Copy,
-  RefreshCw,
-  RotateCcw,
-  ThumbsDown,
-  ThumbsUp,
-  X,
-} from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
-
-interface ChatMessage {
-  id: string
-  role: 'user' | 'assistant'
-  content: string
-  createdAt: Date
-  model: string | null
-  temperature: number | null
-  tokensUsed: number | null
-  responseTime: number | null
-  sources: string[] | null
-  feedback: 'like' | 'dislike' | null
-}
 
 const dummyChats: ChatMessage[] = [
   {
@@ -32,12 +7,6 @@ const dummyChats: ChatMessage[] = [
     role: 'user',
     content: 'Can you help me understand how your pricing works?',
     createdAt: new Date('2024-01-28T10:01:00'),
-    model: null,
-    temperature: null,
-    tokensUsed: null,
-    responseTime: null,
-    sources: null,
-    feedback: null,
   },
   {
     id: '2',
@@ -57,12 +26,6 @@ const dummyChats: ChatMessage[] = [
     role: 'user',
     content: 'Can you help me understand how your pricing works?',
     createdAt: new Date('2024-01-28T10:01:00'),
-    model: null,
-    temperature: null,
-    tokensUsed: null,
-    responseTime: null,
-    sources: null,
-    feedback: null,
   },
   {
     id: '4',
@@ -81,370 +44,34 @@ const dummyChats: ChatMessage[] = [
 
 export const PlaygroundPreview: React.FC = () => {
   const { currentChatbot } = useStore()
-  const [message, setMessage] = useState('')
-  const [noticeDismissed, setNoticeDismissed] = useState(false)
-  const [showScrollButton, setShowScrollButton] = useState(false)
-  const messagesEndRef = useRef<HTMLDivElement>(null)
-  const scrollContainerRef = useRef<HTMLDivElement>(null)
-  const primaryColor = currentChatbot?.brandColor ?? '#000000'
-  const headerContrast = useContrastColor(primaryColor)
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }
-
-  const handleScroll = () => {
-    if (!scrollContainerRef.current) return
-    const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current
-    const isAtBottom = scrollHeight - scrollTop - clientHeight < 50
-    setShowScrollButton(!isAtBottom)
-  }
-
-  useEffect(() => {
-    scrollToBottom()
-  }, [])
-
-  const headerTextColor = currentChatbot?.brandColorForHeader
-    ? headerContrast.contrastHex
-    : currentChatbot?.appearance === 'dark'
-      ? '#ffffff'
-      : '#18181b'
-
-  const handleSubmit = () => {
-    if (!message.trim()) return
+  const handleSendMessage = (message: string) => {
     console.log('Submitting:', message)
-    setMessage('')
   }
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      handleSubmit()
-    }
+  const handleReset = () => {
+    console.log('Reset conversation')
   }
 
   return (
-    <div className="h-full flex items-center p-6">
-      <div className="h-full mx-auto max-h-180 border-border-week border w-full max-w-102 overflow-hidden rounded-[20px rounded-[20px]">
-        <div
-          className={`${currentChatbot?.appearance === 'dark' ? 'bg-zinc-900' : 'bg-white'} flex h-full flex-col`}
-        >
-          <header
-            className="flex items-center justify-between px-5"
-            style={{
-              background: currentChatbot?.brandColorForHeader
-                ? `linear-gradient(0deg, rgba(255, 255, 255, 0) 29.14%, rgba(255, 255, 255, 0.16) 100%), ${currentChatbot.brandColor}`
-                : '',
-            }}
-          >
-            <div className="flex my-4 h-10 items-center gap-3">
-              {currentChatbot?.profilePicture && (
-                <img
-                  src={currentChatbot.profilePicture}
-                  alt="Chatbot"
-                  className="h-10 w-10 rounded-full object-cover"
-                />
-              )}
-              <div className="flex flex-col justify-center">
-                <h1
-                  className="font-medium text-sm tracking-tight"
-                  style={{ color: headerTextColor }}
-                >
-                  {currentChatbot?.name || 'Chatbot'}
-                </h1>
-              </div>
-            </div>
-            <div className="flex items-center">
-              <button
-                className="flex h-9 w-9 items-center justify-center rounded-md p-1.5 opacity-70 hover:opacity-85"
-                title="Reset conversation"
-                style={{ color: headerTextColor }}
-              >
-                <RefreshCw className="h-5 w-5 transition-transform duration-700 ease-in-out hover:rotate-180" />
-              </button>
-            </div>
-          </header>
-          <div className="flex flex-1 flex-col overflow-hidden">
-            <div className="relative flex-1 overflow-hidden">
-              <div
-                ref={scrollContainerRef}
-                onScroll={handleScroll}
-                className={`absolute inset-0 flex flex-col overflow-y-auto scroll-smooth px-5 pt-5 pb-4 ${
-                  currentChatbot?.appearance == 'dark'
-                    ? 'shadow-[inset_0_4px_6px_-1px_rgba(0,0,0,0.3)]'
-                    : 'shadow-inner'
-                }`}
-                style={{
-                  scrollbarColor: currentChatbot?.appearance ? '#52525b #27272a' : undefined,
-                  scrollbarWidth: 'thin',
-                }}
-              >
-                {currentChatbot?.initialMessages && currentChatbot.initialMessages.length > 0 && (
-                  <div className="flex flex-col gap-1">
-                    {currentChatbot.initialMessages.map((message, index) => (
-                      <div
-                        key={index}
-                        className={`relative flex w-fit max-w-[85%] flex-col items-start gap-2 px-4 py-3 text-sm leading-normal tracking-tight ${
-                          currentChatbot?.appearance === 'dark'
-                            ? 'bg-zinc-800 text-zinc-100'
-                            : 'bg-zinc-100 text-zinc-900'
-                        } ${
-                          index === 0
-                            ? 'rounded-[20px] rounded-bl'
-                            : index === currentChatbot.initialMessages.length - 1
-                              ? 'rounded-[20px] rounded-tl'
-                              : 'rounded-r-[20px] rounded-l'
-                        }`}
-                      >
-                        {index === 0 && (
-                          <div className="flex items-center gap-2">
-                            {currentChatbot?.profilePicture && (
-                              <img
-                                src={currentChatbot?.profilePicture}
-                                alt="Chatbot Avatar"
-                                className="h-6 w-6 shrink-0 rounded-full object-cover"
-                              />
-                            )}
-                            <span
-                              className={`font-medium text-sm leading-normal tracking-tight ${
-                                currentChatbot?.appearance === 'dark'
-                                  ? 'text-zinc-100'
-                                  : 'text-zinc-900'
-                              }`}
-                            >
-                              {currentChatbot?.name || 'Chatbot'}
-                            </span>
-                          </div>
-                        )}
-                        <div className="prose h-full w-full max-w-none text-sm leading-normal tracking-tight">
-                          {message}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                {dummyChats.length > 0 && (
-                  <div className="mt-5 flex flex-col gap-5">
-                    {dummyChats.map(chat => (
-                      <div
-                        key={chat.id}
-                        className={`flex flex-col ${chat.role === 'user' ? 'items-end' : 'items-start'}`}
-                      >
-                        <div
-                          className={`relative flex w-fit max-w-[85%] flex-col items-start gap-2 rounded-[20px] px-4 py-3 text-sm leading-normal tracking-tight ${
-                            chat.role === 'assistant'
-                              ? currentChatbot?.appearance === 'dark'
-                                ? 'bg-zinc-800 text-zinc-100'
-                                : 'bg-zinc-100 text-zinc-900'
-                              : ''
-                          }`}
-                          style={
-                            chat.role === 'user'
-                              ? {
-                                  backgroundColor: primaryColor,
-                                  color: headerContrast.contrastHex,
-                                }
-                              : undefined
-                          }
-                        >
-                          <div className="prose flex h-full w-full max-w-none flex-col gap-2 text-sm leading-normal tracking-tight">
-                            {chat.role === 'assistant' && (
-                              <div className="flex items-center gap-2">
-                                {currentChatbot?.profilePicture && (
-                                  <img
-                                    src={currentChatbot?.profilePicture}
-                                    alt="Chatbot Avatar"
-                                    className="h-6 w-6 shrink-0 rounded-full object-cover"
-                                  />
-                                )}
-                                <span
-                                  className={`font-medium text-sm leading-normal tracking-tight ${
-                                    currentChatbot?.appearance === 'dark'
-                                      ? 'text-zinc-100'
-                                      : 'text-zinc-900'
-                                  }`}
-                                >
-                                  {currentChatbot?.name || 'Chatbot'}
-                                </span>
-                              </div>
-                            )}
-                            <div>{chat.content}</div>
-                          </div>
-                        </div>
-                        {chat.role === 'assistant' && (
-                          <div className="relative z-10 ml-6 mt-1 flex flex-row flex-nowrap items-center gap-1">
-                            <Tooltip label="Copy" position="top">
-                              <button
-                                className={`flex h-5 w-5 cursor-pointer items-center justify-center rounded-md transition-all duration-300 ${
-                                  currentChatbot?.appearance === 'dark'
-                                    ? 'text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300'
-                                    : 'text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600'
-                                }`}
-                                title="Copy"
-                              >
-                                <Copy className="h-3 w-3" />
-                              </button>
-                            </Tooltip>
-
-                            <Tooltip label="Good responce" position="top">
-                              <button
-                                className={`flex h-5 w-5 cursor-pointer items-center justify-center rounded-md transition-all duration-300 ${
-                                  currentChatbot?.appearance === 'dark'
-                                    ? 'text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300'
-                                    : 'text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600'
-                                }`}
-                                title="Like"
-                              >
-                                <ThumbsUp className="h-3 w-3" />
-                              </button>
-                            </Tooltip>
-                            <Tooltip label="Bad responce" position="top">
-                              <button
-                                className={`flex h-5 w-5 cursor-pointer items-center justify-center rounded-md transition-all duration-300 ${
-                                  currentChatbot?.appearance === 'dark'
-                                    ? 'text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300'
-                                    : 'text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600'
-                                }`}
-                                title="Dislike"
-                              >
-                                <ThumbsDown className="h-3 w-3" />
-                              </button>
-                            </Tooltip>
-                            <Tooltip label="Retry" position="top">
-                              <button
-                                className={`flex h-5 w-5 cursor-pointer items-center justify-center rounded-md transition-all duration-300 ${
-                                  currentChatbot?.appearance === 'dark'
-                                    ? 'text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300'
-                                    : 'text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600'
-                                }`}
-                                title="Regenerate"
-                              >
-                                <RotateCcw className="h-3 w-3" />
-                              </button>
-                            </Tooltip>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-                <div className="flex-1" />
-                {currentChatbot?.suggestedMessages &&
-                  currentChatbot.suggestedMessages.length > 0 &&
-                  (currentChatbot?.showSuggestedAfterFirst || dummyChats.length === 0) && (
-                    <div className="flex w-full flex-wrap justify-end gap-2 pt-4">
-                      {currentChatbot.suggestedMessages.map((suggestion, index) => (
-                        <div
-                          key={index}
-                          className={`h-auto cursor-pointer min-h-10 max-w-[40ch] rounded-[30px] border px-4 py-2 text-sm font-medium shadow-none transition-colors hover:border-(--hover-bg) hover:bg-(--hover-bg) hover:text-(--hover-text) ${
-                            currentChatbot?.appearance === 'dark'
-                              ? 'border-zinc-700 bg-zinc-800 text-zinc-300'
-                              : 'border-border-week bg-white text-text-primary'
-                          }`}
-                          style={
-                            {
-                              '--hover-bg': primaryColor,
-                              '--hover-text': headerContrast.contrastHex,
-                            } as React.CSSProperties
-                          }
-                          onClick={() => setMessage(suggestion)}
-                        >
-                          {suggestion}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                <div ref={messagesEndRef} />
-              </div>
-              {showScrollButton && (
-                <button
-                  onClick={scrollToBottom}
-                  className={`absolute bottom-4 right-6 z-20 flex h-8 w-8 items-center justify-center rounded-full shadow-md transition-all duration-200 hover:scale-110 ${
-                    currentChatbot?.appearance === 'dark'
-                      ? 'bg-zinc-700 text-zinc-200 hover:bg-zinc-600'
-                      : 'bg-white text-zinc-600 hover:bg-zinc-100'
-                  }`}
-                  title="Scroll to bottom"
-                >
-                  <ArrowDown className="h-4 w-4" />
-                </button>
-              )}
-            </div>
-            <div className="shrink-0 px-4 pb-4">
-              {currentChatbot?.dismissibleNotice && !noticeDismissed && (
-                <div
-                  className={`flex-row flex items-start justify-between rounded-t-[20px] px-3 pt-3 pb-7 -mb-5 ${
-                    currentChatbot?.appearance === 'dark'
-                      ? 'bg-zinc-800 text-zinc-400'
-                      : 'bg-zinc-100 text-zinc-500'
-                  }`}
-                >
-                  <div
-                    className="text-xs flex-1 font-medium [&_a]:underline [&_a]:text-inherit [&_.ql-align-center]:text-center [&_.ql-align-right]:text-right [&_.ql-align-left]:text-left [&_.ql-align-justify]:text-justify"
-                    dangerouslySetInnerHTML={{ __html: currentChatbot.dismissibleNotice }}
-                  />
-                  <button
-                    onClick={() => setNoticeDismissed(true)}
-                    className={`shrink-0 ml-2 ${
-                      currentChatbot?.appearance === 'dark'
-                        ? 'text-zinc-500 hover:text-zinc-300'
-                        : 'text-zinc-400 hover:text-zinc-600'
-                    }`}
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                </div>
-              )}
-              <div
-                className={`flex flex-row items-center gap-1 rounded-3xl border p-2 shadow-input-box ${
-                  currentChatbot?.appearance === 'dark'
-                    ? 'border-zinc-700 focus-within:border-zinc-500 bg-zinc-800 text-zinc-100'
-                    : 'border-border-week focus-within:border-border-strong bg-white'
-                }`}
-              >
-                <div className="flex flex-1 flex-col text-sm">
-                  <textarea
-                    className={`field-sizing-content flex w-full rounded-md px-2 transition-colors disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 min-h-0 flex-1 resize-none border-0 outline-none bg-transparent max-h-40 overflow-y-auto py-1 ${
-                      currentChatbot?.appearance === 'dark'
-                        ? 'placeholder:text-zinc-500 text-zinc-100'
-                        : 'placeholder:text-zinc-400 text-zinc-900'
-                    }`}
-                    id="message"
-                    name="message"
-                    dir="auto"
-                    maxLength={8000}
-                    rows={1}
-                    tabIndex={0}
-                    placeholder={currentChatbot?.messagePlaceholder || 'Type message here..'}
-                    value={message}
-                    onChange={e => setMessage(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                  />
-                </div>
-                <button
-                  className={`flex items-center justify-center gap-2 whitespace-nowrap font-medium text-sm outline-none transition-all duration-200 disabled:pointer-events-none disabled:opacity-50 p-1.5 h-7 w-7 rounded-full shadow-none ${
-                    currentChatbot?.appearance === 'dark'
-                      ? 'bg-white text-zinc-900 disabled:bg-zinc-600'
-                      : 'bg-zinc-900 text-white disabled:bg-zinc-300'
-                  }`}
-                  type="button"
-                  onClick={handleSubmit}
-                  disabled={!message.trim()}
-                >
-                  <ArrowUp className="h-4 w-4" />
-                </button>
-              </div>
-              {currentChatbot?.footer && (
-                <div
-                  className={`px-3 pt-4 text-xs font-medium [&_a]:underline [&_a]:text-inherit [&_.ql-align-center]:text-center [&_.ql-align-right]:text-right [&_.ql-align-left]:text-left [&_.ql-align-justify]:text-justify ${
-                    currentChatbot?.appearance === 'dark' ? 'text-zinc-400' : 'text-zinc-500'
-                  }`}
-                  dangerouslySetInnerHTML={{ __html: currentChatbot.footer }}
-                />
-              )}
-            </div>
-          </div>
-        </div>
+    <div className="flex h-full items-center p-6">
+      <div className="mx-auto h-full max-h-180 w-full max-w-102 overflow-hidden rounded-[20px] border border-border-week">
+        <ChatbotWidget
+          name={currentChatbot?.name || 'Chatbot'}
+          profilePicture={currentChatbot?.profilePicture}
+          appearance={currentChatbot?.appearance ?? 'light'}
+          brandColor={currentChatbot?.brandColor ?? '#000000'}
+          brandColorForHeader={currentChatbot?.brandColorForHeader ?? false}
+          initialMessages={currentChatbot?.initialMessages}
+          suggestedMessages={currentChatbot?.suggestedMessages}
+          showSuggestedAfterFirst={currentChatbot?.showSuggestedAfterFirst}
+          messagePlaceholder={currentChatbot?.messagePlaceholder ?? undefined}
+          dismissibleNotice={currentChatbot?.dismissibleNotice}
+          footer={currentChatbot?.footer}
+          messages={dummyChats}
+          onSendMessage={handleSendMessage}
+          onReset={handleReset}
+        />
       </div>
     </div>
   )
