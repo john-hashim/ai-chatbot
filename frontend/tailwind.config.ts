@@ -28,6 +28,7 @@ export default {
       },
       boxShadow: {
         common: 'var(--box-shadow-common)',
+        'input-box': '0px 4px 16px 0px rgba(0, 0, 0, 0.04), 0px 2px 2px 0px rgba(0, 0, 0, 0.02)',
       },
     },
   },
