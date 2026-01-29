@@ -1,7 +1,7 @@
 import type React from 'react'
 import { useFormContext, useWatch } from 'react-hook-form'
 import type { ChatbotFormValues } from '../pages/Customize'
-import { RefreshCw, Send, X } from 'lucide-react'
+import { ArrowUp, RefreshCw, X } from 'lucide-react'
 import { ChatBubbleIcon } from '@/components/common/ChatBubbleIcon'
 import { useContrastColor } from '@/hooks/useContrastColor'
 
@@ -209,25 +209,28 @@ export const Preview: React.FC = () => {
 
               {/* Input Box */}
               <div
-                className={`relative z-20 mx-4 mb-4 flex min-h-13 items-center rounded-2xl border-[1.5px] px-3 py-2.5 shadow-[0_4px_16px_#0000000a,0_2px_2px_#00000005] ${
+                className={`relative z-20 mx-4 mb-4 flex flex-row items-center gap-1 rounded-3xl border p-2 shadow-input-box ${
                   isDark ? 'border-zinc-700 bg-zinc-800' : 'border-border-week bg-white'
                 }`}
               >
-                <input
-                  type="text"
-                  className={`flex-1 border-0 bg-transparent px-2 py-0 text-sm outline-none placeholder:text-zinc-400 ${
-                    isDark ? 'text-zinc-100' : 'text-zinc-900'
-                  }`}
-                  placeholder={messagePlaceholder || 'Type your message...'}
-                  disabled
-                />
+                <div className="flex flex-1 flex-col text-sm">
+                  <input
+                    type="text"
+                    className={`flex w-full rounded-md border-0 bg-transparent px-2 py-1 text-sm outline-none ${
+                      isDark
+                        ? 'placeholder:text-zinc-500 text-zinc-100'
+                        : 'placeholder:text-zinc-400 text-zinc-900'
+                    }`}
+                    placeholder={messagePlaceholder || 'Type your message...'}
+                    readOnly
+                  />
+                </div>
                 <button
-                  className={`flex h-7 w-7 items-center justify-center rounded-md p-1.5 ${
-                    isDark ? 'text-zinc-500' : 'text-zinc-400'
+                  className={`flex h-7 w-7 items-center justify-center rounded-full p-1.5 ${
+                    isDark ? 'bg-zinc-600 text-zinc-400' : 'bg-zinc-300 text-zinc-500'
                   }`}
-                  disabled
                 >
-                  <Send className="h-5 w-5" />
+                  <ArrowUp className="h-4 w-4" />
                 </button>
               </div>
 
