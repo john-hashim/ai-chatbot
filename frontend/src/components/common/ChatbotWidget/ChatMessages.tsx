@@ -150,7 +150,7 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                   className={`flex flex-col ${chat.role === 'user' ? 'items-end' : 'items-start'}`}
                 >
                   <div
-                    className={`relative flex w-fit max-w-[85%] flex-col items-start gap-2 rounded-[20px] px-4 py-3 text-sm leading-normal tracking-tight ${
+                    className={`relative flex w-fit max-w-[85%] flex-col items-start gap-2 rounded-[20px] ${!isGenerating && 'px-4'}  py-3 text-sm leading-normal tracking-tight ${
                       chat.role === 'assistant' && !isGenerating
                         ? isDark
                           ? 'bg-zinc-800 text-zinc-100'

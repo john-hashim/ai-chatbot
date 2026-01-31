@@ -148,7 +148,7 @@ export async function trainChatbotDocuments(
     // Update chatbot's last_trained timestamp
     await prisma.chatbot.update({
       where: { id: chatbotId },
-      data: { last_trained: new Date() },
+      data: { lastTrained: new Date() },
     })
 
     return result

@@ -10,7 +10,7 @@
     "module": "nodenext",
     "target": "esnext",
     // For nodejs:
-    "lib": ["esnext"],
+    "lib": ["esnext", "dom", "dom.iterable"],
     "types": ["node"],
     // and npm install -D @types/node
 

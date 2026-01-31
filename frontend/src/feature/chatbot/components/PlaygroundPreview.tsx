@@ -3,44 +3,44 @@ import { useStore } from '@/store'
 import { useState } from 'react'
 
 const dummyChats: ChatMessage[] = [
-  {
-    id: '1',
-    role: 'user',
-    content: 'Can you help me understand how your pricing works?',
-    createdAt: new Date('2024-01-28T10:01:00'),
-  },
-  {
-    id: '2',
-    role: 'assistant',
-    content:
-      'Of course! We offer three pricing tiers:\n\n• **Starter** - $9/month\n• **Pro** - $29/month\n• **Enterprise** - Custom pricing\n\nWould you like more details on any specific plan?',
-    createdAt: new Date('2024-01-28T10:01:15'),
-    model: 'gpt-4',
-    temperature: 0.7,
-    tokensUsed: 58,
-    responseTime: 1200,
-    sources: ['doc-pricing-001', 'doc-faq-003'],
-    feedback: 'like',
-  },
-  {
-    id: '3',
-    role: 'user',
-    content: 'Can you help me understand how your pricing works?',
-    createdAt: new Date('2024-01-28T10:01:00'),
-  },
-  {
-    id: '4',
-    role: 'assistant',
-    content:
-      'Of course! We offer three pricing tiers:\n\n• **Starter** - $9/month\n• **Pro** - $29/month\n• **Enterprise** - Custom pricing\n\nWould you like more details on any specific plan?',
-    createdAt: new Date('2024-01-28T10:01:15'),
-    model: 'gpt-4',
-    temperature: 0.7,
-    tokensUsed: 58,
-    responseTime: 1200,
-    sources: ['doc-pricing-001', 'doc-faq-003'],
-    feedback: 'like',
-  },
+  // {
+  //   id: '1',
+  //   role: 'user',
+  //   content: 'Can you help me understand how your pricing works?',
+  //   createdAt: new Date('2024-01-28T10:01:00'),
+  // },
+  // {
+  //   id: '2',
+  //   role: 'assistant',
+  //   content:
+  //     'Of course! We offer three pricing tiers:\n\n• **Starter** - $9/month\n• **Pro** - $29/month\n• **Enterprise** - Custom pricing\n\nWould you like more details on any specific plan?',
+  //   createdAt: new Date('2024-01-28T10:01:15'),
+  //   model: 'gpt-4',
+  //   temperature: 0.7,
+  //   tokensUsed: 58,
+  //   responseTime: 1200,
+  //   sources: ['doc-pricing-001', 'doc-faq-003'],
+  //   feedback: 'like',
+  // },
+  // {
+  //   id: '3',
+  //   role: 'user',
+  //   content: 'Can you help me understand how your pricing works?',
+  //   createdAt: new Date('2024-01-28T10:01:00'),
+  // },
+  // {
+  //   id: '4',
+  //   role: 'assistant',
+  //   content:
+  //     'Of course! We offer three pricing tiers:\n\n• **Starter** - $9/month\n• **Pro** - $29/month\n• **Enterprise** - Custom pricing\n\nWould you like more details on any specific plan?',
+  //   createdAt: new Date('2024-01-28T10:01:15'),
+  //   model: 'gpt-4',
+  //   temperature: 0.7,
+  //   tokensUsed: 58,
+  //   responseTime: 1200,
+  //   sources: ['doc-pricing-001', 'doc-faq-003'],
+  //   feedback: 'like',
+  // },
 ]
 
 export const PlaygroundPreview: React.FC = () => {
