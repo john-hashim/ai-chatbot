@@ -44,7 +44,9 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
       const bubbleHeight = secondLast.getBoundingClientRect().height
       console.log(bubbleHeight)
       setLoaderContainerHeight(scrollContainerRef.current.clientHeight - (bubbleHeight + 70))
-      scrollToBottom()
+      setTimeout(() => {
+        scrollToBottom()
+      })
     }
   }, [messages])
 
