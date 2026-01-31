@@ -43,7 +43,6 @@ export const useChatbotStore = () =>
       currentChatbot: state.currentChatbot,
       documentFilters: state.documentFilters,
       chatSessions: state.chatSessions,
-      currentChatSession: state.currentChatSession,
       getChatbots: state.getChatbots,
       updateChatbot: state.updateChatbot,
       setCurrentChatbot: state.setCurrentChatbot,
@@ -57,9 +56,6 @@ export const useChatbotStore = () =>
       clearChatbots: state.clearChatbots,
       setDocumentFilters: state.setDocumentFilters,
       resetDocumentFilters: state.resetDocumentFilters,
-      getChatSession: state.getChatSession,
-      postMessage: state.postMessage,
-      clearCurrentChatSession: state.clearCurrentChatSession,
       clearChatbotState: state.clearChatbotState,
     }))
   )

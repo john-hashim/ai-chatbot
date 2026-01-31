@@ -1,57 +1,28 @@
-import { ChatbotWidget, type ChatMessage } from '@/components/common/ChatbotWidget'
+import { chatbotService } from '@/api/services/chatbot'
+import { ChatbotWidget } from '@/components/common/ChatbotWidget'
+import { useApi } from '@/hooks/useApi'
 import { useStore } from '@/store'
+import type { ApiResponse } from '@/types/api'
+import type { ChatMessage } from '@/types/chatbot'
 import { useState } from 'react'
-
-const dummyChats: ChatMessage[] = [
-  // {
-  //   id: '1',
-  //   role: 'user',
-  //   content: 'Can you help me understand how your pricing works?',
-  //   createdAt: new Date('2024-01-28T10:01:00'),
-  // },
-  // {
-  //   id: '2',
-  //   role: 'assistant',
-  //   content:
-  //     'Of course! We offer three pricing tiers:\n\n• **Starter** - $9/month\n• **Pro** - $29/month\n• **Enterprise** - Custom pricing\n\nWould you like more details on any specific plan?',
-  //   createdAt: new Date('2024-01-28T10:01:15'),
-  //   model: 'gpt-4',
-  //   temperature: 0.7,
-  //   tokensUsed: 58,
-  //   responseTime: 1200,
-  //   sources: ['doc-pricing-001', 'doc-faq-003'],
-  //   feedback: 'like',
-  // },
-  // {
-  //   id: '3',
-  //   role: 'user',
-  //   content: 'Can you help me understand how your pricing works?',
-  //   createdAt: new Date('2024-01-28T10:01:00'),
-  // },
-  // {
-  //   id: '4',
-  //   role: 'assistant',
-  //   content:
-  //     'Of course! We offer three pricing tiers:\n\n• **Starter** - $9/month\n• **Pro** - $29/month\n• **Enterprise** - Custom pricing\n\nWould you like more details on any specific plan?',
-  //   createdAt: new Date('2024-01-28T10:01:15'),
-  //   model: 'gpt-4',
-  //   temperature: 0.7,
-  //   tokensUsed: 58,
-  //   responseTime: 1200,
-  //   sources: ['doc-pricing-001', 'doc-faq-003'],
-  //   feedback: 'like',
-  // },
-]
 
 export const PlaygroundPreview: React.FC = () => {
   const { currentChatbot } = useStore()
-  const [messages, setMessages] = useState<ChatMessage[]>(dummyChats)
-  const [generating, setGenerating] = useState<boolean>(false)
+  const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [sessionId, setSessionId] = useState<string | null>(null)
+  const [generating, setGenerating] = useState(false)
 
-  const handleSendMessage = (message: string) => {
-    const newMessage: ChatMessage = {
+  const { execute: executePostMessage } = useApi<
+    ApiResponse<{ sessionId: string; message: ChatMessage }>,
+    [string, string, string?]
+  >(chatbotService.postMessage)
+
+  const handleSendMessage = async (message: string) => {
+    if (!currentChatbot) return
+    setGenerating(true)
+    const userMessage: ChatMessage = {
       id: Math.random().toString(),
-      sessionId: '',
+      sessionId: sessionId || '',
       role: 'user',
       content: message,
       createdAt: new Date().toISOString(),
@@ -62,9 +33,9 @@ export const PlaygroundPreview: React.FC = () => {
       sources: [],
       feedback: null,
     }
-    const dummyLoader: ChatMessage = {
+    const loaderMessage: ChatMessage = {
       id: Math.random().toString(),
-      sessionId: '',
+      sessionId: sessionId || '',
       role: 'assistant',
       content: '',
       createdAt: new Date().toISOString(),
@@ -75,12 +46,26 @@ export const PlaygroundPreview: React.FC = () => {
       sources: [],
       feedback: null,
     }
-    setMessages(prev => [...prev, newMessage, dummyLoader])
-    setGenerating(true)
+
+    setMessages(prev => [...prev, userMessage, loaderMessage])
+
+    try {
+      const result = await executePostMessage(currentChatbot.id, message, sessionId || undefined)
+
+      if (result.data) {
+        if (!sessionId) {
+          setSessionId(result.data.sessionId)
+        }
+        setMessages(prev => [...prev.slice(0, -2), result.data!.message, loaderMessage])
+      }
+    } catch {
+      setMessages(prev => prev.slice(0, -1))
+    }
   }
 
   const handleReset = () => {
-    console.log('Reset conversation')
+    setMessages([])
+    setSessionId(null)
   }
 
   return (
