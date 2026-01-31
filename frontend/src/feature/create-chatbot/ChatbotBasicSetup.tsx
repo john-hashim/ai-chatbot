@@ -56,7 +56,10 @@ export const ChatbotBasicSetup: React.FC = () => {
     },
   })
 
-  const formValues = watch()
+  const watchedName = watch('name')
+  const watchedBrandColor = watch('brandColor')
+  const watchedAppearance = watch('appearance')
+  const watchedBrandColorForHeader = watch('brandColorForHeader')
 
   useEffect(() => {
     return () => {
@@ -334,11 +337,11 @@ export const ChatbotBasicSetup: React.FC = () => {
           </div>
           <div className="w-1/2 h-full hidden lg:block bg-[radial-gradient(circle,#ebebeb_2px,#fafafa_0)] bg-size-[30px_30px]">
             <Outline
-              name={formValues.name}
+              name={watchedName}
               profilePicture={previewUrl}
-              brandColor={formValues.brandColor}
-              appearance={formValues.appearance}
-              brandColorForHeader={formValues.brandColorForHeader}
+              brandColor={watchedBrandColor}
+              appearance={watchedAppearance}
+              brandColorForHeader={watchedBrandColorForHeader}
             />
           </div>
         </div>

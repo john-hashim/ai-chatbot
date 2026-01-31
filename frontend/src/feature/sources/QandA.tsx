@@ -9,7 +9,7 @@ import { showLoadingNotification } from '@/utils/notifications'
 import { htmlToPlainText, calculateTextSize } from '@/utils/textFormatting'
 import { Button, Checkbox, Select, TextInput, Text, Tooltip, Menu } from '@mantine/core'
 import { ChevronDown, Ellipsis, Loader2, Plus, Search, SearchX, Trash, X } from 'lucide-react'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import classes from '@/theme.module.css'
 import { modals } from '@mantine/modals'
 import { TagComponent } from '@/components/common/tag'
@@ -102,9 +102,14 @@ ${answerPlain}`
     }
   }
 
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout>>(null)
+
   const handleSearch = (query: string) => {
     setDocumentFilters({ ...documentFilters, searchParam: query })
-    getChatbot()
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current)
+    searchTimeoutRef.current = setTimeout(() => {
+      getChatbot()
+    }, 300)
   }
 
   const handleSelectAll = () => {
@@ -340,9 +345,8 @@ ${answerPlain}`
             currentChatbot.documents
               .filter(document => document.type === 'q&a')
               .map(document => (
-                <div>
+                <div key={document.id}>
                   <div
-                    key={document.id}
                     className="py-4 font-semibold flex justify-between items-center"
                   >
                     <div className="flex">

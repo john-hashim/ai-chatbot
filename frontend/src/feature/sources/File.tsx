@@ -4,7 +4,7 @@ import { Menu, TextInput, Tooltip, Button, Text } from '@mantine/core'
 import { Checkbox } from '@mantine/core'
 import { Select } from '@mantine/core'
 import classes from '@/theme.module.css'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import type { FileWithPath } from '@mantine/dropzone'
 import { showLoadingNotification } from '@/utils/notifications'
 import { useApi } from '@/hooks/useApi'
@@ -136,9 +136,14 @@ export const UploadFile: React.FC = () => {
     })
   }
 
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout>>(null)
+
   const handleSearch = (query: string) => {
     setDocumentFilters({ ...documentFilters, searchParam: query })
-    getChatbot()
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current)
+    searchTimeoutRef.current = setTimeout(() => {
+      getChatbot()
+    }, 300)
   }
 
   const handleSortChange = (value: string | null) => {
@@ -226,9 +231,8 @@ export const UploadFile: React.FC = () => {
             currentChatbot.documents
               .filter(document => document.type === 'document')
               .map(document => (
-                <div>
+                <div key={document.id}>
                   <div
-                    key={document.id}
                     className="py-4 font-semibold flex justify-between items-center"
                   >
                     <div className="flex">

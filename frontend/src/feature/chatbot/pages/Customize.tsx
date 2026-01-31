@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useMediaQuery } from '@mantine/hooks'
 import { Button, Transition } from '@mantine/core'
 import { Style } from '../components/Style'
@@ -121,17 +121,24 @@ export const Customize: React.FC = () => {
   const canSave = nameValue?.trim() && initialMessages?.[0]?.trim()
 
   // Save on Enter when popup is visible (isDirty)
+  const saveRef = useRef(() => {})
+  saveRef.current = () => {
+    if (isDirty && canSave && !isSaving) {
+      handleSubmit(onSave)()
+    }
+  }
+
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Enter' && isDirty && canSave && !isSaving) {
+      if (event.key === 'Enter') {
         event.preventDefault()
-        handleSubmit(onSave)()
+        saveRef.current()
       }
     }
 
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  })
+  }, [])
 
   return (
     <FormProvider {...methods}>

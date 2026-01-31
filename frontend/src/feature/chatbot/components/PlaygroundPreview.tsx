@@ -73,7 +73,7 @@ export const PlaygroundPreview: React.FC = () => {
       sources: ['doc-pricing-001', 'doc-faq-003'],
       feedback: 'like',
     }
-    setMessages([...messages, newMessage, dummyLoader])
+    setMessages(prev => [...prev, newMessage, dummyLoader])
     setGenerating(true)
   }
 

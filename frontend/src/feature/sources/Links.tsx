@@ -1,5 +1,5 @@
 import { Button, TextInput, Checkbox, Select, Text, Tooltip, Menu } from '@mantine/core'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Tabs } from '@mantine/core'
 import {
   Info,
@@ -160,9 +160,14 @@ export const UploadLinks: React.FC = () => {
     })
   }
 
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout>>(null)
+
   const handleSearch = (query: string) => {
     setDocumentFilters({ ...documentFilters, searchParam: query })
-    getChatbot()
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current)
+    searchTimeoutRef.current = setTimeout(() => {
+      getChatbot()
+    }, 300)
   }
 
   const handleSortChange = (value: string | null) => {

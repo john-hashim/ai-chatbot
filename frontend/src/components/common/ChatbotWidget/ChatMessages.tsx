@@ -1,7 +1,28 @@
 import { Tooltip } from '@mantine/core'
 import { ArrowDown, Copy, RotateCcw, ThumbsDown, ThumbsUp } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ChatMessagesProps } from './types'
+
+const ActionButton: React.FC<{
+  label: string
+  icon: React.ReactNode
+  onClick?: () => void
+  isDark: boolean
+}> = ({ label, icon, onClick, isDark }) => (
+  <Tooltip label={label} position="top">
+    <button
+      className={`flex h-5 w-5 cursor-pointer items-center justify-center rounded-md transition-all duration-300 ${
+        isDark
+          ? 'text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300'
+          : 'text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600'
+      }`}
+      title={label}
+      onClick={onClick}
+    >
+      {icon}
+    </button>
+  </Tooltip>
+)
 
 export const ChatMessages: React.FC<ChatMessagesProps> = ({
   name,
@@ -30,45 +51,38 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
 
-  const handleScroll = () => {
-    if (!scrollContainerRef.current) return
-    const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current
-    const isAtBottom = scrollHeight - scrollTop - clientHeight < 50
-    setShowScrollButton(!isAtBottom)
-  }
+  const rafRef = useRef<number>(0)
+
+  const handleScroll = useCallback(() => {
+    if (rafRef.current) return
+    rafRef.current = requestAnimationFrame(() => {
+      if (scrollContainerRef.current) {
+        const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current
+        const isAtBottom = scrollHeight - scrollTop - clientHeight < 50
+        setShowScrollButton(!isAtBottom)
+      }
+      rafRef.current = 0
+    })
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current)
+    }
+  }, [])
 
   useEffect(() => {
     const messageBubbles = scrollContainerRef.current?.querySelectorAll('[data-message]')
     if (messageBubbles && messageBubbles.length >= 2 && scrollContainerRef.current?.clientHeight) {
       const secondLast = messageBubbles[messageBubbles.length - 2]
       const bubbleHeight = secondLast.getBoundingClientRect().height
-      console.log(bubbleHeight)
       setLoaderContainerHeight(scrollContainerRef.current.clientHeight - (bubbleHeight + 70))
-      setTimeout(() => {
+      const timeoutId = setTimeout(() => {
         scrollToBottom()
       })
+      return () => clearTimeout(timeoutId)
     }
   }, [messages])
-
-  const ActionButton: React.FC<{
-    label: string
-    icon: React.ReactNode
-    onClick?: () => void
-  }> = ({ label, icon, onClick }) => (
-    <Tooltip label={label} position="top">
-      <button
-        className={`flex h-5 w-5 cursor-pointer items-center justify-center rounded-md transition-all duration-300 ${
-          isDark
-            ? 'text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300'
-            : 'text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600'
-        }`}
-        title={label}
-        onClick={onClick}
-      >
-        {icon}
-      </button>
-    </Tooltip>
-  )
 
   return (
     <div className="relative flex-1 overflow-hidden">
@@ -200,21 +214,25 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                   {chat.role === 'assistant' && !isGenerating && (
                     <div className="relative z-10 ml-6 mt-1 flex flex-row flex-nowrap items-center gap-1">
                       <ActionButton
+                        isDark={isDark}
                         label="Copy"
                         icon={<Copy className="h-3 w-3" />}
                         onClick={() => onCopy?.(chat.id, chat.content)}
                       />
                       <ActionButton
+                        isDark={isDark}
                         label="Good response"
                         icon={<ThumbsUp className="h-3 w-3" />}
                         onClick={() => onFeedback?.(chat.id, 'like')}
                       />
                       <ActionButton
+                        isDark={isDark}
                         label="Bad response"
                         icon={<ThumbsDown className="h-3 w-3" />}
                         onClick={() => onFeedback?.(chat.id, 'dislike')}
                       />
                       <ActionButton
+                        isDark={isDark}
                         label="Retry"
                         icon={<RotateCcw className="h-3 w-3" />}
                         onClick={() => onRetry?.(chat.id)}
