@@ -24,6 +24,7 @@ export const ChatbotWidget: React.FC<ChatbotWidgetProps> = ({
   onRetry,
   onCopy,
   onReset,
+  generating,
 }) => {
   const [inputValue, setInputValue] = useState('')
   const headerContrast = useContrastColor(brandColor)
@@ -52,9 +53,7 @@ export const ChatbotWidget: React.FC<ChatbotWidgetProps> = ({
   }
 
   return (
-    <div
-      className={`flex h-full flex-col ${isDark ? 'bg-zinc-900' : 'bg-white'}`}
-    >
+    <div className={`flex h-full flex-col ${isDark ? 'bg-zinc-900' : 'bg-white'}`}>
       <ChatHeader
         name={name}
         profilePicture={profilePicture}
@@ -80,6 +79,7 @@ export const ChatbotWidget: React.FC<ChatbotWidgetProps> = ({
           onFeedback={onFeedback}
           onRetry={onRetry}
           onCopy={handleCopy}
+          generating={generating}
         />
 
         <ChatInput

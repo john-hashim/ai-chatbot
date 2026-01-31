@@ -29,6 +29,7 @@ export interface ChatbotWidgetProps {
 
   // Chat state
   messages?: ChatMessage[]
+  generating: boolean
 
   // Behavior
   readOnly?: boolean
@@ -65,6 +66,7 @@ export interface ChatMessagesProps {
   onFeedback?: (messageId: string, type: 'like' | 'dislike') => void
   onRetry?: (messageId: string) => void
   onCopy?: (messageId: string, content: string) => void
+  generating: boolean
 }
 
 export interface ChatInputProps {

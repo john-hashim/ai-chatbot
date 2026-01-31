@@ -1,7 +1,11 @@
 import type React from 'react'
 import { useFormContext, useWatch } from 'react-hook-form'
 import type { ChatbotFormValues } from '../pages/Customize'
-import { ChatbotWidget, ChatBubbleButton, type ChatMessage } from '@/components/common/ChatbotWidget'
+import {
+  ChatbotWidget,
+  ChatBubbleButton,
+  type ChatMessage,
+} from '@/components/common/ChatbotWidget'
 
 const sampleMessages: ChatMessage[] = [
   {
@@ -50,6 +54,7 @@ export const Preview: React.FC = () => {
             footer={footer}
             messages={sampleMessages}
             readOnly
+            generating={false}
           />
         </div>
 

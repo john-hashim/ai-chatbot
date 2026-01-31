@@ -13,6 +13,7 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
   showSuggestedAfterFirst,
   messages,
   contrastColor,
+  generating = false,
   onSuggestionClick,
   onFeedback,
   onRetry,
@@ -21,6 +22,7 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
   const [showScrollButton, setShowScrollButton] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const [loaderContainerHeight, setLoaderContainerHeight] = useState<number>(0)
 
   const isDark = appearance === 'dark'
 
@@ -37,7 +39,13 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
 
   useEffect(() => {
     scrollToBottom()
-  }, [])
+    const lineHeight =
+      (Math.floor(messages[messages.length - 2].content.split('').length / 43) + 1) * 21
+    if (scrollContainerRef.current?.clientHeight)
+      setLoaderContainerHeight(
+        scrollContainerRef.current?.clientHeight - (lineHeight + 24 + 32 + 30)
+      )
+  }, [messages])
 
   const ActionButton: React.FC<{
     label: string
@@ -115,76 +123,101 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
 
         {messages.length > 0 && (
           <div className="mt-5 flex flex-col gap-5">
-            {messages.map(chat => (
-              <div
-                key={chat.id}
-                className={`flex flex-col ${chat.role === 'user' ? 'items-end' : 'items-start'}`}
-              >
+            {messages.map((chat, index) => {
+              const isGenerating =
+                chat.role === 'assistant' && index === messages.length - 1 && generating
+              return (
                 <div
-                  className={`relative flex w-fit max-w-[85%] flex-col items-start gap-2 rounded-[20px] px-4 py-3 text-sm leading-normal tracking-tight ${
-                    chat.role === 'assistant'
-                      ? isDark
-                        ? 'bg-zinc-800 text-zinc-100'
-                        : 'bg-zinc-100 text-zinc-900'
-                      : ''
-                  }`}
-                  style={
-                    chat.role === 'user'
-                      ? {
-                          backgroundColor: brandColor,
-                          color: contrastColor,
-                        }
-                      : undefined
-                  }
+                  key={chat.id}
+                  className={`flex flex-col ${chat.role === 'user' ? 'items-end' : 'items-start'}`}
                 >
-                  <div className="prose flex h-full w-full max-w-none flex-col gap-2 text-sm leading-normal tracking-tight">
-                    {chat.role === 'assistant' && (
-                      <div className="flex items-center gap-2">
-                        {profilePicture && (
-                          <img
-                            src={profilePicture}
-                            alt="Chatbot Avatar"
-                            className="h-6 w-6 shrink-0 rounded-full object-cover"
-                          />
-                        )}
-                        <span
-                          className={`text-sm font-medium leading-normal tracking-tight ${
-                            isDark ? 'text-zinc-100' : 'text-zinc-900'
-                          }`}
+                  <div
+                    className={`relative flex w-fit max-w-[85%] flex-col items-start gap-2 rounded-[20px] px-4 py-3 text-sm leading-normal tracking-tight ${
+                      chat.role === 'assistant' && !isGenerating
+                        ? isDark
+                          ? 'bg-zinc-800 text-zinc-100'
+                          : 'bg-zinc-100 text-zinc-900'
+                        : ''
+                    }`}
+                    style={
+                      chat.role === 'user'
+                        ? {
+                            backgroundColor: brandColor,
+                            color: contrastColor,
+                          }
+                        : undefined
+                    }
+                  >
+                    <div
+                      className="prose flex h-full w-full max-w-none flex-col gap-2 text-sm leading-normal tracking-tight"
+                      style={isGenerating ? { minHeight: `${loaderContainerHeight}px` } : undefined}
+                    >
+                      {chat.role === 'assistant' && !isGenerating && (
+                        <div className="flex items-center gap-2">
+                          {profilePicture && (
+                            <img
+                              src={profilePicture}
+                              alt="Chatbot Avatar"
+                              className="h-6 w-6 shrink-0 rounded-full object-cover"
+                            />
+                          )}
+                          <span
+                            className={`text-sm font-medium leading-normal tracking-tight ${
+                              isDark ? 'text-zinc-100' : 'text-zinc-900'
+                            }`}
+                          >
+                            {name}
+                          </span>
+                        </div>
+                      )}
+                      {isGenerating && (
+                        <div
+                          className={`flex items-center gap-1.5 px-4 py-3 rounded-[20px] ${
+                            isDark ? 'bg-zinc-800 text-zinc-100' : 'bg-zinc-100 text-zinc-900'
+                          }
+                    `}
                         >
-                          {name}
-                        </span>
-                      </div>
-                    )}
-                    <div>{chat.content}</div>
+                          <span className="flex gap-1">
+                            {[0, 1, 2].map(i => (
+                              <span
+                                key={i}
+                                className={`w-2 h-2 ${isDark ? 'bg-zinc-400' : 'bg-zinc-500'} rounded-full animate-bounce animation-duration-[.6s]`}
+                                style={{ animationDelay: `${-0.15 * (2 - i)}s` }}
+                              ></span>
+                            ))}
+                          </span>
+                        </div>
+                      )}
+                      {!isGenerating && <div>{chat.content}</div>}
+                    </div>
                   </div>
+                  {chat.role === 'assistant' && !isGenerating && (
+                    <div className="relative z-10 ml-6 mt-1 flex flex-row flex-nowrap items-center gap-1">
+                      <ActionButton
+                        label="Copy"
+                        icon={<Copy className="h-3 w-3" />}
+                        onClick={() => onCopy?.(chat.id, chat.content)}
+                      />
+                      <ActionButton
+                        label="Good response"
+                        icon={<ThumbsUp className="h-3 w-3" />}
+                        onClick={() => onFeedback?.(chat.id, 'like')}
+                      />
+                      <ActionButton
+                        label="Bad response"
+                        icon={<ThumbsDown className="h-3 w-3" />}
+                        onClick={() => onFeedback?.(chat.id, 'dislike')}
+                      />
+                      <ActionButton
+                        label="Retry"
+                        icon={<RotateCcw className="h-3 w-3" />}
+                        onClick={() => onRetry?.(chat.id)}
+                      />
+                    </div>
+                  )}
                 </div>
-                {chat.role === 'assistant' && (
-                  <div className="relative z-10 ml-6 mt-1 flex flex-row flex-nowrap items-center gap-1">
-                    <ActionButton
-                      label="Copy"
-                      icon={<Copy className="h-3 w-3" />}
-                      onClick={() => onCopy?.(chat.id, chat.content)}
-                    />
-                    <ActionButton
-                      label="Good response"
-                      icon={<ThumbsUp className="h-3 w-3" />}
-                      onClick={() => onFeedback?.(chat.id, 'like')}
-                    />
-                    <ActionButton
-                      label="Bad response"
-                      icon={<ThumbsDown className="h-3 w-3" />}
-                      onClick={() => onFeedback?.(chat.id, 'dislike')}
-                    />
-                    <ActionButton
-                      label="Retry"
-                      icon={<RotateCcw className="h-3 w-3" />}
-                      onClick={() => onRetry?.(chat.id)}
-                    />
-                  </div>
-                )}
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
 

@@ -32,7 +32,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           }`}
         >
           <div
-            className="flex-1 text-xs font-medium [&_.ql-align-center]:text-center [&_.ql-align-justify]:text-justify [&_.ql-align-left]:text-left [&_.ql-align-right]:text-right [&_a]:text-inherit [&_a]:underline"
+            className="no-animate flex-1 text-xs font-medium [&_.ql-align-center]:text-center [&_.ql-align-justify]:text-justify [&_.ql-align-left]:text-left [&_.ql-align-right]:text-right [&_a]:text-inherit [&_a]:underline"
             dangerouslySetInnerHTML={{ __html: dismissibleNotice }}
           />
           <button
@@ -47,13 +47,13 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       )}
 
       <div
-        className={`flex flex-row items-center gap-1 rounded-3xl border p-2 shadow-input-box ${
+        className={`flex flex-row items-end gap-1 rounded-3xl border p-2 shadow-input-box ${
           isDark
             ? 'border-zinc-700 bg-zinc-800 text-zinc-100 focus-within:border-zinc-500'
             : 'border-border-week bg-white focus-within:border-border-strong'
         }`}
       >
-        <div className="flex flex-1 flex-col text-sm">
+        <div className="flex min-w-0 flex-1 flex-col text-sm">
           {readOnly ? (
             <input
               type="text"
@@ -86,7 +86,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           )}
         </div>
         <button
-          className={`flex h-7 w-7 items-center justify-center gap-2 whitespace-nowrap rounded-full p-1.5 text-sm font-medium shadow-none outline-none transition-all duration-200 disabled:pointer-events-none disabled:opacity-50 ${
+          className={`flex h-7 w-7 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-full p-1.5 text-sm font-medium shadow-none outline-none transition-all duration-200 disabled:pointer-events-none disabled:opacity-50 ${
             readOnly
               ? isDark
                 ? 'bg-zinc-600 text-zinc-400'
@@ -105,7 +105,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
       {footer && (
         <div
-          className={`px-3 pt-4 text-xs font-medium [&_.ql-align-center]:text-center [&_.ql-align-justify]:text-justify [&_.ql-align-left]:text-left [&_.ql-align-right]:text-right [&_a]:text-inherit [&_a]:underline ${
+          className={`no-animate px-3 pt-4 text-xs font-medium [&_.ql-align-center]:text-center [&_.ql-align-justify]:text-justify [&_.ql-align-left]:text-left [&_.ql-align-right]:text-right [&_a]:text-inherit [&_a]:underline ${
             isDark ? 'text-zinc-400' : 'text-zinc-500'
           }`}
           dangerouslySetInnerHTML={{ __html: footer }}

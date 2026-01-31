@@ -1,5 +1,6 @@
 import { ChatbotWidget, type ChatMessage } from '@/components/common/ChatbotWidget'
 import { useStore } from '@/store'
+import { useState } from 'react'
 
 const dummyChats: ChatMessage[] = [
   {
@@ -44,9 +45,36 @@ const dummyChats: ChatMessage[] = [
 
 export const PlaygroundPreview: React.FC = () => {
   const { currentChatbot } = useStore()
+  const [messages, setMessages] = useState<ChatMessage[]>(dummyChats)
+  const [generating, setGenerating] = useState<boolean>(false)
 
   const handleSendMessage = (message: string) => {
-    console.log('Submitting:', message)
+    const newMessage: ChatMessage = {
+      id: Math.random().toString(),
+      role: 'user',
+      content: message,
+      createdAt: new Date(),
+      model: 'gpt-4',
+      temperature: 0.7,
+      tokensUsed: 58,
+      responseTime: 1200,
+      sources: ['doc-pricing-001', 'doc-faq-003'],
+      feedback: 'like',
+    }
+    const dummyLoader: ChatMessage = {
+      id: Math.random().toString(),
+      role: 'assistant',
+      content: '',
+      createdAt: new Date(),
+      model: 'gpt-4',
+      temperature: 0.7,
+      tokensUsed: 58,
+      responseTime: 1200,
+      sources: ['doc-pricing-001', 'doc-faq-003'],
+      feedback: 'like',
+    }
+    setMessages([...messages, newMessage, dummyLoader])
+    setGenerating(true)
   }
 
   const handleReset = () => {
@@ -68,9 +96,10 @@ export const PlaygroundPreview: React.FC = () => {
           messagePlaceholder={currentChatbot?.messagePlaceholder ?? undefined}
           dismissibleNotice={currentChatbot?.dismissibleNotice}
           footer={currentChatbot?.footer}
-          messages={dummyChats}
+          messages={messages}
           onSendMessage={handleSendMessage}
           onReset={handleReset}
+          generating={generating}
         />
       </div>
     </div>
