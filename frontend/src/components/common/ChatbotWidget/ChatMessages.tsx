@@ -38,13 +38,14 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
   }
 
   useEffect(() => {
-    scrollToBottom()
-    const lineHeight =
-      (Math.floor(messages[messages.length - 2].content.split('').length / 43) + 1) * 21
-    if (scrollContainerRef.current?.clientHeight)
-      setLoaderContainerHeight(
-        scrollContainerRef.current?.clientHeight - (lineHeight + 24 + 32 + 30)
-      )
+    const messageBubbles = scrollContainerRef.current?.querySelectorAll('[data-message]')
+    if (messageBubbles && messageBubbles.length >= 2 && scrollContainerRef.current?.clientHeight) {
+      const secondLast = messageBubbles[messageBubbles.length - 2]
+      const bubbleHeight = secondLast.getBoundingClientRect().height
+      console.log(bubbleHeight)
+      setLoaderContainerHeight(scrollContainerRef.current.clientHeight - (bubbleHeight + 70))
+      scrollToBottom()
+    }
   }, [messages])
 
   const ActionButton: React.FC<{
@@ -113,7 +114,7 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                     </span>
                   </div>
                 )}
-                <div className="prose h-full w-full max-w-none text-sm leading-normal tracking-tight">
+                <div className="prose h-full w-full max-w-none wrap-break-word text-sm leading-normal tracking-tight">
                   {message}
                 </div>
               </div>
@@ -129,6 +130,7 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
               return (
                 <div
                   key={chat.id}
+                  data-message
                   className={`flex flex-col ${chat.role === 'user' ? 'items-end' : 'items-start'}`}
                 >
                   <div
@@ -149,7 +151,7 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                     }
                   >
                     <div
-                      className="prose flex h-full w-full max-w-none flex-col gap-2 text-sm leading-normal tracking-tight"
+                      className="prose flex h-full w-full max-w-none wrap-break-word flex-col gap-2 text-sm leading-normal tracking-tight"
                       style={isGenerating ? { minHeight: `${loaderContainerHeight}px` } : undefined}
                     >
                       {chat.role === 'assistant' && !isGenerating && (
@@ -188,7 +190,9 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                           </span>
                         </div>
                       )}
-                      {!isGenerating && <div>{chat.content}</div>}
+                      {!isGenerating && (
+                        <div className="whitespace-pre-wrap">{chat.content || 'dummy content'}</div>
+                      )}
                     </div>
                   </div>
                   {chat.role === 'assistant' && !isGenerating && (
