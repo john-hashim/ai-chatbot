@@ -10,9 +10,16 @@ import {
 const sampleMessages: ChatMessage[] = [
   {
     id: '1',
+    sessionId: '',
     role: 'user',
     content: 'Hello',
-    createdAt: new Date(),
+    createdAt: new Date().toISOString(),
+    model: null,
+    temperature: null,
+    tokensUsed: null,
+    responseTime: null,
+    sources: [],
+    feedback: null,
   },
 ]
 

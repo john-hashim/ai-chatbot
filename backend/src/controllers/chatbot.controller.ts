@@ -7,6 +7,7 @@ import mammoth from 'mammoth'
 import WordExtractor from 'word-extractor'
 import * as crawlerService from '../services/crawler.service.js'
 import * as trainingService from '../services/training.service.js'
+import { error } from 'console'
 
 export const createChatbot = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -872,6 +873,143 @@ export const getTrainingStatus = async (req: Request, res: Response, next: NextF
       status: ApiStatus.SUCCESS,
       data: status,
       message: 'Training status retrieved successfully',
+    } satisfies ApiResponse)
+  } catch (error) {
+    next(error)
+  }
+}
+
+export const chatController = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { chatbotId } = req.params
+    let { sessionId, message } = req.body
+
+    if (!chatbotId) {
+      return res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'Chatbot ID is required',
+      } satisfies ApiResponse)
+    }
+
+    if (!message) {
+      return res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'User message required',
+      } satisfies ApiResponse)
+    }
+
+    let chatMessage
+
+    if (!sessionId) {
+      // Verify chatbot exists only on first message
+      const chatbot = await prisma.chatbot.findUnique({
+        where: { id: chatbotId },
+      })
+
+      if (!chatbot) {
+        return res.status(404).json({
+          status: ApiStatus.FAILURE,
+          message: 'Chatbot not found',
+        } satisfies ApiResponse)
+      }
+
+      const session = await prisma.chatSession.create({
+        data: {
+          chatbotId,
+          messages: {
+            create: {
+              role: 'user',
+              content: message,
+              sources: [],
+            },
+          },
+        },
+        include: {
+          messages: true,
+        },
+      })
+      sessionId = session.id
+      chatMessage = session.messages[0]
+    } else {
+      // Session lookup already validates chatbot via chatbotId filter
+      const session = await prisma.chatSession.findFirst({
+        where: { id: sessionId, chatbotId },
+      })
+
+      if (!session) {
+        return res.status(404).json({
+          status: ApiStatus.FAILURE,
+          message: 'Chat session not found',
+        } satisfies ApiResponse)
+      }
+
+      chatMessage = await prisma.chatMessage.create({
+        data: {
+          sessionId,
+          role: 'user',
+          content: message,
+          sources: [],
+        },
+      })
+    }
+
+    res.status(200).json({
+      status: ApiStatus.SUCCESS,
+      data: { sessionId, message: chatMessage },
+      message: 'Message sent successfully',
+    } satisfies ApiResponse)
+  } catch (error) {
+    next(error)
+  }
+}
+
+export const getChatSession = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { chatbotId, sessionId } = req.params
+    if (!chatbotId) {
+      return res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'Chatbot ID is required',
+      } satisfies ApiResponse)
+    }
+
+    if (!sessionId) {
+      return res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'Chat session ID required',
+      } satisfies ApiResponse)
+    }
+
+    const chatbot = await prisma.chatbot.findUnique({
+      where: { id: chatbotId, userId: req.user.id },
+    })
+
+    if (!chatbot) {
+      return res.status(404).json({
+        status: ApiStatus.FAILURE,
+        message: 'Chatbot not found',
+      } satisfies ApiResponse)
+    }
+    const session = await prisma.chatSession.findFirst({
+      where: { id: sessionId, chatbotId },
+      include: {
+        messages: {
+          orderBy: { createdAt: 'asc' },
+        },
+      },
+    })
+
+    if (!session) {
+      return res.status(404).json({
+        status: ApiStatus.FAILURE,
+        message: 'Chat session not found',
+      } satisfies ApiResponse)
+    }
+
+    res.status(200).json({
+      status: ApiStatus.SUCCESS,
+      data: { chatSession: session },
+      message: 'Successfully retrieved chat session',
     } satisfies ApiResponse)
   } catch (error) {
     next(error)

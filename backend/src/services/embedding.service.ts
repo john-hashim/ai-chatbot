@@ -59,7 +59,7 @@ export async function generateEmbedding(text: string): Promise<number[]> {
 
 /**
  * Generate embeddings for multiple texts in batches
- * More efficient than calling generateEmbedding() multiple times
+ * More efficient than calling () multiple times
  */
 export async function generateEmbeddings(texts: string[]): Promise<EmbeddingResult[]> {
   const apiKey = process.env.HUGGINGFACE_API_KEY
@@ -79,7 +79,7 @@ export async function generateEmbeddings(texts: string[]): Promise<EmbeddingResu
 
     // BGE models recommend adding this prefix for retrieval tasks
     const prefixedBatch = batch.map(
-      (text) => `Represent this sentence for searching relevant passages: ${text}`
+      text => `Represent this sentence for searching relevant passages: ${text}`
     )
 
     const response = await fetch(`${HF_API_URL}/${EMBEDDING_MODEL}`, {
@@ -113,7 +113,7 @@ export async function generateEmbeddings(texts: string[]): Promise<EmbeddingResu
 
     // Small delay between batches to avoid rate limiting
     if (i + BATCH_SIZE < texts.length) {
-      await new Promise((resolve) => setTimeout(resolve, 100))
+      await new Promise(resolve => setTimeout(resolve, 100))
     }
   }
 

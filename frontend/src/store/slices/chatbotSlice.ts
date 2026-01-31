@@ -1,5 +1,5 @@
 import { chatbotService } from '@/api/services/chatbot'
-import type { Chatbot } from '@/types/chatbot'
+import type { Chatbot, ChatSession } from '@/types/chatbot'
 import type { DocumentFilters } from '@/types/document'
 import type { StateCreator } from 'zustand'
 
@@ -7,6 +7,8 @@ export interface ChatbotSlice {
   chatbots: Chatbot[]
   currentChatbot: Chatbot | null
   documentFilters: DocumentFilters
+  chatSessions: ChatSession[]
+  currentChatSession: ChatSession | null
 
   getChatbots: () => Promise<void>
 
@@ -26,6 +28,10 @@ export interface ChatbotSlice {
   setDocumentFilters: (filters: Partial<DocumentFilters>) => void
   resetDocumentFilters: () => void
 
+  getChatSession: (chatbotId: string, sessionId: string) => Promise<void>
+  postMessage: (chatbotId: string, message: string) => Promise<void>
+  clearCurrentChatSession: () => void
+
   clearChatbotState: () => void
 }
 
@@ -38,6 +44,8 @@ export const createChatbotSlice: StateCreator<ChatbotSlice> = (set, get) => ({
   chatbots: [],
   currentChatbot: null,
   documentFilters: defaultFilters,
+  chatSessions: [],
+  currentChatSession: null,
 
   getChatbots: async () => {
     const response = await chatbotService.getChabots()
@@ -134,6 +142,58 @@ export const createChatbotSlice: StateCreator<ChatbotSlice> = (set, get) => ({
 
   resetDocumentFilters: () => set({ documentFilters: defaultFilters }),
 
+  getChatSession: async (chatbotId: string, sessionId: string) => {
+    const response = await chatbotService.getChatSession(chatbotId, sessionId)
+    const chatSession = response.data.data?.chatSession
+
+    if (!chatSession) {
+      throw new Error('Chat session not found')
+    }
+
+    set({ currentChatSession: chatSession })
+  },
+  postMessage: async (chatbotId: string, message: string) => {
+    const state = get()
+    const sessionId = state.currentChatSession?.id
+
+    const response = await chatbotService.postMessage(chatbotId, message, sessionId)
+    const data = response.data.data
+
+    if (!data) {
+      throw new Error('Failed to send message')
+    }
+
+    if (!sessionId) {
+      const newSession: ChatSession = {
+        id: data.sessionId,
+        chatbotId,
+        createdAt: data.message.createdAt,
+        updatedAt: data.message.createdAt,
+        messages: [data.message],
+      }
+      set(state => ({
+        currentChatSession: newSession,
+        chatSessions: [newSession, ...state.chatSessions],
+      }))
+    } else {
+      set(state => ({
+        currentChatSession: state.currentChatSession
+          ? {
+              ...state.currentChatSession,
+              messages: [...(state.currentChatSession.messages || []), data.message],
+            }
+          : null,
+      }))
+    }
+  },
+  clearCurrentChatSession: () => set({ currentChatSession: null }),
+
   clearChatbotState: () =>
-    set({ chatbots: [], currentChatbot: null, documentFilters: defaultFilters }),
+    set({
+      chatbots: [],
+      currentChatbot: null,
+      documentFilters: defaultFilters,
+      chatSessions: [],
+      currentChatSession: null,
+    }),
 })

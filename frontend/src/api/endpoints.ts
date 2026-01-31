@@ -22,6 +22,8 @@ export const ENDPOINTS = {
     DELETE_MULTIPLE_DOCUMENTS: 'chatbot/documents/delete-multiple',
     TRAIN: 'chatbot/:chatbotId/train',
     TRAINING_STATUS: 'chatbot/:chatbotId/training-status',
+    POST_MESSAGE: 'chatbot/:chatbotId/chat',
+    GET_CHAT_SESSION: 'chatbot/:chatbotId/:sessionId',
   },
 } as const
 

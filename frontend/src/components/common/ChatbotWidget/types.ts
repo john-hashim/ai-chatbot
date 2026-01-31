@@ -1,15 +1,6 @@
-export interface ChatMessage {
-  id: string
-  role: 'user' | 'assistant'
-  content: string
-  createdAt: Date
-  model?: string | null
-  temperature?: number | null
-  tokensUsed?: number | null
-  responseTime?: number | null
-  sources?: string[] | null
-  feedback?: 'like' | 'dislike' | null
-}
+import type { ChatMessage } from '@/types/chatbot'
+
+export type { ChatMessage }
 
 export interface ChatbotWidgetProps {
   // Appearance

@@ -51,27 +51,29 @@ export const PlaygroundPreview: React.FC = () => {
   const handleSendMessage = (message: string) => {
     const newMessage: ChatMessage = {
       id: Math.random().toString(),
+      sessionId: '',
       role: 'user',
       content: message,
-      createdAt: new Date(),
-      model: 'gpt-4',
-      temperature: 0.7,
-      tokensUsed: 58,
-      responseTime: 1200,
-      sources: ['doc-pricing-001', 'doc-faq-003'],
-      feedback: 'like',
+      createdAt: new Date().toISOString(),
+      model: null,
+      temperature: null,
+      tokensUsed: null,
+      responseTime: null,
+      sources: [],
+      feedback: null,
     }
     const dummyLoader: ChatMessage = {
       id: Math.random().toString(),
+      sessionId: '',
       role: 'assistant',
       content: '',
-      createdAt: new Date(),
-      model: 'gpt-4',
-      temperature: 0.7,
-      tokensUsed: 58,
-      responseTime: 1200,
-      sources: ['doc-pricing-001', 'doc-faq-003'],
-      feedback: 'like',
+      createdAt: new Date().toISOString(),
+      model: null,
+      temperature: null,
+      tokensUsed: null,
+      responseTime: null,
+      sources: [],
+      feedback: null,
     }
     setMessages(prev => [...prev, newMessage, dummyLoader])
     setGenerating(true)

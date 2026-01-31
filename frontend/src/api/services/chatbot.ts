@@ -2,7 +2,7 @@
 import { type AxiosResponse } from 'axios'
 import apiClient from '../index'
 import { ENDPOINTS } from '../endpoints'
-import type { Chatbot, ChatbotFormData } from '@/types/chatbot'
+import type { Chatbot, ChatbotFormData, ChatMessage, ChatSession } from '@/types/chatbot'
 import type { ApiResponse } from '@/types/api'
 import type { Document, DocumentFilters, TextDocumentUploadParams } from '@/types/document'
 
@@ -181,5 +181,39 @@ export const chatbotService = {
     >
   > => {
     return apiClient.get(ENDPOINTS.CHATBOT.TRAINING_STATUS.replace(':chatbotId', chatbotId))
+  },
+  /**
+   * Send a chat message to a chatbot
+   * @param chatbotId - ID of the chatbot
+   * @param message - User message text
+   * @param sessionId - Optional existing session ID (omit to create new session)
+   * @returns Promise with session ID and saved message
+   */
+  postMessage: (
+    chatbotId: string,
+    message: string,
+    sessionId?: string
+  ): Promise<AxiosResponse<ApiResponse<{ sessionId: string; message: ChatMessage }>>> => {
+    return apiClient.post(ENDPOINTS.CHATBOT.POST_MESSAGE.replace(':chatbotId', chatbotId), {
+      message,
+      sessionId,
+    })
+  },
+  /**
+   * Get a chat session with all its messages
+   * @param chatbotId - ID of the chatbot
+   * @param sessionId - ID of the chat session
+   * @returns Promise with chat session and messages
+   */
+  getChatSession: (
+    chatbotId: string,
+    sessionId: string
+  ): Promise<AxiosResponse<ApiResponse<{ chatSession: ChatSession }>>> => {
+    return apiClient.get(
+      ENDPOINTS.CHATBOT.GET_CHAT_SESSION.replace(':chatbotId', chatbotId).replace(
+        ':sessionId',
+        sessionId
+      )
+    )
   },
 }

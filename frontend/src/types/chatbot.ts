@@ -1,5 +1,27 @@
 import type { Document } from './document'
 
+export interface ChatMessage {
+  id: string
+  sessionId: string
+  role: 'user' | 'assistant'
+  content: string
+  model: string | null
+  temperature: number | null
+  tokensUsed: number | null
+  responseTime: number | null
+  sources: string[]
+  feedback: 'like' | 'dislike' | null
+  createdAt: string
+}
+
+export interface ChatSession {
+  id: string
+  chatbotId: string
+  createdAt: string
+  updatedAt: string
+  messages?: ChatMessage[]
+}
+
 export interface ChatbotFormData {
   name: string
   appearance: 'light' | 'dark'

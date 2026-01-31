@@ -50,5 +50,11 @@ router.get(
   authMiddleware.authenticateToken,
   chatbotController.getTrainingStatus
 )
+router.post('/:chatbotId/chat', authMiddleware.authenticateToken, chatbotController.chatController)
+router.get(
+  '/:chatbotId/:sessionId',
+  authMiddleware.authenticateToken,
+  chatbotController.getChatSession
+)
 
 export default router
