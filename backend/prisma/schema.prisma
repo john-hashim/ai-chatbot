@@ -45,7 +45,7 @@ model Session {
 model Chatbot {
   id                       String        @id @default(cuid())
   userId                   String
-  name                     String        @unique
+  name                     String
   appearance               String        @default("light") // 'light' or 'dark'
   brandColor               String
   brandColorForHeader      Boolean       @default(false)
@@ -69,6 +69,7 @@ model Chatbot {
   chatBubbleButtonColor    String        @default("#000000")
   chatBubbleButtonPosition String        @default("right")
 
+  @@unique([name, userId])
   @@index([userId])
   @@map("chatbots")
 }

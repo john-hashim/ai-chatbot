@@ -1,4 +1,5 @@
 import type { Request, Response, NextFunction } from 'express'
+import { Prisma } from '@prisma/client'
 import { prisma } from '../prisma/client.js'
 import { ApiStatus, type ApiResponse } from '../types/api.js'
 import * as r2Service from '../services/r2.service.js'
@@ -32,6 +33,12 @@ export const createChatbot = async (req: Request, res: Response, next: NextFunct
       message: 'Chatbot created successfully',
     } satisfies ApiResponse)
   } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      return res.status(409).json({
+        status: ApiStatus.FAILURE,
+        message: 'A chatbot with this name already exists',
+      } satisfies ApiResponse)
+    }
     next(error)
   }
 }
@@ -109,6 +116,12 @@ export const updateChatbot = async (req: Request, res: Response, next: NextFunct
       message: 'Chatbot updated successfully',
     } satisfies ApiResponse)
   } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      return res.status(409).json({
+        status: ApiStatus.FAILURE,
+        message: 'A chatbot with this name already exists',
+      } satisfies ApiResponse)
+    }
     next(error)
   }
 }
