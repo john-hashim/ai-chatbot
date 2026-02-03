@@ -68,6 +68,8 @@ model Chatbot {
   chatIcon                 String?
   chatBubbleButtonColor    String        @default("#000000")
   chatBubbleButtonPosition String        @default("right")
+  instructionType          String        @default("base")
+  customInstruction        String?
 
   @@unique([name, userId])
   @@index([userId])

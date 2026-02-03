@@ -9,12 +9,13 @@ import WordExtractor from 'word-extractor'
 import * as crawlerService from '../services/crawler.service.js'
 import * as trainingService from '../services/training.service.js'
 import * as chatService from '../services/chat.service.js'
+import { getSystemInstruction } from '../constants/instructions.js'
 
 export const createChatbot = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const user = req.user
 
-    const { name, appearance, brandColor, brandColorForHeader, profilePicture } = req.body
+    const { name, appearance, brandColor, brandColorForHeader, profilePicture, instructionType, customInstruction } = req.body
 
     const chatbot = await prisma.chatbot.create({
       data: {
@@ -25,6 +26,8 @@ export const createChatbot = async (req: Request, res: Response, next: NextFunct
         profilePicture: profilePicture || null,
         userId: user.id,
         initialMessages: ['Hi! What can I help you with?'],
+        instructionType: instructionType || 'base',
+        customInstruction: instructionType === 'manual' ? customInstruction || null : null,
       },
     })
 
@@ -85,6 +88,8 @@ export const updateChatbot = async (req: Request, res: Response, next: NextFunct
       'chatIcon',
       'chatBubbleButtonColor',
       'chatBubbleButtonPosition',
+      'instructionType',
+      'customInstruction',
     ] as const
 
     const updateData: Record<string, unknown> = {}
@@ -912,19 +917,20 @@ export const chatController = async (req: Request, res: Response, next: NextFunc
       } satisfies ApiResponse)
     }
 
-    // --- Session creation / validation (keep existing logic) ---
+    // --- Fetch chatbot (always needed for instruction config) ---
+    const chatbot = await prisma.chatbot.findUnique({
+      where: { id: chatbotId },
+    })
+
+    if (!chatbot) {
+      return res.status(404).json({
+        status: ApiStatus.FAILURE,
+        message: 'Chatbot not found',
+      } satisfies ApiResponse)
+    }
+
+    // --- Session creation / validation ---
     if (!sessionId) {
-      const chatbot = await prisma.chatbot.findUnique({
-        where: { id: chatbotId },
-      })
-
-      if (!chatbot) {
-        return res.status(404).json({
-          status: ApiStatus.FAILURE,
-          message: 'Chatbot not found',
-        } satisfies ApiResponse)
-      }
-
       const session = await prisma.chatSession.create({
         data: {
           chatbotId,
@@ -963,6 +969,8 @@ export const chatController = async (req: Request, res: Response, next: NextFunc
       })
     }
 
+    const systemInstruction = getSystemInstruction(chatbot.instructionType, chatbot.customInstruction)
+
     // --- SSE headers ---
     res.setHeader('Content-Type', 'text/event-stream')
     res.setHeader('Cache-Control', 'no-cache')
@@ -990,19 +998,22 @@ export const chatController = async (req: Request, res: Response, next: NextFunc
     }
 
     const relevantChunks = await chatService.searchRelevantChunks(chatbotId, queryEmbedding)
-    const context = relevantChunks.map(c => c.content).join('\n\n---\n\n')
+    const context = chatService.buildContext(relevantChunks)
     const sourceDocIds = [...new Set(relevantChunks.map(c => c.documentId))]
 
-    // Fetch recent chat history for context
+    // Fetch last 10 messages (desc to get most recent, then reverse for chronological order)
     const recentMessages = await prisma.chatMessage.findMany({
       where: { sessionId },
-      orderBy: { createdAt: 'asc' },
+      orderBy: { createdAt: 'desc' },
       take: 10,
     })
-    const chatHistory = recentMessages.slice(0, -1).map(m => ({
-      role: m.role,
-      content: m.content,
-    }))
+    const chatHistory = recentMessages
+      .reverse()
+      .slice(0, -1) // exclude the user message we just saved
+      .map(m => ({
+        role: m.role,
+        content: m.content,
+      }))
 
     // --- Stream LLM response ---
     let fullResponse = ''
@@ -1011,6 +1022,7 @@ export const chatController = async (req: Request, res: Response, next: NextFunc
       message,
       context,
       chatHistory,
+      systemInstruction,
       onToken: (token: string) => {
         fullResponse += token
         sendSSE({ type: 'token', token })

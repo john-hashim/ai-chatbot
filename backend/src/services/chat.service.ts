@@ -11,6 +11,8 @@ import { prisma } from '../prisma/client.js'
 import { generateEmbedding } from './embedding.service.js'
 
 const LLM_MODEL = 'meta-llama/Llama-3.1-8B-Instruct'
+const SIMILARITY_THRESHOLD = 0.4
+const MAX_CONTEXT_CHARS = 4000
 
 export interface RelevantChunk {
   content: string
@@ -42,13 +44,26 @@ export async function searchRelevantChunks(
     limit
   )
 
-  return results
+  return results.filter(r => r.similarity > SIMILARITY_THRESHOLD)
+}
+
+/**
+ * Build a size-capped context string from relevant chunks
+ */
+export function buildContext(chunks: RelevantChunk[]): string {
+  let context = ''
+  for (const chunk of chunks) {
+    if (context.length + chunk.content.length > MAX_CONTEXT_CHARS) break
+    context += (context ? '\n\n---\n\n' : '') + chunk.content
+  }
+  return context
 }
 
 interface StreamLLMParams {
   message: string
   context: string
   chatHistory?: { role: string; content: string }[]
+  systemInstruction: string
   onToken: (token: string) => void
   onComplete: () => void
   onError: (error: Error) => void
@@ -61,6 +76,7 @@ export async function streamLLMResponse({
   message,
   context,
   chatHistory = [],
+  systemInstruction,
   onToken,
   onComplete,
   onError,
@@ -73,10 +89,14 @@ export async function streamLLMResponse({
 
   const hf = new InferenceClient(apiKey)
 
+  const systemContent = context
+    ? `${systemInstruction}\n\nBelow is context retrieved from the knowledge base. Use it to answer the user's question. If the context doesn't contain relevant information, say so honestly.\n\nContext:\n${context}`
+    : `${systemInstruction}\n\nNo relevant context was found in the knowledge base for this question. Let the user know you couldn't find specific information in the documents, but still try to be helpful within your role.`
+
   const messages: { role: 'system' | 'user' | 'assistant'; content: string }[] = [
     {
       role: 'system',
-      content: `You are a helpful assistant. Answer the user's question based on the following context from the knowledge base. If the context doesn't contain relevant information, say so honestly but still try to be helpful.\n\nContext:\n${context}`,
+      content: systemContent,
     },
     ...chatHistory.map(msg => ({
       role: msg.role as 'user' | 'assistant',
