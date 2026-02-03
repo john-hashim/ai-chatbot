@@ -8,7 +8,7 @@ import mammoth from 'mammoth'
 import WordExtractor from 'word-extractor'
 import * as crawlerService from '../services/crawler.service.js'
 import * as trainingService from '../services/training.service.js'
-import { error } from 'console'
+import * as chatService from '../services/chat.service.js'
 
 export const createChatbot = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -912,10 +912,8 @@ export const chatController = async (req: Request, res: Response, next: NextFunc
       } satisfies ApiResponse)
     }
 
-    let chatMessage
-
+    // --- Session creation / validation (keep existing logic) ---
     if (!sessionId) {
-      // Verify chatbot exists only on first message
       const chatbot = await prisma.chatbot.findUnique({
         where: { id: chatbotId },
       })
@@ -943,9 +941,7 @@ export const chatController = async (req: Request, res: Response, next: NextFunc
         },
       })
       sessionId = session.id
-      chatMessage = session.messages[0]
     } else {
-      // Session lookup already validates chatbot via chatbotId filter
       const session = await prisma.chatSession.findFirst({
         where: { id: sessionId, chatbotId },
       })
@@ -957,7 +953,7 @@ export const chatController = async (req: Request, res: Response, next: NextFunc
         } satisfies ApiResponse)
       }
 
-      chatMessage = await prisma.chatMessage.create({
+      await prisma.chatMessage.create({
         data: {
           sessionId,
           role: 'user',
@@ -967,13 +963,90 @@ export const chatController = async (req: Request, res: Response, next: NextFunc
       })
     }
 
-    res.status(200).json({
-      status: ApiStatus.SUCCESS,
-      data: { sessionId, message: chatMessage },
-      message: 'Message sent successfully',
-    } satisfies ApiResponse)
+    // --- SSE headers ---
+    res.setHeader('Content-Type', 'text/event-stream')
+    res.setHeader('Cache-Control', 'no-cache')
+    res.setHeader('Connection', 'keep-alive')
+    res.setHeader('X-Accel-Buffering', 'no')
+    res.flushHeaders()
+
+    const sendSSE = (payload: object) => {
+      res.write(`data: ${JSON.stringify(payload)}\n\n`)
+    }
+
+    // Send sessionId immediately
+    sendSSE({ type: 'session', sessionId })
+
+    // --- RAG: embed + search ---
+    const startTime = Date.now()
+
+    let queryEmbedding: number[]
+    try {
+      queryEmbedding = await chatService.generateEmbedding(message)
+    } catch (err) {
+      sendSSE({ type: 'error', message: 'Failed to generate embedding' })
+      res.end()
+      return
+    }
+
+    const relevantChunks = await chatService.searchRelevantChunks(chatbotId, queryEmbedding)
+    const context = relevantChunks.map(c => c.content).join('\n\n---\n\n')
+    const sourceDocIds = [...new Set(relevantChunks.map(c => c.documentId))]
+
+    // Fetch recent chat history for context
+    const recentMessages = await prisma.chatMessage.findMany({
+      where: { sessionId },
+      orderBy: { createdAt: 'asc' },
+      take: 10,
+    })
+    const chatHistory = recentMessages.slice(0, -1).map(m => ({
+      role: m.role,
+      content: m.content,
+    }))
+
+    // --- Stream LLM response ---
+    let fullResponse = ''
+
+    await chatService.streamLLMResponse({
+      message,
+      context,
+      chatHistory,
+      onToken: (token: string) => {
+        fullResponse += token
+        sendSSE({ type: 'token', token })
+      },
+      onComplete: async () => {
+        const responseTime = Date.now() - startTime
+
+        // Save assistant message to DB
+        const assistantMessage = await prisma.chatMessage.create({
+          data: {
+            sessionId,
+            role: 'assistant',
+            content: fullResponse,
+            model: 'meta-llama/Llama-3.1-8B-Instruct',
+            responseTime,
+            sources: sourceDocIds,
+          },
+        })
+
+        sendSSE({ type: 'done', message: assistantMessage })
+        res.end()
+      },
+      onError: (error: Error) => {
+        console.error('LLM streaming error:', error)
+        sendSSE({ type: 'error', message: 'Failed to generate response' })
+        res.end()
+      },
+    })
   } catch (error) {
-    next(error)
+    // If headers already sent (SSE started), send error event
+    if (res.headersSent) {
+      res.write(`data: ${JSON.stringify({ type: 'error', message: 'Internal server error' })}\n\n`)
+      res.end()
+    } else {
+      next(error)
+    }
   }
 }
 

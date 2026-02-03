@@ -5,6 +5,7 @@ import { ENDPOINTS } from '../endpoints'
 import type { Chatbot, ChatbotFormData, ChatMessage, ChatSession } from '@/types/chatbot'
 import type { ApiResponse } from '@/types/api'
 import type { Document, DocumentFilters, TextDocumentUploadParams } from '@/types/document'
+import { useStore } from '@/store'
 
 interface PresignedUrlData {
   uploadUrl: string
@@ -216,4 +217,86 @@ export const chatbotService = {
       )
     )
   },
+}
+
+export interface StreamChatCallbacks {
+  onSessionId: (sessionId: string) => void
+  onToken: (token: string) => void
+  onDone: (message: ChatMessage) => void
+  onError: (error: string) => void
+}
+
+/**
+ * Stream a chat response via SSE using native fetch.
+ * Axios does not support streaming, so we use fetch + ReadableStream.
+ */
+export async function streamChat(
+  chatbotId: string,
+  message: string,
+  sessionId: string | undefined,
+  callbacks: StreamChatCallbacks
+): Promise<void> {
+  const token = useStore.getState().token
+  const baseUrl = (import.meta.env.VITE_API_URL as string).replace(/\/+$/, '')
+  const endpoint = ENDPOINTS.CHATBOT.POST_MESSAGE.replace(':chatbotId', chatbotId)
+  const url = `${baseUrl}/${endpoint}`
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify({ message, sessionId }),
+  })
+
+  if (!response.ok) {
+    callbacks.onError(`Request failed: ${response.status}`)
+    return
+  }
+
+  const reader = response.body?.getReader()
+  if (!reader) {
+    callbacks.onError('No response body')
+    return
+  }
+
+  const decoder = new TextDecoder()
+  let buffer = ''
+
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+
+    buffer += decoder.decode(value, { stream: true })
+    const lines = buffer.split('\n')
+    buffer = lines.pop() || ''
+
+    for (const line of lines) {
+      const trimmed = line.trim()
+      if (!trimmed || !trimmed.startsWith('data:')) continue
+
+      const jsonStr = trimmed.slice(5).trim()
+      try {
+        const data = JSON.parse(jsonStr)
+
+        switch (data.type) {
+          case 'session':
+            callbacks.onSessionId(data.sessionId)
+            break
+          case 'token':
+            callbacks.onToken(data.token)
+            break
+          case 'done':
+            callbacks.onDone(data.message)
+            break
+          case 'error':
+            callbacks.onError(data.message)
+            break
+        }
+      } catch {
+        // Skip malformed JSON lines
+      }
+    }
+  }
 }

@@ -150,8 +150,8 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                   className={`flex flex-col ${chat.role === 'user' ? 'items-end' : 'items-start'}`}
                 >
                   <div
-                    className={`relative flex w-fit max-w-[85%] flex-col items-start gap-2 rounded-[20px] ${!isGenerating && 'px-4'}  py-3 text-sm leading-normal tracking-tight ${
-                      chat.role === 'assistant' && !isGenerating
+                    className={`relative flex w-fit max-w-[85%] flex-col items-start gap-2 rounded-[20px] ${!(isGenerating && !chat.content) && 'px-4'}  py-3 text-sm leading-normal tracking-tight ${
+                      chat.role === 'assistant' && !(isGenerating && !chat.content)
                         ? isDark
                           ? 'bg-zinc-800 text-zinc-100'
                           : 'bg-zinc-100 text-zinc-900'
@@ -168,9 +168,9 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                   >
                     <div
                       className="prose flex h-full w-full max-w-none wrap-break-word flex-col gap-2 text-sm leading-normal tracking-tight"
-                      style={isGenerating ? { minHeight: `${loaderContainerHeight}px` } : undefined}
+                      style={isGenerating && !chat.content ? { minHeight: `${loaderContainerHeight}px` } : undefined}
                     >
-                      {chat.role === 'assistant' && !isGenerating && (
+                      {chat.role === 'assistant' && !(isGenerating && !chat.content) && (
                         <div className="flex items-center gap-2">
                           {profilePicture && (
                             <img
@@ -188,7 +188,7 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                           </span>
                         </div>
                       )}
-                      {isGenerating && (
+                      {isGenerating && !chat.content && (
                         <div
                           className={`flex items-center gap-1.5 px-4 py-3 rounded-[20px] ${
                             isDark ? 'bg-zinc-800 text-zinc-100' : 'bg-zinc-100 text-zinc-900'
@@ -206,7 +206,7 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                           </span>
                         </div>
                       )}
-                      {!isGenerating && (
+                      {!(isGenerating && !chat.content) && (
                         <div className="whitespace-pre-wrap">{chat.content || 'dummy content'}</div>
                       )}
                     </div>

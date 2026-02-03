@@ -18,6 +18,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.940.0",
     "@aws-sdk/s3-request-presigner": "^3.940.0",
+    "@huggingface/inference": "^4.13.11",
     "@prisma/client": "^6.17.0",
     "@types/express": "^5.0.3",
     "@types/multer": "^2.0.0",

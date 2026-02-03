@@ -1,25 +1,20 @@
-import { chatbotService } from '@/api/services/chatbot'
+import { streamChat } from '@/api/services/chatbot'
 import { ChatbotWidget } from '@/components/common/ChatbotWidget'
-import { useApi } from '@/hooks/useApi'
 import { useStore } from '@/store'
-import type { ApiResponse } from '@/types/api'
 import type { ChatMessage } from '@/types/chatbot'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 
 export const PlaygroundPreview: React.FC = () => {
   const { currentChatbot } = useStore()
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [generating, setGenerating] = useState(false)
-
-  const { execute: executePostMessage } = useApi<
-    ApiResponse<{ sessionId: string; message: ChatMessage }>,
-    [string, string, string?]
-  >(chatbotService.postMessage)
+  const assistantIdRef = useRef<string>('')
 
   const handleSendMessage = async (message: string) => {
     if (!currentChatbot) return
     setGenerating(true)
+
     const userMessage: ChatMessage = {
       id: Math.random().toString(),
       sessionId: sessionId || '',
@@ -33,8 +28,11 @@ export const PlaygroundPreview: React.FC = () => {
       sources: [],
       feedback: null,
     }
-    const loaderMessage: ChatMessage = {
-      id: Math.random().toString(),
+
+    const assistantId = Math.random().toString()
+    assistantIdRef.current = assistantId
+    const assistantMessage: ChatMessage = {
+      id: assistantId,
       sessionId: sessionId || '',
       role: 'assistant',
       content: '',
@@ -47,19 +45,37 @@ export const PlaygroundPreview: React.FC = () => {
       feedback: null,
     }
 
-    setMessages(prev => [...prev, userMessage, loaderMessage])
+    setMessages(prev => [...prev, userMessage, assistantMessage])
 
     try {
-      const result = await executePostMessage(currentChatbot.id, message, sessionId || undefined)
-
-      if (result.data) {
-        if (!sessionId) {
-          setSessionId(result.data.sessionId)
-        }
-        setMessages(prev => [...prev.slice(0, -2), result.data!.message, loaderMessage])
-      }
+      await streamChat(currentChatbot.id, message, sessionId || undefined, {
+        onSessionId: (sid: string) => {
+          setSessionId(sid)
+        },
+        onToken: (token: string) => {
+          setMessages(prev =>
+            prev.map(msg =>
+              msg.id === assistantIdRef.current
+                ? { ...msg, content: msg.content + token }
+                : msg
+            )
+          )
+        },
+        onDone: (finalMessage: ChatMessage) => {
+          setMessages(prev =>
+            prev.map(msg => (msg.id === assistantIdRef.current ? finalMessage : msg))
+          )
+          setGenerating(false)
+        },
+        onError: (error: string) => {
+          console.error('Stream error:', error)
+          setMessages(prev => prev.filter(msg => msg.id !== assistantIdRef.current))
+          setGenerating(false)
+        },
+      })
     } catch {
-      setMessages(prev => prev.slice(0, -1))
+      setMessages(prev => prev.filter(msg => msg.id !== assistantIdRef.current))
+      setGenerating(false)
     }
   }
 
