@@ -24,6 +24,7 @@ export const createChatbot = async (req: Request, res: Response, next: NextFunct
         brandColorForHeader: brandColorForHeader ?? false,
         profilePicture: profilePicture || null,
         userId: user.id,
+        initialMessages: ['Hi! What can I help you with?'],
       },
     })
 
