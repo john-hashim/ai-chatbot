@@ -17,6 +17,7 @@ import {
   Select,
   Tabs,
   NumberInput,
+  Textarea,
 } from '@mantine/core'
 import { Notifications } from '@mantine/notifications'
 import { ModalsProvider } from '@mantine/modals'
@@ -111,6 +112,11 @@ const theme = createTheme({
     Select: Select.extend({
       classNames: {
         input: classes.selectInput,
+      },
+    }),
+    Textarea: Textarea.extend({
+      classNames: {
+        input: classes.input,
       },
     }),
     Tabs: Tabs.extend({
