@@ -1,7 +1,13 @@
 import { Tooltip } from '@mantine/core'
 import { ArrowDown, Copy, RotateCcw, ThumbsDown, ThumbsUp } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import ReactMarkdown from 'react-markdown'
+import rehypeRaw from 'rehype-raw'
+import remarkGfm from 'remark-gfm'
 import type { ChatMessagesProps } from './types'
+
+const REMARK_PLUGINS = [remarkGfm]
+const REHYPE_PLUGINS = [rehypeRaw]
 
 const ActionButton: React.FC<{
   label: string
@@ -47,9 +53,9 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
 
   const isDark = appearance === 'dark'
 
-  const scrollToBottom = () => {
+  const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }
+  }, [])
 
   const rafRef = useRef<number>(0)
 
@@ -82,7 +88,7 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
       })
       return () => clearTimeout(timeoutId)
     }
-  }, [messages])
+  }, [messages, scrollToBottom])
 
   return (
     <div className="relative flex-1 overflow-hidden">
@@ -168,7 +174,11 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                   >
                     <div
                       className="prose flex h-full w-full max-w-none wrap-break-word flex-col gap-2 text-sm leading-normal tracking-tight"
-                      style={isGenerating && !chat.content ? { minHeight: `${loaderContainerHeight}px` } : undefined}
+                      style={
+                        isGenerating && !chat.content
+                          ? { minHeight: `${loaderContainerHeight}px` }
+                          : undefined
+                      }
                     >
                       {chat.role === 'assistant' && !(isGenerating && !chat.content) && (
                         <div className="flex items-center gap-2">
@@ -207,7 +217,11 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                         </div>
                       )}
                       {!(isGenerating && !chat.content) && (
-                        <div className="whitespace-pre-wrap">{chat.content || 'dummy content'}</div>
+                        <div className="animate-message-in">
+                          <ReactMarkdown remarkPlugins={REMARK_PLUGINS} rehypePlugins={REHYPE_PLUGINS}>
+                            {chat.content || 'dummy content'}
+                          </ReactMarkdown>
+                        </div>
                       )}
                     </div>
                   </div>

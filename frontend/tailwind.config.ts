@@ -30,6 +30,20 @@ export default {
         common: 'var(--box-shadow-common)',
         'input-box': '0px 4px 16px 0px rgba(0, 0, 0, 0.04), 0px 2px 2px 0px rgba(0, 0, 0, 0.02)',
       },
+      keyframes: {
+        'message-in': {
+          '0%': { opacity: '0', transform: 'translateY(8px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        'chunk-in': {
+          '0%': { opacity: '0', transform: 'translateY(4px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+      },
+      animation: {
+        'message-in': 'message-in 0.3s ease-out',
+        'chunk-in': 'chunk-in 0.25s ease-out',
+      },
     },
   },
   plugins: [],
