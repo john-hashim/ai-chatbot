@@ -201,6 +201,14 @@ export const chatbotService = {
     })
   },
   /**
+   * Get all chat sessions for a chatbot (first session includes messages)
+   * @param chatbotId - ID of the chatbot
+   * @returns Promise with array of chat sessions
+   */
+  getChatSessions: (chatbotId: string): Promise<AxiosResponse<ApiResponse<ChatSession[]>>> => {
+    return apiClient.get(ENDPOINTS.CHATBOT.GET_CHAT_SESSIONS.replace(':chatbotId', chatbotId))
+  },
+  /**
    * Get a chat session with all its messages
    * @param chatbotId - ID of the chatbot
    * @param sessionId - ID of the chat session

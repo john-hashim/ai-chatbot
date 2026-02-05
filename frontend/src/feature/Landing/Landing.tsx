@@ -26,6 +26,7 @@ export const Landing: React.FC = () => {
     currentChatbot,
     chatbots,
     deleteChatbot,
+    clearChatSessions,
   } = useChatbotStore()
   const { user } = useUserStore()
   const navigate = useNavigate()
@@ -37,8 +38,9 @@ export const Landing: React.FC = () => {
   useEffect(() => {
     resetDocumentFilters()
     getChatbots()
+    clearChatSessions()
     clearCurrentChatbot()
-  }, [clearCurrentChatbot, getChatbots, resetDocumentFilters])
+  }, [clearCurrentChatbot, getChatbots, resetDocumentFilters, clearChatSessions])
 
   const firstName = user?.name.split(' ')[0]
   const formattedFirstName = firstName

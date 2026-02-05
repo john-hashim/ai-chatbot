@@ -52,6 +52,11 @@ router.get(
 )
 router.post('/:chatbotId/chat', authMiddleware.authenticateToken, chatbotController.chatController)
 router.get(
+  '/:chatbotId/chat-sessions',
+  authMiddleware.authenticateToken,
+  chatbotController.getChatSessions
+)
+router.get(
   '/:chatbotId/:sessionId',
   authMiddleware.authenticateToken,
   chatbotController.getChatSession

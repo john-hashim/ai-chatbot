@@ -57,5 +57,10 @@ export const useChatbotStore = () =>
       setDocumentFilters: state.setDocumentFilters,
       resetDocumentFilters: state.resetDocumentFilters,
       clearChatbotState: state.clearChatbotState,
+      getChatSessions: state.getChatSessions,
+      setChatSessions: state.setChatSessions,
+      updateSessionMessages: state.updateSessionMessages,
+      getSessionDetails: state.getSessionDetails,
+      clearChatSessions: state.clearChatSessions,
     }))
   )

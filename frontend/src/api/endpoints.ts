@@ -23,6 +23,7 @@ export const ENDPOINTS = {
     TRAIN: 'chatbot/:chatbotId/train',
     TRAINING_STATUS: 'chatbot/:chatbotId/training-status',
     POST_MESSAGE: 'chatbot/:chatbotId/chat',
+    GET_CHAT_SESSIONS: 'chatbot/:chatbotId/chat-sessions',
     GET_CHAT_SESSION: 'chatbot/:chatbotId/:sessionId',
   },
 } as const

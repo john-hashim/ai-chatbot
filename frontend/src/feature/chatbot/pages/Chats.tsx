@@ -1,17 +1,49 @@
 import type React from 'react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useMediaQuery } from '@mantine/hooks'
 import { ChatsList } from '../components/ChatsList'
 import { ChatDetails } from '../components/ChatDetails'
+import { useStore } from '@/store'
 
 export const Chats: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'chatslist' | 'chatdetails'>('chatslist')
+  const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null)
   const isLargeScreen = useMediaQuery('(min-width: 1024px)')
+  const {
+    currentChatbot,
+    chatSessions,
+    getChatSessions,
+    getSessionDetails,
+    isLoadingSessions,
+    isLoadingSessionDetails,
+  } = useStore()
+
+  useEffect(() => {
+    if (currentChatbot?.id) {
+      getChatSessions(currentChatbot.id)
+    }
+  }, [currentChatbot?.id, getChatSessions])
+
+  // Auto-select first session (messages already included from getChatSessions)
+  useEffect(() => {
+    if (chatSessions.length > 0 && !selectedSessionId) {
+      setSelectedSessionId(chatSessions[0].id)
+    }
+  }, [chatSessions, selectedSessionId])
+
+  const handleSelectSession = (sessionId: string) => {
+    setSelectedSessionId(sessionId)
+    if (currentChatbot?.id) {
+      getSessionDetails(currentChatbot.id, sessionId)
+    }
+  }
+
+  const selectedSession = chatSessions.find(s => s.id === selectedSessionId) || null
 
   return (
     <div className="flex h-full">
-      <div className="lg:w-[500px] border-r border-r-border-week w-full h-full flex flex-col relative overflow-auto">
-        <p className="py-5 px-6 font-semibold text-2xl">Chats</p>
+      <div className="lg:w-[500px] border-r bg-background-dark-week border-r-border-week w-full h-full flex flex-col relative overflow-auto">
+        <p className="py-5 px-6 font-semibold text-2xl">Chat Logs</p>
         <div className="flex-1 flex flex-col min-h-0">
           {!isLargeScreen && (
             <div className="flex border-b border-border-week">

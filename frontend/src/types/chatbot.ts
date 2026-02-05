@@ -20,6 +20,9 @@ export interface ChatSession {
   createdAt: string
   updatedAt: string
   messages?: ChatMessage[]
+  _count?: {
+    messages: number
+  }
 }
 
 export interface ChatbotFormData {

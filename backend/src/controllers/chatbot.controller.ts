@@ -15,7 +15,15 @@ export const createChatbot = async (req: Request, res: Response, next: NextFunct
   try {
     const user = req.user
 
-    const { name, appearance, brandColor, brandColorForHeader, profilePicture, instructionType, customInstruction } = req.body
+    const {
+      name,
+      appearance,
+      brandColor,
+      brandColorForHeader,
+      profilePicture,
+      instructionType,
+      customInstruction,
+    } = req.body
 
     const chatbot = await prisma.chatbot.create({
       data: {
@@ -969,7 +977,10 @@ export const chatController = async (req: Request, res: Response, next: NextFunc
       })
     }
 
-    const systemInstruction = getSystemInstruction(chatbot.instructionType, chatbot.customInstruction)
+    const systemInstruction = getSystemInstruction(
+      chatbot.instructionType,
+      chatbot.customInstruction
+    )
 
     // --- SSE headers ---
     res.setHeader('Content-Type', 'text/event-stream')
@@ -1059,6 +1070,62 @@ export const chatController = async (req: Request, res: Response, next: NextFunc
     } else {
       next(error)
     }
+  }
+}
+
+export const getChatSessions = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { chatbotId } = req.params
+
+    if (!chatbotId) {
+      return res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'Chatbot ID is required',
+      } satisfies ApiResponse)
+    }
+
+    const chatbot = await prisma.chatbot.findUnique({
+      where: { id: chatbotId, userId: req.user.id },
+    })
+
+    if (!chatbot) {
+      return res.status(404).json({
+        status: ApiStatus.FAILURE,
+        message: 'Chatbot not found',
+      } satisfies ApiResponse)
+    }
+
+    const sessions = await prisma.chatSession.findMany({
+      where: { chatbotId },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        chatbotId: true,
+        createdAt: true,
+        updatedAt: true,
+        _count: {
+          select: { messages: true },
+        },
+      },
+    })
+
+    // Fetch messages for the first (most recent) session
+    const firstSession = sessions[0]
+    if (firstSession) {
+      const messages = await prisma.chatMessage.findMany({
+        where: { sessionId: firstSession.id },
+        orderBy: { createdAt: 'asc' },
+      })
+      ;(firstSession as any).messages = messages
+    }
+
+    res.status(200).json({
+      status: ApiStatus.SUCCESS,
+      data: sessions,
+      message: 'Chat sessions retrieved successfully',
+    } satisfies ApiResponse)
+  } catch (error) {
+    next(error)
   }
 }
 

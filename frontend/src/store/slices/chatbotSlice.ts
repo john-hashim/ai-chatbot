@@ -1,5 +1,5 @@
 import { chatbotService } from '@/api/services/chatbot'
-import type { Chatbot, ChatSession } from '@/types/chatbot'
+import type { Chatbot, ChatMessage, ChatSession } from '@/types/chatbot'
 import type { DocumentFilters } from '@/types/document'
 import type { StateCreator } from 'zustand'
 
@@ -8,8 +8,15 @@ export interface ChatbotSlice {
   currentChatbot: Chatbot | null
   documentFilters: DocumentFilters
   chatSessions: ChatSession[]
+  isLoadingSessions: boolean
+  isLoadingSessionDetails: boolean
 
   getChatbots: () => Promise<void>
+  getChatSessions: (chatbotId: string) => Promise<void>
+  setChatSessions: (sessions: ChatSession[]) => void
+  updateSessionMessages: (sessionId: string, messages: ChatMessage[]) => void
+  getSessionDetails: (chatbotId: string, sessionId: string) => Promise<void>
+  clearChatSessions: () => void
 
   setCurrentChatbot: (chatbotId: string) => void
   clearCurrentChatbot: () => void
@@ -40,6 +47,8 @@ export const createChatbotSlice: StateCreator<ChatbotSlice> = (set, get) => ({
   currentChatbot: null,
   documentFilters: defaultFilters,
   chatSessions: [],
+  isLoadingSessions: false,
+  isLoadingSessionDetails: false,
 
   getChatbots: async () => {
     const response = await chatbotService.getChabots()
@@ -47,6 +56,38 @@ export const createChatbotSlice: StateCreator<ChatbotSlice> = (set, get) => ({
       throw new Error('No data received from server')
     }
     set({ chatbots: response.data.data })
+  },
+  getChatSessions: async (chatbotId: string) => {
+    set({ isLoadingSessions: true })
+    try {
+      const response = await chatbotService.getChatSessions(chatbotId)
+      if (!response.data.data) {
+        throw new Error('No data received from server')
+      }
+      set({ chatSessions: response.data.data })
+    } finally {
+      set({ isLoadingSessions: false })
+    }
+  },
+  setChatSessions: (sessions: ChatSession[]) => set({ chatSessions: sessions }),
+  updateSessionMessages: (sessionId: string, messages: ChatMessage[]) =>
+    set(state => ({
+      chatSessions: state.chatSessions.map(session =>
+        session.id === sessionId ? { ...session, messages } : session
+      ),
+    })),
+  getSessionDetails: async (chatbotId: string, sessionId: string) => {
+    set({ isLoadingSessionDetails: true })
+    try {
+      const response = await chatbotService.getChatSession(chatbotId, sessionId)
+      const chatSession = response.data.data?.chatSession
+      if (!chatSession) {
+        throw new Error('Chat session not found')
+      }
+      get().updateSessionMessages(sessionId, chatSession.messages || [])
+    } finally {
+      set({ isLoadingSessionDetails: false })
+    }
   },
   setCurrentChatbot: (chatbotId: string) => {
     set(state => {
@@ -128,6 +169,7 @@ export const createChatbotSlice: StateCreator<ChatbotSlice> = (set, get) => ({
         return { chatbots: [chatbot, ...state.chatbots] }
       }
     }),
+  clearChatSessions: () => set({ chatSessions: [] }),
   deleteChatbot: id => set(state => ({ chatbots: state.chatbots.filter(bot => bot.id !== id) })),
   clearChatbots: () => set({ chatbots: [] }),
 
@@ -142,5 +184,7 @@ export const createChatbotSlice: StateCreator<ChatbotSlice> = (set, get) => ({
       currentChatbot: null,
       documentFilters: defaultFilters,
       chatSessions: [],
+      isLoadingSessions: false,
+      isLoadingSessionDetails: false,
     }),
 })
