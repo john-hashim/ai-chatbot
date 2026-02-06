@@ -20,6 +20,7 @@ const sampleMessages: ChatMessage[] = [
     responseTime: null,
     sources: [],
     feedback: null,
+    confidenceScore: null,
   },
 ]
 

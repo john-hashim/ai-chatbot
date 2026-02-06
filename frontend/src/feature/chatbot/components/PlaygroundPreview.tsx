@@ -26,6 +26,7 @@ export const PlaygroundPreview: React.FC = () => {
       tokensUsed: null,
       responseTime: null,
       sources: [],
+      confidenceScore: null,
       feedback: null,
     }
 
@@ -42,6 +43,7 @@ export const PlaygroundPreview: React.FC = () => {
       tokensUsed: null,
       responseTime: null,
       sources: [],
+      confidenceScore: null,
       feedback: null,
     }
 
@@ -72,7 +74,7 @@ export const PlaygroundPreview: React.FC = () => {
           setMessages(prev => prev.filter(msg => msg.id !== assistantIdRef.current))
           setGenerating(false)
         },
-      })
+      }, 'playground')
     } catch {
       setMessages(prev => prev.filter(msg => msg.id !== assistantIdRef.current))
       setGenerating(false)

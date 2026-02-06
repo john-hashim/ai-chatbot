@@ -10,13 +10,27 @@ export interface ChatMessage {
   tokensUsed: number | null
   responseTime: number | null
   sources: string[]
+  confidenceScore: number | null
   feedback: 'like' | 'dislike' | null
   createdAt: string
 }
 
+export type ChatSessionSource =
+  | 'playground'
+  | 'iframe'
+  | 'widget'
+  | 'whatsapp'
+  | 'api'
+  | 'messenger'
+  | 'zendesk'
+  | 'slack'
+  | 'email'
+  | 'salesforce'
+
 export interface ChatSession {
   id: string
   chatbotId: string
+  source: ChatSessionSource
   createdAt: string
   updatedAt: string
   messages?: ChatMessage[]

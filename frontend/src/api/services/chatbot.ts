@@ -2,7 +2,7 @@
 import { type AxiosResponse } from 'axios'
 import apiClient from '../index'
 import { ENDPOINTS } from '../endpoints'
-import type { Chatbot, ChatbotFormData, ChatMessage, ChatSession } from '@/types/chatbot'
+import type { Chatbot, ChatbotFormData, ChatMessage, ChatSession, ChatSessionSource } from '@/types/chatbot'
 import type { ApiResponse } from '@/types/api'
 import type { Document, DocumentFilters, TextDocumentUploadParams } from '@/types/document'
 import { useStore } from '@/store'
@@ -193,11 +193,13 @@ export const chatbotService = {
   postMessage: (
     chatbotId: string,
     message: string,
-    sessionId?: string
+    sessionId?: string,
+    source?: ChatSessionSource
   ): Promise<AxiosResponse<ApiResponse<{ sessionId: string; message: ChatMessage }>>> => {
     return apiClient.post(ENDPOINTS.CHATBOT.POST_MESSAGE.replace(':chatbotId', chatbotId), {
       message,
       sessionId,
+      source,
     })
   },
   /**
@@ -258,7 +260,8 @@ export async function streamChat(
   chatbotId: string,
   message: string,
   sessionId: string | undefined,
-  callbacks: StreamChatCallbacks
+  callbacks: StreamChatCallbacks,
+  source?: ChatSessionSource
 ): Promise<void> {
   const token = useStore.getState().token
   const baseUrl = (import.meta.env.VITE_API_URL as string).replace(/\/+$/, '')
@@ -271,7 +274,7 @@ export async function streamChat(
       'Content-Type': 'application/json',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
-    body: JSON.stringify({ message, sessionId }),
+    body: JSON.stringify({ message, sessionId, source }),
   })
 
   if (!response.ok) {

@@ -910,7 +910,7 @@ export const getTrainingStatus = async (req: Request, res: Response, next: NextF
 export const chatController = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { chatbotId } = req.params
-    let { sessionId, message } = req.body
+    let { sessionId, message, source } = req.body
 
     if (!chatbotId) {
       return res.status(400).json({
@@ -943,6 +943,7 @@ export const chatController = async (req: Request, res: Response, next: NextFunc
       const session = await prisma.chatSession.create({
         data: {
           chatbotId,
+          source: source || 'playground',
           messages: {
             create: {
               role: 'user',
@@ -1013,6 +1014,12 @@ export const chatController = async (req: Request, res: Response, next: NextFunc
     const context = chatService.buildContext(relevantChunks)
     const sourceDocIds = [...new Set(relevantChunks.map(c => c.documentId))]
 
+    // Calculate confidence score from average similarity of retrieved chunks
+    const confidenceScore =
+      relevantChunks.length > 0
+        ? relevantChunks.reduce((sum, c) => sum + c.similarity, 0) / relevantChunks.length
+        : 0
+
     // Fetch last 10 messages (desc to get most recent, then reverse for chronological order)
     const recentMessages = await prisma.chatMessage.findMany({
       where: { sessionId },
@@ -1051,6 +1058,7 @@ export const chatController = async (req: Request, res: Response, next: NextFunc
             model: 'meta-llama/Llama-3.1-8B-Instruct',
             responseTime,
             sources: sourceDocIds,
+            confidenceScore,
           },
         })
 

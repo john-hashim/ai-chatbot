@@ -79,6 +79,7 @@ model Chatbot {
 model ChatSession {
   id        String        @id @default(cuid())
   chatbotId String
+  source    String        @default("playground") // 'playground', 'iframe', 'widget', 'whatsapp', 'api', 'messenger', 'zendesk', 'slack', 'email', 'salesforce'
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
   chatbot   Chatbot       @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
@@ -97,8 +98,9 @@ model ChatMessage {
   temperature  Float?      // AI temperature (null for user)
   tokensUsed   Int?        // tokens consumed (null for user)
   responseTime Int?        // ms to generate (null for user)
-  sources      String[]    // document IDs for RAG
-  feedback     String?     // 'like' or 'dislike'
+  sources         String[]    // document IDs for RAG
+  confidenceScore Float?      // RAG confidence score (0-1) for assistant messages
+  feedback        String?     // 'like' or 'dislike'
   createdAt    DateTime    @default(now())
   session      ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
