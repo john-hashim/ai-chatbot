@@ -6,6 +6,7 @@ import { Download, FileJson, FileSpreadsheet, FileText, RefreshCw } from 'lucide
 import { ChatsList } from './ChatsList'
 import { ChatDetails } from './ChatDetails'
 import { useStore } from '@/store'
+import { useShallow } from 'zustand/react/shallow'
 import { useApi } from '@/hooks/useApi'
 import { chatService } from '@/api/services/chat'
 import { type ChatSession } from '@/types/chatbot'
@@ -17,7 +18,23 @@ export const Chats: React.FC = () => {
   const [selectedSession, setSelectedSession] = useState<ChatSession | null>(null)
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const isLargeScreen = useMediaQuery('(min-width: 1024px)')
-  const { currentChatbot, chatSessions, isLoadingSessions, getChatSessions } = useStore()
+  const {
+    currentChatbot,
+    chatSessions,
+    isLoadingSessions,
+    isLoadingSessionDetails,
+    getChatSessions,
+    getSessionDetails,
+  } = useStore(
+    useShallow(state => ({
+      currentChatbot: state.currentChatbot,
+      chatSessions: state.chatSessions,
+      isLoadingSessions: state.isLoadingSessions,
+      isLoadingSessionDetails: state.isLoadingSessionDetails,
+      getChatSessions: state.getChatSessions,
+      getSessionDetails: state.getSessionDetails,
+    }))
+  )
   const { execute: exportJSON, loading: jsonLoading } = useApi(chatService.exportChatsAsJSON)
   const { execute: exportCSV, loading: csvLoading } = useApi(chatService.exportChatsAsCSV)
   const { execute: exportPDF, loading: pdfLoading } = useApi(chatService.exportChatsAsPDF)
@@ -63,11 +80,34 @@ export const Chats: React.FC = () => {
     }
   }, [chatSessions, selectedSession])
 
-  const handleSessionDelete = () => {
+  // Fetch full messages when selected session changes
+  useEffect(() => {
+    if (selectedSession?.id && currentChatbot?.id) {
+      getSessionDetails(currentChatbot.id, selectedSession.id)
+    }
+  }, [selectedSession?.id, currentChatbot?.id, getSessionDetails])
+
+  // Sync selectedSession with store after messages are fetched
+  useEffect(() => {
+    if (selectedSession) {
+      const updated = chatSessions.find(s => s.id === selectedSession.id)
+      if (updated && updated !== selectedSession) setSelectedSession(updated)
+    }
+  }, [chatSessions, selectedSession])
+
+  const handleSelectSession = useCallback(
+    (id: string) => {
+      const session = chatSessions.find(s => s.id === id) ?? null
+      setSelectedSession(session)
+    },
+    [chatSessions]
+  )
+
+  const handleSessionDelete = useCallback(() => {
     if (currentChatbot && selectedSession) {
       setDeleteModalOpen(true)
     }
-  }
+  }, [currentChatbot, selectedSession])
 
   const confirmDelete = async () => {
     if (currentChatbot && selectedSession) {
@@ -176,24 +216,25 @@ export const Chats: React.FC = () => {
                 <ChatsList
                   chatSessions={chatSessions}
                   selectedSessionId={selectedSession?.id ?? null}
-                  onSelectSession={id => {
-                    const session = chatSessions.find(s => s.id === id) ?? null
-                    setSelectedSession(session)
-                  }}
+                  onSelectSession={handleSelectSession}
                   loading={isLoadingSessions}
                 />
               </div>
             )}
             {activeTab === 'chatdetails' && (
               <div className="h-full">
-                <ChatDetails session={selectedSession} handleSessionDelete={handleSessionDelete} />
+                <ChatDetails
+                  session={selectedSession}
+                  handleSessionDelete={handleSessionDelete}
+                  loading={isLoadingSessionDetails}
+                />
               </div>
             )}
           </div>
         </div>
       </div>
       <div className="flex-1 h-full hidden lg:block">
-        <ChatDetails session={selectedSession} handleSessionDelete={handleSessionDelete} />
+        <ChatDetails session={selectedSession} handleSessionDelete={handleSessionDelete} loading={isLoadingSessionDetails} />
       </div>
 
       <Modal

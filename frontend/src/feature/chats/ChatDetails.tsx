@@ -13,9 +13,10 @@ const REHYPE_PLUGINS = [rehypeRaw]
 export interface ChatDetailsInterface {
   session: ChatSession | null
   handleSessionDelete: (id: string) => void
+  loading?: boolean
 }
 
-export const ChatDetails: React.FC<ChatDetailsInterface> = ({ session, handleSessionDelete }) => {
+export const ChatDetails: React.FC<ChatDetailsInterface> = ({ session, handleSessionDelete, loading }) => {
   return (
     <div className="h-full">
       {session && (
@@ -42,7 +43,16 @@ export const ChatDetails: React.FC<ChatDetailsInterface> = ({ session, handleSes
             </Menu>
           </div>
           <div className="p-6 space-y-8 flex-1 overflow-y-auto">
-            {session.messages?.map(message => (
+            {loading && (
+              <>
+                <div className="max-w-[70%] w-[60%] h-16 rounded-3xl bg-gray-200 animate-pulse" />
+                <div className="max-w-[70%] w-[40%] h-12 rounded-3xl bg-gray-200 animate-pulse ml-auto" />
+                <div className="max-w-[70%] w-[55%] h-20 rounded-3xl bg-gray-200 animate-pulse" />
+                <div className="max-w-[70%] w-[35%] h-12 rounded-3xl bg-gray-200 animate-pulse ml-auto" />
+                <div className="max-w-[70%] w-[50%] h-16 rounded-3xl bg-gray-200 animate-pulse" />
+              </>
+            )}
+            {!loading && session.messages?.map(message => (
               <div
                 key={message.id}
                 className={`max-w-[70%] w-fit px-4 py-3 rounded-3xl ${
