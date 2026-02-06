@@ -25,6 +25,7 @@ export const ENDPOINTS = {
     POST_MESSAGE: 'chatbot/:chatbotId/chat',
     GET_CHAT_SESSIONS: 'chatbot/:chatbotId/chat-sessions',
     GET_CHAT_SESSION: 'chatbot/:chatbotId/:sessionId',
+    DELETE_CHAT_SESSION: 'chatbot/:chatbotId/:sessionId',
     EXPORT_JSON: 'chatbot/:chatbotId/export/json',
     EXPORT_CSV: 'chatbot/:chatbotId/export/csv',
     EXPORT_PDF: 'chatbot/:chatbotId/export/pdf',

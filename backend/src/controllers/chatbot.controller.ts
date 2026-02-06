@@ -1112,6 +1112,7 @@ export const getChatSessions = async (req: Request, res: Response, next: NextFun
         chatbotId: true,
         createdAt: true,
         updatedAt: true,
+        source: true,
         messages: {
           take: 2,
           orderBy: { createdAt: 'asc' },
@@ -1195,6 +1196,43 @@ export const getChatSession = async (req: Request, res: Response, next: NextFunc
   }
 }
 
+export const deleteChatSession = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { chatbotId, sessionId } = req.params
+    if (!chatbotId) {
+      return res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'Chatbot ID is required',
+      } satisfies ApiResponse)
+    }
+
+    if (!sessionId) {
+      return res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'Chat session ID required',
+      } satisfies ApiResponse)
+    }
+
+    await prisma.chatSession.delete({
+      where: { id: sessionId, chatbotId: chatbotId },
+    })
+
+    return res.status(200).json({
+      status: ApiStatus.SUCCESS,
+      data: null,
+      message: 'Session deleted successfully',
+    } satisfies ApiResponse)
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+      return res.status(404).json({
+        status: ApiStatus.FAILURE,
+        message: 'Chat session not found',
+      } satisfies ApiResponse)
+    }
+    next(error)
+  }
+}
+
 // Helper to fetch all chat sessions with messages for export
 const getExportData = async (chatbotId: string, userId: string) => {
   const chatbot = await prisma.chatbot.findUnique({
@@ -1215,7 +1253,10 @@ export const exportChatsAsJSON = async (req: Request, res: Response, next: NextF
   try {
     const { chatbotId } = req.params
     if (!chatbotId) {
-      return res.status(400).json({ status: ApiStatus.FAILURE, message: 'Chatbot ID is required' } satisfies ApiResponse)
+      return res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'Chatbot ID is required',
+      } satisfies ApiResponse)
     }
     const sessions = await getExportData(chatbotId, req.user.id)
 
@@ -1238,7 +1279,10 @@ export const exportChatsAsCSV = async (req: Request, res: Response, next: NextFu
   try {
     const { chatbotId } = req.params
     if (!chatbotId) {
-      return res.status(400).json({ status: ApiStatus.FAILURE, message: 'Chatbot ID is required' } satisfies ApiResponse)
+      return res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'Chatbot ID is required',
+      } satisfies ApiResponse)
     }
     const sessions = await getExportData(chatbotId, req.user.id)
 
@@ -1251,19 +1295,22 @@ export const exportChatsAsCSV = async (req: Request, res: Response, next: NextFu
 
     const escapeCSV = (value: string) => `"${value.replace(/"/g, '""')}"`
 
-    const header = 'Session ID,Created At,Role,Content,Model,Tokens Used,Response Time,Feedback,Message Created At'
+    const header =
+      'Session ID,Created At,Role,Content,Model,Tokens Used,Response Time,Feedback,Message Created At'
     const rows = sessions.flatMap(session =>
-      session.messages.map(msg => [
-        escapeCSV(session.id),
-        escapeCSV(session.createdAt.toISOString()),
-        escapeCSV(msg.role),
-        escapeCSV(msg.content),
-        escapeCSV(msg.model ?? ''),
-        msg.tokensUsed ?? '',
-        msg.responseTime ?? '',
-        escapeCSV(msg.feedback ?? ''),
-        escapeCSV(msg.createdAt.toISOString()),
-      ].join(','))
+      session.messages.map(msg =>
+        [
+          escapeCSV(session.id),
+          escapeCSV(session.createdAt.toISOString()),
+          escapeCSV(msg.role),
+          escapeCSV(msg.content),
+          escapeCSV(msg.model ?? ''),
+          msg.tokensUsed ?? '',
+          msg.responseTime ?? '',
+          escapeCSV(msg.feedback ?? ''),
+          escapeCSV(msg.createdAt.toISOString()),
+        ].join(',')
+      )
     )
 
     const csv = [header, ...rows].join('\n')
@@ -1280,7 +1327,10 @@ export const exportChatsAsPDF = async (req: Request, res: Response, next: NextFu
   try {
     const { chatbotId } = req.params
     if (!chatbotId) {
-      return res.status(400).json({ status: ApiStatus.FAILURE, message: 'Chatbot ID is required' } satisfies ApiResponse)
+      return res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'Chatbot ID is required',
+      } satisfies ApiResponse)
     }
     const sessions = await getExportData(chatbotId, req.user.id)
 
@@ -1313,7 +1363,10 @@ export const exportChatsAsPDF = async (req: Request, res: Response, next: NextFu
       }
 
       doc.moveDown()
-      doc.moveTo(50, doc.y).lineTo(doc.page.width - 50, doc.y).stroke('#e0e0e0')
+      doc
+        .moveTo(50, doc.y)
+        .lineTo(doc.page.width - 50, doc.y)
+        .stroke('#e0e0e0')
       doc.moveDown()
     }
 

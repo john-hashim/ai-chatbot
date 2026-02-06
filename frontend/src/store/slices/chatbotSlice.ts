@@ -8,10 +8,10 @@ export interface ChatbotSlice {
   currentChatbot: Chatbot | null
   documentFilters: DocumentFilters
   chatSessions: ChatSession[]
-  isLoadingSessions: boolean
   isLoadingSessionDetails: boolean
 
   getChatbots: () => Promise<void>
+
   getChatSessions: (chatbotId: string) => Promise<void>
   setChatSessions: (sessions: ChatSession[]) => void
   updateSessionMessages: (sessionId: string, messages: ChatMessage[]) => void
@@ -58,7 +58,6 @@ export const createChatbotSlice: StateCreator<ChatbotSlice> = (set, get) => ({
     set({ chatbots: response.data.data })
   },
   getChatSessions: async (chatbotId: string) => {
-    set({ isLoadingSessions: true })
     try {
       const response = await chatbotService.getChatSessions(chatbotId)
       if (!response.data.data) {
@@ -66,7 +65,7 @@ export const createChatbotSlice: StateCreator<ChatbotSlice> = (set, get) => ({
       }
       set({ chatSessions: response.data.data })
     } finally {
-      set({ isLoadingSessions: false })
+      console.log('Sessions fetch completed')
     }
   },
   setChatSessions: (sessions: ChatSession[]) => set({ chatSessions: sessions }),
@@ -184,7 +183,6 @@ export const createChatbotSlice: StateCreator<ChatbotSlice> = (set, get) => ({
       currentChatbot: null,
       documentFilters: defaultFilters,
       chatSessions: [],
-      isLoadingSessions: false,
       isLoadingSessionDetails: false,
     }),
 })

@@ -13,6 +13,7 @@ import {
   Users,
   Zap,
 } from 'lucide-react'
+import { useStore } from '@/store'
 
 const navItems = [
   {
@@ -72,6 +73,7 @@ export const ChatbotSidebar: React.FC = () => {
   const location = useLocation()
   const { chatbotId } = useParams()
   const isMobile = useMediaQuery('(max-width: 768px)')
+  const { clearChatSessions } = useStore()
 
   const pathSegments = location.pathname.split('/')
   const currentPath = pathSegments[pathSegments.length - 1]
@@ -83,6 +85,7 @@ export const ChatbotSidebar: React.FC = () => {
   const itemHeight = 36.3
 
   const handleNavClick = (path: string) => {
+    if (path !== 'chats') clearChatSessions()
     navigate(`/chatbot/${chatbotId}/${path}`)
     if (isMobile) setExpanded(false)
   }

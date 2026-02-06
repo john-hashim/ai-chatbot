@@ -18,6 +18,18 @@ export const ChatsList: React.FC<ChatListInterface> = ({
 
   return (
     <div className="flex flex-col gap-1 px-3 pb-3">
+      {(!chatSessions || chatSessions.length === 0) &&
+        Array.from({ length: 6 }).map((_, i) => (
+          <div
+            key={i}
+            className="animate-pulse bg-gray-200"
+            style={{
+              width: '100%',
+              height: 60,
+              borderRadius: 10,
+            }}
+          />
+        ))}
       {chatSessions?.map(chat => {
         const isActive = selectedSessionId === chat.id
         const isHovered = hoveredId === chat.id

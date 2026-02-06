@@ -1,22 +1,38 @@
 import type React from 'react'
 import { useCallback, useEffect, useState } from 'react'
 import { useMediaQuery } from '@mantine/hooks'
-import { Button, Menu, Tooltip } from '@mantine/core'
-import { Download, FileJson, FileSpreadsheet, FileText } from 'lucide-react'
+import { Button, Menu, Modal, Text, Tooltip } from '@mantine/core'
+import { Download, FileJson, FileSpreadsheet, FileText, RefreshCw } from 'lucide-react'
 import { ChatsList } from '../components/ChatsList'
 import { ChatDetails } from '../components/ChatDetails'
 import { useStore } from '@/store'
 import { useApi } from '@/hooks/useApi'
 import { chatbotService } from '@/api/services/chatbot'
+import { type ChatSession } from '@/types/chatbot'
+import type { ApiResponse } from '@/types/api'
+import { showNotification } from '@/utils/notifications'
 
 export const Chats: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'chatslist' | 'chatdetails'>('chatslist')
-  const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null)
+  const [selectedSession, setSelectedSession] = useState<ChatSession | null>(null)
+  const [isRefreshing, setIsRefreshing] = useState(true)
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const isLargeScreen = useMediaQuery('(min-width: 1024px)')
   const { currentChatbot, chatSessions, getChatSessions } = useStore()
   const { execute: exportJSON, loading: jsonLoading } = useApi(chatbotService.exportChatsAsJSON)
   const { execute: exportCSV, loading: csvLoading } = useApi(chatbotService.exportChatsAsCSV)
   const { execute: exportPDF, loading: pdfLoading } = useApi(chatbotService.exportChatsAsPDF)
+  const { execute: excuteDeleteChatSession, loading: sessionDeleting } = useApi<
+    ApiResponse<null>,
+    [string, string]
+  >(chatbotService.deleteChatSession)
+
+  const handleRefresh = useCallback(() => {
+    if (!currentChatbot?.id || isRefreshing) return
+    setIsRefreshing(true)
+    getChatSessions(currentChatbot.id)
+    setTimeout(() => setIsRefreshing(false), 1000)
+  }, [currentChatbot?.id, getChatSessions, isRefreshing])
 
   const downloadBlob = useCallback((blob: Blob, filename: string) => {
     const url = URL.createObjectURL(blob)
@@ -27,25 +43,50 @@ export const Chats: React.FC = () => {
     URL.revokeObjectURL(url)
   }, [])
 
-  const handleExport = useCallback(async (format: 'json' | 'csv' | 'pdf') => {
-    if (!currentChatbot?.id) return
-    const exportFn = { json: exportJSON, csv: exportCSV, pdf: exportPDF }[format]
-    const ext = { json: 'json', csv: 'csv', pdf: 'pdf' }[format]
-    const blob = await exportFn(currentChatbot.id)
-    downloadBlob(blob as unknown as Blob, `chats-export.${ext}`)
-  }, [currentChatbot?.id, exportJSON, exportCSV, exportPDF, downloadBlob])
+  const handleExport = useCallback(
+    async (format: 'json' | 'csv' | 'pdf') => {
+      if (!currentChatbot?.id) return
+      const exportFn = { json: exportJSON, csv: exportCSV, pdf: exportPDF }[format]
+      const ext = { json: 'json', csv: 'csv', pdf: 'pdf' }[format]
+      const blob = await exportFn(currentChatbot.id)
+      downloadBlob(blob as unknown as Blob, `chats-export.${ext}`)
+    },
+    [currentChatbot?.id, exportJSON, exportCSV, exportPDF, downloadBlob]
+  )
 
   useEffect(() => {
     if (currentChatbot?.id) {
       getChatSessions(currentChatbot.id)
+      setTimeout(() => setIsRefreshing(false), 1000)
     }
-  }, [currentChatbot?.id, getChatSessions])
+  }, [currentChatbot?.id, getChatSessions, setIsRefreshing])
 
   useEffect(() => {
-    if (chatSessions.length > 0 && !selectedSessionId) {
-      setSelectedSessionId(chatSessions[0].id)
+    if (chatSessions.length > 0 && !selectedSession) {
+      setSelectedSession(chatSessions[0])
     }
-  }, [chatSessions, selectedSessionId])
+  }, [chatSessions, selectedSession])
+
+  const handleSessionDelete = () => {
+    if (currentChatbot && selectedSession) {
+      setDeleteModalOpen(true)
+    }
+  }
+
+  const confirmDelete = async () => {
+    if (currentChatbot && selectedSession) {
+      try {
+        const result = await excuteDeleteChatSession(currentChatbot.id, selectedSession.id)
+        if (result.status === 'success') {
+          showNotification('success', `Conversation deleted successfully`)
+          getChatSessions(currentChatbot.id)
+          setDeleteModalOpen(false)
+        }
+      } catch (error) {
+        showNotification('error', `Failed to delete Conversation: ${error}`)
+      }
+    }
+  }
 
   return (
     <div className="flex h-full">
@@ -60,6 +101,15 @@ export const Chats: React.FC = () => {
               </Button>
             </Tooltip>
             */}
+            <Tooltip label="Refresh">
+              <Button variant="secondary" size="compact-sm" radius="md" onClick={handleRefresh}>
+                <RefreshCw
+                  size={16}
+                  strokeWidth={1.5}
+                  className={isRefreshing ? 'animate-spin' : ''}
+                />
+              </Button>
+            </Tooltip>
             <Menu shadow="md" width={180}>
               <Menu.Target>
                 <Tooltip label="Export">
@@ -69,13 +119,25 @@ export const Chats: React.FC = () => {
                 </Tooltip>
               </Menu.Target>
               <Menu.Dropdown>
-                <Menu.Item leftSection={<FileSpreadsheet size={14} />} disabled={csvLoading} onClick={() => handleExport('csv')}>
+                <Menu.Item
+                  leftSection={<FileSpreadsheet size={14} />}
+                  disabled={csvLoading}
+                  onClick={() => handleExport('csv')}
+                >
                   Export as CSV
                 </Menu.Item>
-                <Menu.Item leftSection={<FileText size={14} />} disabled={pdfLoading} onClick={() => handleExport('pdf')}>
+                <Menu.Item
+                  leftSection={<FileText size={14} />}
+                  disabled={pdfLoading}
+                  onClick={() => handleExport('pdf')}
+                >
                   Export as PDF
                 </Menu.Item>
-                <Menu.Item leftSection={<FileJson size={14} />} disabled={jsonLoading} onClick={() => handleExport('json')}>
+                <Menu.Item
+                  leftSection={<FileJson size={14} />}
+                  disabled={jsonLoading}
+                  onClick={() => handleExport('json')}
+                >
                   Export as JSON
                 </Menu.Item>
               </Menu.Dropdown>
@@ -114,22 +176,44 @@ export const Chats: React.FC = () => {
               <div className="h-full">
                 <ChatsList
                   chatSessions={chatSessions}
-                  selectedSessionId={selectedSessionId}
-                  onSelectSession={setSelectedSessionId}
+                  selectedSessionId={selectedSession?.id ?? null}
+                  onSelectSession={id => {
+                    const session = chatSessions.find(s => s.id === id) ?? null
+                    setSelectedSession(session)
+                  }}
                 />
               </div>
             )}
             {activeTab === 'chatdetails' && (
               <div className="h-full">
-                <ChatDetails />
+                <ChatDetails session={selectedSession} handleSessionDelete={handleSessionDelete} />
               </div>
             )}
           </div>
         </div>
       </div>
       <div className="flex-1 h-full hidden lg:block">
-        <ChatDetails />
+        <ChatDetails session={selectedSession} handleSessionDelete={handleSessionDelete} />
       </div>
+
+      <Modal
+        opened={deleteModalOpen}
+        onClose={() => !sessionDeleting && setDeleteModalOpen(false)}
+        title="Delete Conversation"
+        centered
+      >
+        <Text size="sm">
+          Are you sure you want to delete this conversation? This action cannot be undone.
+        </Text>
+        <div className="flex justify-end gap-2 mt-4">
+          <Button variant="default" onClick={() => setDeleteModalOpen(false)} disabled={sessionDeleting}>
+            Cancel
+          </Button>
+          <Button color="red" variant="filled" loading={sessionDeleting} onClick={confirmDelete}>
+            Delete
+          </Button>
+        </div>
+      </Modal>
     </div>
   )
 }

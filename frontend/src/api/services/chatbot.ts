@@ -2,7 +2,13 @@
 import { type AxiosResponse } from 'axios'
 import apiClient from '../index'
 import { ENDPOINTS } from '../endpoints'
-import type { Chatbot, ChatbotFormData, ChatMessage, ChatSession, ChatSessionSource } from '@/types/chatbot'
+import type {
+  Chatbot,
+  ChatbotFormData,
+  ChatMessage,
+  ChatSession,
+  ChatSessionSource,
+} from '@/types/chatbot'
 import type { ApiResponse } from '@/types/api'
 import type { Document, DocumentFilters, TextDocumentUploadParams } from '@/types/document'
 import { useStore } from '@/store'
@@ -157,9 +163,7 @@ export const chatbotService = {
    */
   trainDocuments: (
     chatbotId: string
-  ): Promise<
-    AxiosResponse<ApiResponse<{ documentsProcessed: number; chunksCreated: number }>>
-  > => {
+  ): Promise<AxiosResponse<ApiResponse<{ documentsProcessed: number; chunksCreated: number }>>> => {
     return apiClient.post(ENDPOINTS.CHATBOT.TRAIN.replace(':chatbotId', chatbotId))
   },
   /**
@@ -228,6 +232,17 @@ export const chatbotService = {
     )
   },
 
+  deleteChatSession: (
+    chatbotId: string,
+    sessionId: string
+  ): Promise<AxiosResponse<ApiResponse<null>>> => {
+    return apiClient.delete(
+      ENDPOINTS.CHATBOT.DELETE_CHAT_SESSION.replace(':chatbotId', chatbotId).replace(
+        ':sessionId',
+        sessionId
+      )
+    )
+  },
   exportChatsAsJSON: (chatbotId: string): Promise<AxiosResponse<Blob>> => {
     return apiClient.get(ENDPOINTS.CHATBOT.EXPORT_JSON.replace(':chatbotId', chatbotId), {
       responseType: 'blob',
