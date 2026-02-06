@@ -30,6 +30,7 @@
     "mammoth": "^1.11.0",
     "multer": "^2.0.2",
     "pdf-parse": "^2.4.5",
+    "pdfkit": "^0.17.2",
     "pgvector": "^0.2.1",
     "playwright": "^1.57.0",
     "word-extractor": "^1.0.4"
@@ -38,6 +39,7 @@
     "@types/cors": "^2.8.19",
     "@types/dotenv": "^6.1.1",
     "@types/node": "^24.5.2",
+    "@types/pdfkit": "^0.17.4",
     "@types/word-extractor": "^1.0.6",
     "nodemon": "^3.1.10",
     "prettier": "^3.6.2",

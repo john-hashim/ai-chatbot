@@ -225,6 +225,22 @@ export const chatbotService = {
       )
     )
   },
+
+  exportChatsAsJSON: (chatbotId: string): Promise<AxiosResponse<Blob>> => {
+    return apiClient.get(ENDPOINTS.CHATBOT.EXPORT_JSON.replace(':chatbotId', chatbotId), {
+      responseType: 'blob',
+    })
+  },
+  exportChatsAsCSV: (chatbotId: string): Promise<AxiosResponse<Blob>> => {
+    return apiClient.get(ENDPOINTS.CHATBOT.EXPORT_CSV.replace(':chatbotId', chatbotId), {
+      responseType: 'blob',
+    })
+  },
+  exportChatsAsPDF: (chatbotId: string): Promise<AxiosResponse<Blob>> => {
+    return apiClient.get(ENDPOINTS.CHATBOT.EXPORT_PDF.replace(':chatbotId', chatbotId), {
+      responseType: 'blob',
+    })
+  },
 }
 
 export interface StreamChatCallbacks {

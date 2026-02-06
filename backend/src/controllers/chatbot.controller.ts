@@ -6,6 +6,7 @@ import * as r2Service from '../services/r2.service.js'
 import { PDFParse } from 'pdf-parse'
 import mammoth from 'mammoth'
 import WordExtractor from 'word-extractor'
+import PDFDocument from 'pdfkit'
 import * as crawlerService from '../services/crawler.service.js'
 import * as trainingService from '../services/training.service.js'
 import * as chatService from '../services/chat.service.js'
@@ -1103,6 +1104,10 @@ export const getChatSessions = async (req: Request, res: Response, next: NextFun
         chatbotId: true,
         createdAt: true,
         updatedAt: true,
+        messages: {
+          take: 2,
+          orderBy: { createdAt: 'asc' },
+        },
         _count: {
           select: { messages: true },
         },
@@ -1177,6 +1182,134 @@ export const getChatSession = async (req: Request, res: Response, next: NextFunc
       data: { chatSession: session },
       message: 'Successfully retrieved chat session',
     } satisfies ApiResponse)
+  } catch (error) {
+    next(error)
+  }
+}
+
+// Helper to fetch all chat sessions with messages for export
+const getExportData = async (chatbotId: string, userId: string) => {
+  const chatbot = await prisma.chatbot.findUnique({
+    where: { id: chatbotId, userId },
+  })
+  if (!chatbot) return null
+
+  return prisma.chatSession.findMany({
+    where: { chatbotId },
+    orderBy: { createdAt: 'desc' },
+    include: {
+      messages: { orderBy: { createdAt: 'asc' } },
+    },
+  })
+}
+
+export const exportChatsAsJSON = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { chatbotId } = req.params
+    if (!chatbotId) {
+      return res.status(400).json({ status: ApiStatus.FAILURE, message: 'Chatbot ID is required' } satisfies ApiResponse)
+    }
+    const sessions = await getExportData(chatbotId, req.user.id)
+
+    if (!sessions) {
+      return res.status(404).json({
+        status: ApiStatus.FAILURE,
+        message: 'Chatbot not found',
+      } satisfies ApiResponse)
+    }
+
+    res.setHeader('Content-Type', 'application/json')
+    res.setHeader('Content-Disposition', `attachment; filename="chats-${chatbotId}.json"`)
+    res.send(JSON.stringify(sessions, null, 2))
+  } catch (error) {
+    next(error)
+  }
+}
+
+export const exportChatsAsCSV = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { chatbotId } = req.params
+    if (!chatbotId) {
+      return res.status(400).json({ status: ApiStatus.FAILURE, message: 'Chatbot ID is required' } satisfies ApiResponse)
+    }
+    const sessions = await getExportData(chatbotId, req.user.id)
+
+    if (!sessions) {
+      return res.status(404).json({
+        status: ApiStatus.FAILURE,
+        message: 'Chatbot not found',
+      } satisfies ApiResponse)
+    }
+
+    const escapeCSV = (value: string) => `"${value.replace(/"/g, '""')}"`
+
+    const header = 'Session ID,Created At,Role,Content,Model,Tokens Used,Response Time,Feedback,Message Created At'
+    const rows = sessions.flatMap(session =>
+      session.messages.map(msg => [
+        escapeCSV(session.id),
+        escapeCSV(session.createdAt.toISOString()),
+        escapeCSV(msg.role),
+        escapeCSV(msg.content),
+        escapeCSV(msg.model ?? ''),
+        msg.tokensUsed ?? '',
+        msg.responseTime ?? '',
+        escapeCSV(msg.feedback ?? ''),
+        escapeCSV(msg.createdAt.toISOString()),
+      ].join(','))
+    )
+
+    const csv = [header, ...rows].join('\n')
+
+    res.setHeader('Content-Type', 'text/csv')
+    res.setHeader('Content-Disposition', `attachment; filename="chats-${chatbotId}.csv"`)
+    res.send(csv)
+  } catch (error) {
+    next(error)
+  }
+}
+
+export const exportChatsAsPDF = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { chatbotId } = req.params
+    if (!chatbotId) {
+      return res.status(400).json({ status: ApiStatus.FAILURE, message: 'Chatbot ID is required' } satisfies ApiResponse)
+    }
+    const sessions = await getExportData(chatbotId, req.user.id)
+
+    if (!sessions) {
+      return res.status(404).json({
+        status: ApiStatus.FAILURE,
+        message: 'Chatbot not found',
+      } satisfies ApiResponse)
+    }
+
+    res.setHeader('Content-Type', 'application/pdf')
+    res.setHeader('Content-Disposition', `attachment; filename="chats-${chatbotId}.pdf"`)
+
+    const doc = new PDFDocument({ margin: 50 })
+    doc.pipe(res)
+
+    doc.fontSize(20).text('Chat Logs Export', { align: 'center' })
+    doc.moveDown()
+
+    for (const session of sessions) {
+      doc.fontSize(12).font('Helvetica-Bold').text(`Session: ${session.id}`)
+      doc.fontSize(9).font('Helvetica').text(`Created: ${session.createdAt.toISOString()}`)
+      doc.moveDown(0.5)
+
+      for (const msg of session.messages) {
+        const label = msg.role === 'user' ? 'User' : 'Assistant'
+        doc.fontSize(10).font('Helvetica-Bold').text(`${label}:`, { continued: true })
+        doc.font('Helvetica').text(` ${msg.content}`)
+        doc.moveDown(0.3)
+      }
+
+      doc.moveDown()
+      doc.moveTo(50, doc.y).lineTo(doc.page.width - 50, doc.y).stroke('#e0e0e0')
+      doc.moveDown()
+    }
+
+    doc.end()
   } catch (error) {
     next(error)
   }

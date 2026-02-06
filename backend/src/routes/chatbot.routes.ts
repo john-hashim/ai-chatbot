@@ -56,6 +56,13 @@ router.get(
   authMiddleware.authenticateToken,
   chatbotController.getChatSessions
 )
+
+// Export routes
+router.get('/:chatbotId/export/json', authMiddleware.authenticateToken, chatbotController.exportChatsAsJSON)
+router.get('/:chatbotId/export/csv', authMiddleware.authenticateToken, chatbotController.exportChatsAsCSV)
+router.get('/:chatbotId/export/pdf', authMiddleware.authenticateToken, chatbotController.exportChatsAsPDF)
+
+// This must be last — /:sessionId is a catch-all param
 router.get(
   '/:chatbotId/:sessionId',
   authMiddleware.authenticateToken,
