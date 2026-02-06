@@ -15,7 +15,6 @@ import { showNotification } from '@/utils/notifications'
 export const Chats: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'chatslist' | 'chatdetails'>('chatslist')
   const [selectedSession, setSelectedSession] = useState<ChatSession | null>(null)
-  const [isRefreshing, setIsRefreshing] = useState(true)
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const isLargeScreen = useMediaQuery('(min-width: 1024px)')
   const { currentChatbot, chatSessions, isLoadingSessions, getChatSessions } = useStore()
@@ -28,11 +27,9 @@ export const Chats: React.FC = () => {
   >(chatService.deleteChatSession)
 
   const handleRefresh = useCallback(() => {
-    if (!currentChatbot?.id || isRefreshing) return
-    setIsRefreshing(true)
+    if (!currentChatbot?.id) return
     getChatSessions(currentChatbot.id)
-    setTimeout(() => setIsRefreshing(false), 1000)
-  }, [currentChatbot?.id, getChatSessions, isRefreshing])
+  }, [currentChatbot?.id, getChatSessions])
 
   const downloadBlob = useCallback((blob: Blob, filename: string) => {
     const url = URL.createObjectURL(blob)
@@ -57,9 +54,8 @@ export const Chats: React.FC = () => {
   useEffect(() => {
     if (currentChatbot?.id) {
       getChatSessions(currentChatbot.id)
-      setTimeout(() => setIsRefreshing(false), 1000)
     }
-  }, [currentChatbot?.id, getChatSessions, setIsRefreshing])
+  }, [currentChatbot?.id, getChatSessions])
 
   useEffect(() => {
     if (chatSessions.length > 0 && !selectedSession) {
@@ -107,7 +103,7 @@ export const Chats: React.FC = () => {
                 <RefreshCw
                   size={16}
                   strokeWidth={1.5}
-                  className={isRefreshing ? 'animate-spin' : ''}
+                  className={isLoadingSessions ? 'animate-spin' : ''}
                 />
               </Button>
             </Tooltip>
