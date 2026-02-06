@@ -2,7 +2,7 @@ import type React from 'react'
 import { useCallback, useEffect, useState } from 'react'
 import { useMediaQuery } from '@mantine/hooks'
 import { Button, Menu, Tooltip } from '@mantine/core'
-import { Download, FileJson, FileSpreadsheet, FileText, SlidersHorizontal } from 'lucide-react'
+import { Download, FileJson, FileSpreadsheet, FileText } from 'lucide-react'
 import { ChatsList } from '../components/ChatsList'
 import { ChatDetails } from '../components/ChatDetails'
 import { useStore } from '@/store'
@@ -53,11 +53,13 @@ export const Chats: React.FC = () => {
         <div className="py-5 px-6 flex items-center justify-between">
           <p className="font-semibold text-2xl">Chat Logs</p>
           <div className="flex gap-2">
+            {/* TODO: Add filter button in phase 2
             <Tooltip label="Filter">
               <Button variant="secondary" size="compact-sm" radius="md">
                 <SlidersHorizontal size={16} strokeWidth={1.5} />
               </Button>
             </Tooltip>
+            */}
             <Menu shadow="md" width={180}>
               <Menu.Target>
                 <Tooltip label="Export">
