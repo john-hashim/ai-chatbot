@@ -18,7 +18,7 @@ export const Chats: React.FC = () => {
   const [isRefreshing, setIsRefreshing] = useState(true)
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const isLargeScreen = useMediaQuery('(min-width: 1024px)')
-  const { currentChatbot, chatSessions, getChatSessions } = useStore()
+  const { currentChatbot, chatSessions, isLoadingSessions, getChatSessions } = useStore()
   const { execute: exportJSON, loading: jsonLoading } = useApi(chatService.exportChatsAsJSON)
   const { execute: exportCSV, loading: csvLoading } = useApi(chatService.exportChatsAsCSV)
   const { execute: exportPDF, loading: pdfLoading } = useApi(chatService.exportChatsAsPDF)
@@ -79,8 +79,9 @@ export const Chats: React.FC = () => {
         const result = await excuteDeleteChatSession(currentChatbot.id, selectedSession.id)
         if (result.status === 'success') {
           showNotification('success', `Conversation deleted successfully`)
-          getChatSessions(currentChatbot.id)
           setDeleteModalOpen(false)
+          await getChatSessions(currentChatbot.id)
+          setSelectedSession(null)
         }
       } catch (error) {
         showNotification('error', `Failed to delete Conversation: ${error}`)
@@ -110,38 +111,40 @@ export const Chats: React.FC = () => {
                 />
               </Button>
             </Tooltip>
-            <Menu shadow="md" width={180}>
-              <Menu.Target>
-                <Tooltip label="Export">
-                  <Button variant="default" size="compact-sm" radius="md">
-                    <Download size={16} strokeWidth={1.5} />
-                  </Button>
-                </Tooltip>
-              </Menu.Target>
-              <Menu.Dropdown>
-                <Menu.Item
-                  leftSection={<FileSpreadsheet size={14} />}
-                  disabled={csvLoading}
-                  onClick={() => handleExport('csv')}
-                >
-                  Export as CSV
-                </Menu.Item>
-                <Menu.Item
-                  leftSection={<FileText size={14} />}
-                  disabled={pdfLoading}
-                  onClick={() => handleExport('pdf')}
-                >
-                  Export as PDF
-                </Menu.Item>
-                <Menu.Item
-                  leftSection={<FileJson size={14} />}
-                  disabled={jsonLoading}
-                  onClick={() => handleExport('json')}
-                >
-                  Export as JSON
-                </Menu.Item>
-              </Menu.Dropdown>
-            </Menu>
+            {chatSessions?.length > 0 && (
+              <Menu shadow="md" width={180}>
+                <Menu.Target>
+                  <Tooltip label="Export">
+                    <Button variant="default" size="compact-sm" radius="md">
+                      <Download size={16} strokeWidth={1.5} />
+                    </Button>
+                  </Tooltip>
+                </Menu.Target>
+                <Menu.Dropdown>
+                  <Menu.Item
+                    leftSection={<FileSpreadsheet size={14} />}
+                    disabled={csvLoading}
+                    onClick={() => handleExport('csv')}
+                  >
+                    Export as CSV
+                  </Menu.Item>
+                  <Menu.Item
+                    leftSection={<FileText size={14} />}
+                    disabled={pdfLoading}
+                    onClick={() => handleExport('pdf')}
+                  >
+                    Export as PDF
+                  </Menu.Item>
+                  <Menu.Item
+                    leftSection={<FileJson size={14} />}
+                    disabled={jsonLoading}
+                    onClick={() => handleExport('json')}
+                  >
+                    Export as JSON
+                  </Menu.Item>
+                </Menu.Dropdown>
+              </Menu>
+            )}
           </div>
         </div>
         <div className="flex-1 flex flex-col min-h-0">
@@ -181,6 +184,7 @@ export const Chats: React.FC = () => {
                     const session = chatSessions.find(s => s.id === id) ?? null
                     setSelectedSession(session)
                   }}
+                  loading={isLoadingSessions}
                 />
               </div>
             )}

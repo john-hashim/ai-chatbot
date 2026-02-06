@@ -10,6 +10,7 @@ export interface ChatbotSlice {
   currentChatbot: Chatbot | null
   documentFilters: DocumentFilters
   chatSessions: ChatSession[]
+  isLoadingSessions: boolean
   isLoadingSessionDetails: boolean
 
   getChatbots: () => Promise<void>
@@ -60,13 +61,15 @@ export const createChatbotSlice: StateCreator<ChatbotSlice> = (set, get) => ({
     set({ chatbots: response.data.data })
   },
   getChatSessions: async (chatbotId: string) => {
+    set({ isLoadingSessions: true })
     try {
       const response = await chatService.getChatSessions(chatbotId)
       if (!response.data.data) {
         throw new Error('No data received from server')
       }
-      set({ chatSessions: response.data.data })
+      set({ chatSessions: response.data.data, isLoadingSessions: false })
     } finally {
+      set({ isLoadingSessions: false })
       console.log('Sessions fetch completed')
     }
   },

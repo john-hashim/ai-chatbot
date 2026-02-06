@@ -43,6 +43,7 @@ export const useChatbotStore = () =>
       currentChatbot: state.currentChatbot,
       documentFilters: state.documentFilters,
       chatSessions: state.chatSessions,
+      isLoadingSessions: state.isLoadingSessions,
       getChatbots: state.getChatbots,
       updateChatbot: state.updateChatbot,
       setCurrentChatbot: state.setCurrentChatbot,
