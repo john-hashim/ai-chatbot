@@ -3,7 +3,7 @@ import { TextEditor } from '../../components/common/TextEditor'
 import { Button, Checkbox, Select, TextInput, Text, Tooltip, Menu } from '@mantine/core'
 import type { ApiResponse } from '@/types/api'
 import { useApi } from '@/hooks/useApi'
-import { chatbotService } from '@/api/services/chatbot'
+import { documentService } from '@/api/services/document'
 import type { Document, SortOption, TextDocumentUploadParams } from '@/types/document'
 import { ChevronDown, Ellipsis, Loader2, Search, SearchX, Trash } from 'lucide-react'
 import { useChatbotStore } from '@/store'
@@ -34,7 +34,7 @@ export const UploadText: React.FC = () => {
   const { execute: excuteTextSnippetCreate, loading } = useApi<
     ApiResponse<Document>,
     [TextDocumentUploadParams, string]
-  >(chatbotService.uploadTextSnippet)
+  >(documentService.uploadTextSnippet)
   const handleChange = (newValue: string) => {
     setValue(newValue)
   }

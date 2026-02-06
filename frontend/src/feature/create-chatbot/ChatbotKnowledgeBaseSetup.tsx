@@ -22,7 +22,7 @@ import { useChatbotStore } from '@/store'
 import { useFormat } from '@/hooks/useFormats'
 import { useApi } from '@/hooks/useApi'
 import { usePageTitle } from '@/hooks/usePageTitle'
-import { chatbotService } from '@/api/services/chatbot'
+import { documentService } from '@/api/services/document'
 import type { ApiResponse } from '@/types/api'
 import { showNotification } from '@/utils/notifications'
 
@@ -47,7 +47,7 @@ export const ChatbotKnowledgeBaseSetup: React.FC = () => {
   } = useApi<
     ApiResponse<{ documentsProcessed: number; chunksCreated: number }>,
     [string]
-  >(chatbotService.trainDocuments)
+  >(documentService.trainDocuments)
 
   const handleTrainAndContinue = async () => {
     if (!chatbotId) return

@@ -9,7 +9,7 @@ import type { FileWithPath } from '@mantine/dropzone'
 import { showLoadingNotification } from '@/utils/notifications'
 import { useApi } from '@/hooks/useApi'
 import type { ApiResponse } from '@/types/api'
-import { chatbotService } from '@/api/services/chatbot'
+import { documentService } from '@/api/services/document'
 import { useChatbotStore } from '@/store'
 import type { Document, SortOption } from '@/types/document'
 import { useFormat } from '@/hooks/useFormats'
@@ -31,7 +31,7 @@ export const UploadFile: React.FC = () => {
   const [selectAll, setSelectAll] = useState(false)
 
   const { execute: excuteUploadDocument } = useApi<ApiResponse<Document[]>, [File[], string]>(
-    chatbotService.uploadDocuments
+    documentService.uploadDocuments
   )
 
   const onFileDrop = async (files: FileWithPath[]) => {

@@ -1,4 +1,4 @@
-import { chatbotService } from '@/api/services/chatbot'
+import { documentService } from '@/api/services/document'
 import { TextEditor } from '@/components/common/TextEditor'
 import { useApi } from '@/hooks/useApi'
 import { useFormat } from '@/hooks/useFormats'
@@ -34,7 +34,7 @@ export const UploadQandA: React.FC = () => {
   const { execute: excuteTextSnippetCreate, loading } = useApi<
     ApiResponse<Document>,
     [TextDocumentUploadParams, string]
-  >(chatbotService.uploadTextSnippet)
+  >(documentService.uploadTextSnippet)
 
   const handleChange = (newValue: string) => {
     setValue(newValue)

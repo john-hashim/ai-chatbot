@@ -7,7 +7,7 @@ import { ChatsList } from '../components/ChatsList'
 import { ChatDetails } from '../components/ChatDetails'
 import { useStore } from '@/store'
 import { useApi } from '@/hooks/useApi'
-import { chatbotService } from '@/api/services/chatbot'
+import { chatService } from '@/api/services/chat'
 import { type ChatSession } from '@/types/chatbot'
 import type { ApiResponse } from '@/types/api'
 import { showNotification } from '@/utils/notifications'
@@ -19,13 +19,13 @@ export const Chats: React.FC = () => {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const isLargeScreen = useMediaQuery('(min-width: 1024px)')
   const { currentChatbot, chatSessions, getChatSessions } = useStore()
-  const { execute: exportJSON, loading: jsonLoading } = useApi(chatbotService.exportChatsAsJSON)
-  const { execute: exportCSV, loading: csvLoading } = useApi(chatbotService.exportChatsAsCSV)
-  const { execute: exportPDF, loading: pdfLoading } = useApi(chatbotService.exportChatsAsPDF)
+  const { execute: exportJSON, loading: jsonLoading } = useApi(chatService.exportChatsAsJSON)
+  const { execute: exportCSV, loading: csvLoading } = useApi(chatService.exportChatsAsCSV)
+  const { execute: exportPDF, loading: pdfLoading } = useApi(chatService.exportChatsAsPDF)
   const { execute: excuteDeleteChatSession, loading: sessionDeleting } = useApi<
     ApiResponse<null>,
     [string, string]
-  >(chatbotService.deleteChatSession)
+  >(chatService.deleteChatSession)
 
   const handleRefresh = useCallback(() => {
     if (!currentChatbot?.id || isRefreshing) return

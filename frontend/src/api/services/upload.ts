@@ -1,4 +1,4 @@
-import { chatbotService } from './chatbot'
+import { documentService } from './document'
 
 /**
  * Uploads an image to Cloudflare R2 using presigned URL
@@ -7,7 +7,7 @@ import { chatbotService } from './chatbot'
  * @returns The URL of the uploaded file
  */
 export const uploadImageToR2 = async (file: File, directory: string): Promise<string> => {
-  const presignedResponse = await chatbotService.getPresignedUploadUrl(
+  const presignedResponse = await documentService.getPresignedUploadUrl(
     file.name,
     file.type,
     directory
@@ -39,5 +39,5 @@ export const uploadImageToR2 = async (file: File, directory: string): Promise<st
  * @param fileUrl - The URL of the file to delete
  */
 export const deleteImageFromR2 = async (fileUrl: string): Promise<void> => {
-  await chatbotService.deleteFile(fileUrl)
+  await documentService.deleteFile(fileUrl)
 }

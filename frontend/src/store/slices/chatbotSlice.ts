@@ -1,4 +1,6 @@
 import { chatbotService } from '@/api/services/chatbot'
+import { documentService } from '@/api/services/document'
+import { chatService } from '@/api/services/chat'
 import type { Chatbot, ChatMessage, ChatSession } from '@/types/chatbot'
 import type { DocumentFilters } from '@/types/document'
 import type { StateCreator } from 'zustand'
@@ -59,7 +61,7 @@ export const createChatbotSlice: StateCreator<ChatbotSlice> = (set, get) => ({
   },
   getChatSessions: async (chatbotId: string) => {
     try {
-      const response = await chatbotService.getChatSessions(chatbotId)
+      const response = await chatService.getChatSessions(chatbotId)
       if (!response.data.data) {
         throw new Error('No data received from server')
       }
@@ -78,7 +80,7 @@ export const createChatbotSlice: StateCreator<ChatbotSlice> = (set, get) => ({
   getSessionDetails: async (chatbotId: string, sessionId: string) => {
     set({ isLoadingSessionDetails: true })
     try {
-      const response = await chatbotService.getChatSession(chatbotId, sessionId)
+      const response = await chatService.getChatSession(chatbotId, sessionId)
       const chatSession = response.data.data?.chatSession
       if (!chatSession) {
         throw new Error('Chat session not found')
@@ -144,14 +146,14 @@ export const createChatbotSlice: StateCreator<ChatbotSlice> = (set, get) => ({
     const state = get()
     if (!state.currentChatbot) return
 
-    await chatbotService.deleteDocument(documentId)
+    await documentService.deleteDocument(documentId)
     await state.getChatbot()
   },
   deleteMultipleDocuments: async (documentIds: string[]) => {
     const state = get()
     if (!state.currentChatbot) return 0
 
-    const response = await chatbotService.deleteMultipleDocuments(documentIds)
+    const response = await documentService.deleteMultipleDocuments(documentIds)
     const deletedCount = response.data.data?.deletedCount || 0
     await state.getChatbot()
 

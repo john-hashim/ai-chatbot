@@ -1,4 +1,4 @@
-import { streamChat } from '@/api/services/chatbot'
+import { streamChat } from '@/api/services/chat'
 import { ChatbotWidget } from '@/components/common/ChatbotWidget'
 import { useStore } from '@/store'
 import type { ChatMessage } from '@/types/chatbot'

@@ -14,7 +14,7 @@ import {
 } from 'lucide-react'
 import { useApi } from '@/hooks/useApi'
 import type { ApiResponse } from '@/types/api'
-import { chatbotService } from '@/api/services/chatbot'
+import { documentService } from '@/api/services/document'
 import { useChatbotStore } from '@/store'
 import type { Document, SortOption } from '@/types/document'
 import { useFormat } from '@/hooks/useFormats'
@@ -42,7 +42,7 @@ export const UploadLinks: React.FC = () => {
   const { execute: executeWebsiteCrawl, loading } = useApi<
     ApiResponse<Document>,
     [{ url: string; subtype: 'url' | 'sitemap' }, string]
-  >(chatbotService.uploadWebsiteUrl)
+  >(documentService.uploadWebsiteUrl)
 
   const handleSubmit = async () => {
     if (!url.trim()) return
