@@ -1,6 +1,6 @@
 import { Select, Textarea } from '@mantine/core'
 import { Controller, useFormContext, useWatch } from 'react-hook-form'
-import type { PlaygroundFormValues } from '../pages/Playground'
+import type { PlaygroundFormValues } from './Playground'
 import { INSTRUCTION_OPTIONS, getInstructionByType } from '@/constants/instructions'
 import { useStore } from '@/store'
 import { formatRelativeDate } from '@/hooks/useRelativeDate'

@@ -32,17 +32,15 @@ import { useStore } from '@/store'
 import { Landing } from '@/feature/Landing/Landing'
 import { ChatbotBasicSetup } from './feature/create-chatbot/ChatbotBasicSetup'
 import { ChatbotKnowledgeBaseSetup } from './feature/create-chatbot/ChatbotKnowledgeBaseSetup'
-import {
-  ChatbotDashboard,
-  Playground,
-  Customize,
-  KnowledgeBase,
-  Chats,
-  Analytics,
-  Contacts,
-  Automations,
-  Deploy,
-} from './feature/chatbot'
+import { ChatbotDashboard } from './feature/chatbot/ChatbotDashboard'
+import { Playground } from './feature/playground/Playground'
+import { Customize } from './feature/customize/Customize'
+import { KnowledgeBase } from './feature/knowledgebase/KnowledgeBase'
+import { Chats } from './feature/chats/Chats'
+import { Analytics } from './feature/analytics/Analytics'
+import { Contacts } from './feature/contacts/Contacts'
+import { Automations } from './feature/automations/Automations'
+import { Deploy } from './feature/deploy/Deploy'
 
 const theme = createTheme({
   colors: {

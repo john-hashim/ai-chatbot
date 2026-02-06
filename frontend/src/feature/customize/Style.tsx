@@ -1,6 +1,6 @@
 import type React from 'react'
 import { Controller, useFormContext, useWatch } from 'react-hook-form'
-import type { ChatbotFormValues } from '../pages/Customize'
+import type { ChatbotFormValues } from './Customize'
 import {
   Button,
   Center,

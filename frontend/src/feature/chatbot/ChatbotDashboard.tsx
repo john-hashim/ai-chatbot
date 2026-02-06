@@ -4,7 +4,7 @@ import { useChatbotStore } from '@/store'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import { Flex } from '@mantine/core'
 import { useMediaQuery } from '@mantine/hooks'
-import { ChatbotSidebar } from './components/ChatbotSidebar'
+import { ChatbotSidebar } from './ChatbotSidebar'
 
 export const ChatbotDashboard: React.FC = () => {
   const { chatbotId } = useParams()

@@ -3,8 +3,8 @@ import { useCallback, useEffect, useState } from 'react'
 import { useMediaQuery } from '@mantine/hooks'
 import { Button, Menu, Modal, Text, Tooltip } from '@mantine/core'
 import { Download, FileJson, FileSpreadsheet, FileText, RefreshCw } from 'lucide-react'
-import { ChatsList } from '../components/ChatsList'
-import { ChatDetails } from '../components/ChatDetails'
+import { ChatsList } from './ChatsList'
+import { ChatDetails } from './ChatDetails'
 import { useStore } from '@/store'
 import { useApi } from '@/hooks/useApi'
 import { chatService } from '@/api/services/chat'
@@ -206,7 +206,11 @@ export const Chats: React.FC = () => {
           Are you sure you want to delete this conversation? This action cannot be undone.
         </Text>
         <div className="flex justify-end gap-2 mt-4">
-          <Button variant="default" onClick={() => setDeleteModalOpen(false)} disabled={sessionDeleting}>
+          <Button
+            variant="default"
+            onClick={() => setDeleteModalOpen(false)}
+            disabled={sessionDeleting}
+          >
             Cancel
           </Button>
           <Button color="red" variant="filled" loading={sessionDeleting} onClick={confirmDelete}>

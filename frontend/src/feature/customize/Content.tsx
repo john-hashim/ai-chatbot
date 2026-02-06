@@ -1,6 +1,6 @@
 import type React from 'react'
 import { useFormContext, Controller, useFieldArray, useWatch } from 'react-hook-form'
-import type { ChatbotFormValues } from '../pages/Customize'
+import type { ChatbotFormValues } from './Customize'
 import { ActionIcon, Button, HoverCard, TextInput, Text, Switch, NumberInput } from '@mantine/core'
 import { InfoIcon, X } from 'lucide-react'
 import { TextEditor } from '@/components/common/TextEditor'

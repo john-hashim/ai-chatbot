@@ -1,8 +1,0 @@
-export { Playground } from './Playground'
-export { Customize } from './Customize'
-export { KnowledgeBase } from './KnowledgeBase'
-export { Chats } from './Chats'
-export { Analytics } from './Analytics'
-export { Contacts } from './Contacts'
-export { Automations } from './Automations'
-export { Deploy } from './Deploy'
