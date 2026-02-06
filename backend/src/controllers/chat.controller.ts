@@ -222,6 +222,16 @@ export const getChatSessions = async (req: Request, res: Response, next: NextFun
       },
     })
 
+    // Fetch messages for the first (most recent) session
+    const firstSession = sessions[0]
+    if (firstSession) {
+      const messages = await prisma.chatMessage.findMany({
+        where: { sessionId: firstSession.id },
+        orderBy: { createdAt: 'asc' },
+      })
+      ;(firstSession as any).messages = messages
+    }
+
     res.status(200).json({
       status: ApiStatus.SUCCESS,
       data: sessions,
