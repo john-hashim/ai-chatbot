@@ -235,7 +235,7 @@ ${answerPlain}`
               />
               {questions.length > 1 && (
                 <Button
-                  variant="default"
+                  variant="secondary"
                   color="red"
                   size="sm"
                   onClick={() => removeQuestion(index)}
@@ -247,7 +247,7 @@ ${answerPlain}`
             </div>
             {index === questions.length - 1 && (
               <Button
-                variant="default"
+                variant="secondary"
                 size="xs"
                 className="mt-2"
                 leftSection={<Plus size={14} />}
@@ -346,9 +346,7 @@ ${answerPlain}`
               .filter(document => document.type === 'q&a')
               .map(document => (
                 <div key={document.id}>
-                  <div
-                    className="py-4 font-semibold flex justify-between items-center"
-                  >
+                  <div className="py-4 font-semibold flex justify-between items-center">
                     <div className="flex">
                       <div>
                         <Checkbox

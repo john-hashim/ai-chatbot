@@ -86,7 +86,7 @@ export const Playground: React.FC = () => {
     <FormProvider {...methods}>
       <div className="flex h-full">
         <div className="lg:w-[500px] border-r border-r-border-week w-full h-full flex flex-col relative  overflow-auto">
-          <p className="py-5 px-6 font-semibold text-2xl">Playground</p>
+          <p className="pt-8 pb-2 px-6 font-semibold text-2xl">Playground</p>
           <div className="flex-1 flex flex-col min-h-0">
             {!isLargeScreen && (
               <div className="flex border-b border-border-week">
