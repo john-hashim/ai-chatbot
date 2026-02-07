@@ -12,6 +12,7 @@ export interface ChatbotSlice {
   chatSessions: ChatSession[]
   isLoadingSessions: boolean
   isLoadingSessionDetails: boolean
+  isLoadingChatbot: boolean
 
   getChatbots: () => Promise<void>
 
@@ -52,6 +53,7 @@ export const createChatbotSlice: StateCreator<ChatbotSlice> = (set, get) => ({
   chatSessions: [],
   isLoadingSessions: false,
   isLoadingSessionDetails: false,
+  isLoadingChatbot: false,
 
   getChatbots: async () => {
     const response = await chatbotService.getChabots()
@@ -108,14 +110,19 @@ export const createChatbotSlice: StateCreator<ChatbotSlice> = (set, get) => ({
       throw new Error('No chatbot ID provided and no current chatbot set')
     }
 
-    const filters = state.documentFilters
-    const response = await chatbotService.getChatbot(id, filters)
-    const chatbot = response.data.data
+    set({ isLoadingChatbot: true })
+    try {
+      const filters = state.documentFilters
+      const response = await chatbotService.getChatbot(id, filters)
+      const chatbot = response.data.data
 
-    if (!chatbot) {
-      throw new Error('Chatbot not found')
+      if (!chatbot) {
+        throw new Error('Chatbot not found')
+      }
+      set({ currentChatbot: chatbot })
+    } finally {
+      set({ isLoadingChatbot: false })
     }
-    set({ currentChatbot: chatbot })
   },
   updateChatbot: async (data: Partial<Chatbot>) => {
     const state = get()
@@ -189,5 +196,6 @@ export const createChatbotSlice: StateCreator<ChatbotSlice> = (set, get) => ({
       documentFilters: defaultFilters,
       chatSessions: [],
       isLoadingSessionDetails: false,
+      isLoadingChatbot: false,
     }),
 })

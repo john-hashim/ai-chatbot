@@ -1,5 +1,5 @@
 import { DropzoneUpload } from '../../components/common/DropzoneUpload'
-import { Search, ChevronDown, Ellipsis, Trash, SearchX } from 'lucide-react'
+import { Search, ChevronDown, Ellipsis, Trash, SearchX, Loader2 } from 'lucide-react'
 import { Menu, TextInput, Tooltip, Button, Text } from '@mantine/core'
 import { Checkbox } from '@mantine/core'
 import { Select } from '@mantine/core'
@@ -25,6 +25,7 @@ export const UploadFile: React.FC = () => {
     setDocumentFilters,
     documentFilters,
     getChatbot,
+    isLoadingChatbot,
   } = useChatbotStore()
   const { formatFileSize } = useFormat()
   const [documentToDelete, setDocumentsToDelete] = useState<string[]>([])
@@ -227,7 +228,11 @@ export const UploadFile: React.FC = () => {
             </div>
           </div>
           <div className="border-b mt-2 border-border-week"></div>
-          {currentChatbot.documents && currentChatbot.documents.length > 0 ? (
+          {isLoadingChatbot ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-6 w-6 animate-spin text-text-weak" />
+            </div>
+          ) : currentChatbot.documents && currentChatbot.documents.length > 0 ? (
             currentChatbot.documents
               .filter(document => document.type === 'document')
               .map(document => (
@@ -254,7 +259,7 @@ export const UploadFile: React.FC = () => {
                     </div>
                     <Menu shadow="md" width={200}>
                       <Menu.Target>
-                        <Ellipsis className="h-4 w-4 text-icon cursor-pointer" />
+                        <Ellipsis className="h-4 w-4 text-icon cursor-pointer mr-6" />
                       </Menu.Target>
 
                       <Menu.Dropdown>

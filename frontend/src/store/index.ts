@@ -44,6 +44,7 @@ export const useChatbotStore = () =>
       documentFilters: state.documentFilters,
       chatSessions: state.chatSessions,
       isLoadingSessions: state.isLoadingSessions,
+      isLoadingChatbot: state.isLoadingChatbot,
       getChatbots: state.getChatbots,
       updateChatbot: state.updateChatbot,
       setCurrentChatbot: state.setCurrentChatbot,
