@@ -232,9 +232,7 @@ export const UploadFile: React.FC = () => {
               .filter(document => document.type === 'document')
               .map(document => (
                 <div key={document.id}>
-                  <div
-                    className="py-4 font-semibold flex justify-between items-center"
-                  >
+                  <div className="py-4 font-semibold flex justify-between items-center">
                     <div className="flex">
                       <div>
                         <Checkbox
@@ -246,11 +244,13 @@ export const UploadFile: React.FC = () => {
                           {formatFileSize(document.size)}
                         </p>
                       </div>
-                      <Tooltip label="Not Trained yet" position="bottom-end">
-                        <div className="ml-2">
-                          <TagComponent text="new" className="cursor-pointer" color="#97f4b9" />
-                        </div>
-                      </Tooltip>
+                      {document.status === 'untrained' && (
+                        <Tooltip label="Not Trained yet" position="bottom-end">
+                          <div className="ml-2">
+                            <TagComponent text="new" className="cursor-pointer" color="#97f4b9" />
+                          </div>
+                        </Tooltip>
+                      )}
                     </div>
                     <Menu shadow="md" width={200}>
                       <Menu.Target>

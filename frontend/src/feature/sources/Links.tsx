@@ -346,11 +346,13 @@ export const UploadLinks: React.FC = () => {
                           {formatFileSize(document.size)}
                         </p>
                       </div>
-                      <Tooltip label="Not Trained yet" position="bottom-end">
-                        <div className="ml-2">
-                          <TagComponent text="new" className="cursor-pointer" color="#97f4b9" />
-                        </div>
-                      </Tooltip>
+                      {document.status === 'untrained' && (
+                        <Tooltip label="Not Trained yet" position="bottom-end">
+                          <div className="ml-2">
+                            <TagComponent text="new" className="cursor-pointer" color="#97f4b9" />
+                          </div>
+                        </Tooltip>
+                      )}
                     </div>
                     <Menu shadow="md" width={200}>
                       <Menu.Target>
