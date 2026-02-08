@@ -27,7 +27,7 @@ export interface ChatbotWidgetProps {
 
   // Callbacks
   onSendMessage?: (message: string) => void
-  onFeedback?: (messageId: string, type: 'like' | 'dislike') => void
+  onFeedback?: (messageId: string, type: string) => void
   onRetry?: (messageId: string) => void
   onCopy?: (messageId: string, content: string) => void
   onReset?: () => void

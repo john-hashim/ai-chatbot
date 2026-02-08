@@ -1,6 +1,6 @@
 import type React from 'react'
 import type { ChatSession } from '@/types/chatbot'
-import { Ellipsis, Gauge, ThumbsUp, Trash } from 'lucide-react'
+import { Ellipsis, Gauge, ThumbsDown, ThumbsUp, Trash } from 'lucide-react'
 import { Button, Menu, Tooltip } from '@mantine/core'
 import { formatRelativeDate } from '@/hooks/useRelativeDate'
 import ReactMarkdown from 'react-markdown'
@@ -78,8 +78,13 @@ export const ChatDetails: React.FC<ChatDetailsInterface> = ({ session, handleSes
                       {formatRelativeDate(message.createdAt)}
                     </span>
                     {message.feedback === 'like' && (
-                      <span className="flex  items-center text-xs px-2 py-0.5 rounded-full bg-white/80 text-text-secondary">
-                        <ThumbsUp size={12} />
+                      <span className="flex items-center text-xs px-2 py-0.5 rounded-full border border-green-200 bg-green-50 text-green-600">
+                        <ThumbsUp size={12} fill="currentColor" />
+                      </span>
+                    )}
+                    {message.feedback === 'dislike' && (
+                      <span className="flex items-center text-xs px-2 py-0.5 rounded-full border border-red-200 bg-red-50 text-red-500">
+                        <ThumbsDown size={12} fill="currentColor" />
                       </span>
                     )}
                   </div>

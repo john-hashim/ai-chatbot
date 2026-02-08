@@ -44,10 +44,7 @@ export const chatService = {
     sessionId: string
   ): Promise<AxiosResponse<ApiResponse<{ chatSession: ChatSession }>>> => {
     return apiClient.get(
-      ENDPOINTS.CHAT.GET_SESSION.replace(':chatbotId', chatbotId).replace(
-        ':sessionId',
-        sessionId
-      )
+      ENDPOINTS.CHAT.GET_SESSION.replace(':chatbotId', chatbotId).replace(':sessionId', sessionId)
     )
   },
 
@@ -76,6 +73,19 @@ export const chatService = {
     return apiClient.get(ENDPOINTS.CHAT.EXPORT_PDF.replace(':chatbotId', chatbotId), {
       responseType: 'blob',
     })
+  },
+  updateMessage: (
+    chatbotId: string,
+    sessionId: string,
+    messageId: string,
+    feedback: string
+  ): Promise<AxiosResponse<ApiResponse<ChatMessage>>> => {
+    return apiClient.patch(
+      ENDPOINTS.CHAT.UPDATE_MESSAGE.replace(':chatbotId', chatbotId)
+        .replace(':sessionId', sessionId)
+        .replace(':messageId', messageId),
+      { feedback }
+    )
   },
 }
 

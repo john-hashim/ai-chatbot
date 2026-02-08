@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import rehypeRaw from 'rehype-raw'
 import remarkGfm from 'remark-gfm'
+import { formatRelativeDate } from '@/hooks/useRelativeDate'
 import type { ChatMessagesProps } from './types'
 
 const REMARK_PLUGINS = [remarkGfm]
@@ -218,7 +219,10 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                       )}
                       {!(isGenerating && !chat.content) && (
                         <div className="animate-message-in">
-                          <ReactMarkdown remarkPlugins={REMARK_PLUGINS} rehypePlugins={REHYPE_PLUGINS}>
+                          <ReactMarkdown
+                            remarkPlugins={REMARK_PLUGINS}
+                            rehypePlugins={REHYPE_PLUGINS}
+                          >
                             {chat.content || 'dummy content'}
                           </ReactMarkdown>
                         </div>
@@ -236,13 +240,23 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                       <ActionButton
                         isDark={isDark}
                         label="Good response"
-                        icon={<ThumbsUp className="h-3 w-3" />}
+                        icon={
+                          <ThumbsUp
+                            className="h-3 w-3"
+                            {...(chat.feedback === 'like' && { fill: 'currentColor' })}
+                          />
+                        }
                         onClick={() => onFeedback?.(chat.id, 'like')}
                       />
                       <ActionButton
                         isDark={isDark}
                         label="Bad response"
-                        icon={<ThumbsDown className="h-3 w-3" />}
+                        icon={
+                          <ThumbsDown
+                            className="h-3 w-3"
+                            {...(chat.feedback === 'dislike' && { fill: 'currentColor' })}
+                          />
+                        }
                         onClick={() => onFeedback?.(chat.id, 'dislike')}
                       />
                       <ActionButton
@@ -251,6 +265,9 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                         icon={<RotateCcw className="h-3 w-3" />}
                         onClick={() => onRetry?.(chat.id)}
                       />
+                      {/* <span className={`ml-1 text-[10px] ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>
+                        {formatRelativeDate(chat.createdAt)}
+                      </span> */}
                     </div>
                   )}
                 </div>

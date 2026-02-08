@@ -34,6 +34,12 @@ router.get(
   authMiddleware.authenticateToken,
   chatController.getChatSession
 )
+
+router.patch(
+  '/:chatbotId/:sessionId/:messageId',
+  authMiddleware.authenticateToken,
+  chatController.updateMessage
+)
 router.delete(
   '/:chatbotId/:sessionId',
   authMiddleware.authenticateToken,

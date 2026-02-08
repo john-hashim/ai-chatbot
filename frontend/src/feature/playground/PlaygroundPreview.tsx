@@ -1,6 +1,8 @@
-import { streamChat } from '@/api/services/chat'
+import { chatService, streamChat } from '@/api/services/chat'
 import { ChatbotWidget } from '@/components/common/ChatbotWidget'
+import { useApi } from '@/hooks/useApi'
 import { useStore } from '@/store'
+import type { ApiResponse } from '@/types/api'
 import type { ChatMessage } from '@/types/chatbot'
 import { useRef, useState } from 'react'
 
@@ -10,6 +12,30 @@ export const PlaygroundPreview: React.FC = () => {
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [generating, setGenerating] = useState(false)
   const assistantIdRef = useRef<string>('')
+
+  const { execute: excuteUpdateMessage } = useApi<
+    ApiResponse<ChatMessage>,
+    [string, string, string, string]
+  >(chatService.updateMessage)
+
+  const handleFeedback = async (messageId: string, type: string) => {
+    if (!currentChatbot || !type || !sessionId) return
+
+    // Optimistic update
+    setMessages(prev =>
+      prev.map(msg => (msg.id === messageId ? { ...msg, feedback: type as ChatMessage['feedback'] } : msg))
+    )
+
+    try {
+      const result = await excuteUpdateMessage(currentChatbot.id, sessionId, messageId, type)
+      const updatedMessage = result?.data
+      if (updatedMessage) {
+        setMessages(prev => prev.map(msg => (msg.id === messageId ? updatedMessage : msg)))
+      }
+    } catch (e) {
+      console.log(e)
+    }
+  }
 
   const handleSendMessage = async (message: string) => {
     if (!currentChatbot) return
@@ -50,31 +76,35 @@ export const PlaygroundPreview: React.FC = () => {
     setMessages(prev => [...prev, userMessage, assistantMessage])
 
     try {
-      await streamChat(currentChatbot.id, message, sessionId || undefined, {
-        onSessionId: (sid: string) => {
-          setSessionId(sid)
-        },
-        onToken: (token: string) => {
-          setMessages(prev =>
-            prev.map(msg =>
-              msg.id === assistantIdRef.current
-                ? { ...msg, content: msg.content + token }
-                : msg
+      await streamChat(
+        currentChatbot.id,
+        message,
+        sessionId || undefined,
+        {
+          onSessionId: (sid: string) => {
+            setSessionId(sid)
+          },
+          onToken: (token: string) => {
+            setMessages(prev =>
+              prev.map(msg =>
+                msg.id === assistantIdRef.current ? { ...msg, content: msg.content + token } : msg
+              )
             )
-          )
+          },
+          onDone: (finalMessage: ChatMessage) => {
+            setMessages(prev =>
+              prev.map(msg => (msg.id === assistantIdRef.current ? finalMessage : msg))
+            )
+            setGenerating(false)
+          },
+          onError: (error: string) => {
+            console.error('Stream error:', error)
+            setMessages(prev => prev.filter(msg => msg.id !== assistantIdRef.current))
+            setGenerating(false)
+          },
         },
-        onDone: (finalMessage: ChatMessage) => {
-          setMessages(prev =>
-            prev.map(msg => (msg.id === assistantIdRef.current ? finalMessage : msg))
-          )
-          setGenerating(false)
-        },
-        onError: (error: string) => {
-          console.error('Stream error:', error)
-          setMessages(prev => prev.filter(msg => msg.id !== assistantIdRef.current))
-          setGenerating(false)
-        },
-      }, 'playground')
+        'playground'
+      )
     } catch {
       setMessages(prev => prev.filter(msg => msg.id !== assistantIdRef.current))
       setGenerating(false)
@@ -103,6 +133,7 @@ export const PlaygroundPreview: React.FC = () => {
           footer={currentChatbot?.footer}
           messages={messages}
           onSendMessage={handleSendMessage}
+          onFeedback={handleFeedback}
           onReset={handleReset}
           generating={generating}
         />

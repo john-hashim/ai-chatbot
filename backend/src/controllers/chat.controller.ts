@@ -474,3 +474,77 @@ export const exportChatsAsPDF = async (req: Request, res: Response, next: NextFu
     next(error)
   }
 }
+
+export const updateMessage = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { chatbotId, sessionId, messageId } = req.params
+    const { feedback } = req.body
+    const user = req.user
+    if (!chatbotId) {
+      return res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'Chatbot ID is required',
+      } satisfies ApiResponse)
+    }
+
+    if (!sessionId) {
+      return res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'Chat session ID required',
+      } satisfies ApiResponse)
+    }
+
+    if (!messageId) {
+      return res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'Message ID is required',
+      } satisfies ApiResponse)
+    }
+
+    const existingChatbot = await prisma.chatbot.findUnique({
+      where: { id: chatbotId, userId: user.id },
+    })
+
+    if (!existingChatbot) {
+      return res.status(404).json({
+        status: ApiStatus.FAILURE,
+        message: "Chatbot not found or you don't have the permission to edit",
+      } satisfies ApiResponse)
+    }
+
+    const existingSession = await prisma.chatSession.findUnique({
+      where: { id: sessionId, chatbotId: chatbotId },
+    })
+
+    if (!existingSession) {
+      return res.status(404).json({
+        status: ApiStatus.FAILURE,
+        message: 'Session not found or session does not belong to this chatbot',
+      } satisfies ApiResponse)
+    }
+
+    const existingMessage = await prisma.chatMessage.findUnique({
+      where: { id: messageId, sessionId: sessionId },
+    })
+
+    if (!existingMessage) {
+      return res.status(404).json({
+        status: ApiStatus.FAILURE,
+        message: 'Message not found or message does not belong to this session',
+      } satisfies ApiResponse)
+    }
+
+    const message = await prisma.chatMessage.update({
+      where: { id: messageId },
+      data: { feedback },
+    })
+
+    res.status(200).json({
+      status: ApiStatus.SUCCESS,
+      data: message,
+      message: 'Message updated successfully',
+    } satisfies ApiResponse)
+  } catch (error) {
+    next(error)
+  }
+}
