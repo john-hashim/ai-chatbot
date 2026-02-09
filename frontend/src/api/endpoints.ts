@@ -35,6 +35,9 @@ export const ENDPOINTS = {
     EXPORT_PDF: 'chatbot/:chatbotId/export/pdf',
     UPDATE_MESSAGE: 'chatbot/:chatbotId/:sessionId/:messageId',
   },
+  ANALYTICS: {
+    GET: 'chatbot/:chatbotId/analytics',
+  },
 } as const
 
 export type EndpointValues = typeof ENDPOINTS

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import rehypeRaw from 'rehype-raw'
 import remarkGfm from 'remark-gfm'
-import { formatRelativeDate } from '@/hooks/useRelativeDate'
+// import { formatRelativeDate } from '@/hooks/useRelativeDate'
 import type { ChatMessagesProps } from './types'
 
 const REMARK_PLUGINS = [remarkGfm]

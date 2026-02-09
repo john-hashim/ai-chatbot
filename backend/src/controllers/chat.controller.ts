@@ -5,6 +5,7 @@ import { ApiStatus, type ApiResponse } from '../types/api.js'
 import PDFDocument from 'pdfkit'
 import * as chatService from '../services/chat.service.js'
 import { getSystemInstruction } from '../constants/instructions.js'
+import { resolveCountry } from '../services/geolocation.service.js'
 
 export const chatController = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -56,6 +57,17 @@ export const chatController = async (req: Request, res: Response, next: NextFunc
         },
       })
       sessionId = session.id
+
+      // Resolve country in background — don't block chat response
+      const clientIp = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.ip || ''
+      resolveCountry(clientIp).then(geo => {
+        if (geo.country) {
+          prisma.chatSession.update({
+            where: { id: session.id },
+            data: { country: geo.country, countryCode: geo.countryCode },
+          }).catch(() => {})
+        }
+      })
     } else {
       const session = await prisma.chatSession.findFirst({
         where: { id: sessionId, chatbotId },
