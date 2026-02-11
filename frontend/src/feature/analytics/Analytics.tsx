@@ -134,43 +134,41 @@ export const Analytics = () => {
         {loading ? (
           <Skeleton height={300} radius="sm" />
         ) : analytics?.conversationsOverTime && analytics.conversationsOverTime.length > 0 ? (
-          <div style={{ width: '100%', height: 300 }}>
-            <ResponsiveContainer>
-              <AreaChart data={analytics.conversationsOverTime}>
-                <defs>
-                  <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#fe5e51" stopOpacity={0.15} />
-                    <stop offset="95%" stopColor="#fe5e51" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <XAxis
-                  dataKey="date"
-                  tick={{ fontSize: 12 }}
-                  tickFormatter={formatDateLabel}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <YAxis
-                  tick={{ fontSize: 12 }}
-                  allowDecimals={false}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <Tooltip
-                  labelFormatter={(label) => formatDateLabel(String(label))}
-                  contentStyle={{ fontSize: 13, borderRadius: 8, border: '1px solid #e5e5e5' }}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="count"
-                  name="Conversations"
-                  stroke="#fe5e51"
-                  fill="url(#colorCount)"
-                  strokeWidth={2}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
+          <ResponsiveContainer width="99%" height={300}>
+            <AreaChart data={analytics.conversationsOverTime}>
+              <defs>
+                <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#fe5e51" stopOpacity={0.15} />
+                  <stop offset="95%" stopColor="#fe5e51" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <XAxis
+                dataKey="date"
+                tick={{ fontSize: 12 }}
+                tickFormatter={formatDateLabel}
+                axisLine={false}
+                tickLine={false}
+              />
+              <YAxis
+                tick={{ fontSize: 12 }}
+                allowDecimals={false}
+                axisLine={false}
+                tickLine={false}
+              />
+              <Tooltip
+                labelFormatter={(label) => formatDateLabel(String(label))}
+                contentStyle={{ fontSize: 13, borderRadius: 8, border: '1px solid #e5e5e5' }}
+              />
+              <Area
+                type="monotone"
+                dataKey="count"
+                name="Conversations"
+                stroke="#fe5e51"
+                fill="url(#colorCount)"
+                strokeWidth={2}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
         ) : (
           <div className="flex items-center justify-center h-48 text-text-secondary text-sm">
             No conversation data for this period
