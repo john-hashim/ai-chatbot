@@ -38,6 +38,11 @@ export const ENDPOINTS = {
   ANALYTICS: {
     GET: 'chatbot/:chatbotId/analytics',
   },
+  EMBED: {
+    CREATE: 'chatbot/:chatbotId/embed',
+    GET: 'chatbot/:chatbotId/embed',
+    UPDATE: 'chatbot/:chatbotId/embed',
+  },
 } as const
 
 export type EndpointValues = typeof ENDPOINTS

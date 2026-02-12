@@ -59,13 +59,16 @@ export const chatController = async (req: Request, res: Response, next: NextFunc
       sessionId = session.id
 
       // Resolve country in background — don't block chat response
-      const clientIp = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.ip || ''
+      const clientIp =
+        (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.ip || ''
       resolveCountry(clientIp).then(geo => {
         if (geo.country) {
-          prisma.chatSession.update({
-            where: { id: session.id },
-            data: { country: geo.country, countryCode: geo.countryCode },
-          }).catch(() => {})
+          prisma.chatSession
+            .update({
+              where: { id: session.id },
+              data: { country: geo.country, countryCode: geo.countryCode },
+            })
+            .catch(() => {})
         }
       })
     } else {
@@ -491,7 +494,6 @@ export const updateMessage = async (req: Request, res: Response, next: NextFunct
   try {
     const { chatbotId, sessionId, messageId } = req.params
     const { feedback } = req.body
-    const user = req.user
     if (!chatbotId) {
       return res.status(400).json({
         status: ApiStatus.FAILURE,
@@ -514,7 +516,7 @@ export const updateMessage = async (req: Request, res: Response, next: NextFunct
     }
 
     const existingChatbot = await prisma.chatbot.findUnique({
-      where: { id: chatbotId, userId: user.id },
+      where: { id: chatbotId },
     })
 
     if (!existingChatbot) {

@@ -6,6 +6,7 @@ import chatbotRoutes from './routes/chatbot.routes.js'
 import documentRoutes from './routes/document.routes.js'
 import chatRoutes from './routes/chat.routes.js'
 import analyticsRoutes from './routes/analytics.routes.js'
+import embedRoutes from './routes/embed.routes.js'
 import { errorHandler } from './middleware/error.middleware.js'
 
 dotenv.config()
@@ -21,6 +22,7 @@ app.use('/api/chatbot', analyticsRoutes)
 app.use('/api/chatbot', chatbotRoutes)
 app.use('/api/chatbot', documentRoutes)
 app.use('/api/chatbot', chatRoutes)
+app.use('/api/embed', embedRoutes)
 
 app.get('/', (req, res) => {
   res.json({ message: 'AI Chatbot Backend Server is running!' })

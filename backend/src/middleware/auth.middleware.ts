@@ -8,6 +8,8 @@ declare global {
     interface Request {
       user?: any
       session?: any
+      chatbot?: any
+      embedConfig?: any
     }
   }
 }

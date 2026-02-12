@@ -70,11 +70,27 @@ model Chatbot {
   chatBubbleButtonPosition String        @default("right")
   instructionType          String        @default("base")
   customInstruction        String?
+  embedConfig              EmbedConfig?
 
   @@unique([name, userId])
   @@index([userId])
   @@map("chatbots")
 }
+
+model EmbedConfig {
+  id              String   @id @default(cuid())
+  chatbotId       String   @unique
+  embedKey        String   @unique
+  isActive        Boolean  @default(true)
+  allowedDomains  String[] @default([])
+  rateLimitPerMin Int      @default(20)
+  createAt        DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  chatbot         Chatbot  @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
+
+  @@index([embedKey])
+  @@map("embed_configs")
+ }
 
 model ChatSession {
   id          String        @id @default(cuid())

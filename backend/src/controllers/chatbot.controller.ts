@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client'
 import { prisma } from '../prisma/client.js'
 import { ApiStatus, type ApiResponse } from '../types/api.js'
 import * as r2Service from '../services/r2.service.js'
+import crypto from 'crypto'
 
 export const createChatbot = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -333,6 +334,149 @@ export const getChatbot = async (req: Request, res: Response, next: NextFunction
         QandACount,
       },
       message: 'Chatbot retrieved successfully',
+    } satisfies ApiResponse)
+  } catch (error) {
+    next(error)
+  }
+}
+
+export const createEmbedConfig = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const user = req.user
+    const { chatbotId } = req.params
+
+    if (!chatbotId) {
+      return res.status(404).json({
+        status: ApiStatus.FAILURE,
+        message: 'ChatbotId is required',
+      } satisfies ApiResponse)
+    }
+
+    const chatbot = await prisma.chatbot.findUnique({
+      where: { id: chatbotId, userId: user.id },
+    })
+
+    if (!chatbot) {
+      return res.status(404).json({
+        status: ApiStatus.FAILURE,
+        message: 'Chatbot not found',
+      } satisfies ApiResponse)
+    }
+
+    const existing = await prisma.embedConfig.findUnique({
+      where: { chatbotId },
+    })
+
+    if (existing) {
+      return res.status(409).json({
+        status: ApiStatus.FAILURE,
+        message: 'Embed config already exists for this chatbot',
+      } satisfies ApiResponse)
+    }
+
+    const embedKey = 'ek_' + crypto.randomBytes(24).toString('hex')
+
+    const embedConfig = await prisma.embedConfig.create({
+      data: {
+        chatbotId,
+        embedKey,
+      },
+    })
+
+    res.status(201).json({
+      status: ApiStatus.SUCCESS,
+      data: embedConfig,
+      message: 'Embed config created successfully',
+    } satisfies ApiResponse)
+  } catch (error) {
+    next(error)
+  }
+}
+
+export const getEmbedConfigAdmin = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const user = req.user
+    const { chatbotId } = req.params
+
+    if (!chatbotId) {
+      return res.status(404).json({
+        status: ApiStatus.FAILURE,
+        message: 'ChatbotId is required',
+      } satisfies ApiResponse)
+    }
+
+    const chatbot = await prisma.chatbot.findUnique({
+      where: { id: chatbotId, userId: user.id },
+    })
+
+    if (!chatbot) {
+      return res.status(404).json({
+        status: ApiStatus.FAILURE,
+        message: 'Chatbot not found',
+      } satisfies ApiResponse)
+    }
+
+    const embedConfig = await prisma.embedConfig.findUnique({
+      where: { chatbotId },
+    })
+
+    if (!embedConfig) {
+      return res.status(200).json({
+        status: ApiStatus.SUCCESS,
+        data: null,
+        message: 'No embed config found for this chatbot',
+      })
+    }
+
+    res.status(200).json({
+      status: ApiStatus.SUCCESS,
+      data: embedConfig,
+      message: 'Embed config retrieved successfully',
+    } satisfies ApiResponse)
+  } catch (error) {
+    next(error)
+  }
+}
+
+export const updateEmbedConfig = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const user = req.user
+    const { chatbotId } = req.params
+    const { isActive, allowedDomains, rateLimitPerMin, regenerateKey } = req.body
+
+    if (!chatbotId) {
+      return res.status(404).json({
+        status: ApiStatus.FAILURE,
+        message: 'ChatbotId is required',
+      } satisfies ApiResponse)
+    }
+
+    const chatbot = await prisma.chatbot.findUnique({
+      where: { id: chatbotId, userId: user.id },
+    })
+
+    if (!chatbot) {
+      return res.status(404).json({
+        status: ApiStatus.FAILURE,
+        message: 'Chatbot not found',
+      } satisfies ApiResponse)
+    }
+
+    const updateData: any = {}
+    if (isActive !== undefined) updateData.isActive = isActive
+    if (allowedDomains !== undefined) updateData.allowedDomains = allowedDomains
+    if (rateLimitPerMin !== undefined) updateData.rateLimitPerMin = rateLimitPerMin
+    if (regenerateKey) updateData.embedKey = 'ek_' + crypto.randomBytes(24).toString('hex')
+
+    const embedConfig = await prisma.embedConfig.update({
+      where: { chatbotId },
+      data: updateData,
+    })
+
+    res.status(200).json({
+      status: ApiStatus.SUCCESS,
+      data: embedConfig,
+      message: 'Embed config updated successfully',
     } satisfies ApiResponse)
   } catch (error) {
     next(error)
