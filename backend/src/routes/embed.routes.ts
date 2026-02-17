@@ -5,7 +5,7 @@ import * as chatController from '../controllers/chat.controller.js'
 
 const router = express.Router()
 
-router.get(':embedKey/config', embedMiddleware.authenticateEmbed, embedController.getEmbedConfig)
+router.get('/:embedKey/config', embedMiddleware.authenticateEmbed, embedController.getEmbedConfig)
 router.post('/:embedKey/chat', embedMiddleware.authenticateEmbed, chatController.chatController)
 
 router.patch(
