@@ -52,7 +52,7 @@ const defaultFilters: DocumentFilters = {
   sortBy: 'Newest',
 }
 
-export const createChatbotSlice:StateCreator<
+export const createChatbotSlice: StateCreator<
   ChatbotSlice,
   [['zustand/devtools', never]],
   []
@@ -236,4 +236,4 @@ export const createChatbotSlice:StateCreator<
       isLoadingSessionDetails: false,
       isLoadingChatbot: false,
     }, undefined, '[Chat Bot] Clear Chat Bot State'),
-  })
+})
