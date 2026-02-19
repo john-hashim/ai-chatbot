@@ -112,7 +112,9 @@ export const Deploy: React.FC = () => {
     return `<iframe src="${EMBED_BASE}/embed/${embedConfig.embedKey}" width="400" height="600" frameborder="0"></iframe>`
   }
 
-  const directChatLink = 'https://google.com'
+  const directChatLink = embedConfig
+    ? `${EMBED_BASE}/embed/${embedConfig.embedKey}`
+    : ''
 
   return (
     <div className="flex justify-center items-start p-6 h-full overflow-y-auto">

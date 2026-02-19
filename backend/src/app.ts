@@ -1,4 +1,6 @@
 import express from 'express'
+import path from 'path'
+import { fileURLToPath } from 'url'
 import dotenv from 'dotenv'
 import cors from 'cors'
 import authRoutes from './routes/auth.routes.js'
@@ -23,6 +25,17 @@ app.use('/api/chatbot', chatbotRoutes)
 app.use('/api/chatbot', documentRoutes)
 app.use('/api/chatbot', chatRoutes)
 app.use('/api/embed', embedRoutes)
+
+//Finding embed directory path and provide embed.js ( embed.js is same as embed.tsx from embed app)
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+const embedDistPath = path.join(__dirname, '../../embed/dist')
+console.log(embedDistPath)
+app.use('/embed-assets', express.static(embedDistPath))
+
+app.get('/embed/:embedKey', (req, res) => {
+  res.sendFile(path.join(embedDistPath, 'iframe.html'))
+})
 
 app.get('/', (req, res) => {
   res.json({ message: 'AI Chatbot Backend Server is running!' })

@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Embed Widget Test</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        padding: 40px;
+        background: #f5f5f5;
+      }
+      h1 {
+        color: #333;
+      }
+      p {
+        color: #666;
+        max-width: 600px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Embed Widget Test Page</h1>
+    <p>
+      This simulates a customer's website. The chat bubble should appear in the
+      bottom-right corner.
+    </p>
+    <p>Below is an iframe embed test:</p>
+    <iframe
+      src="http://localhost:3001/embed/ek_2cfb1f9cf467cd29a5ac873ee62a8127c7ad4e283ac288aa"
+      width="400"
+      height="700"
+      frameborder="0"
+    ></iframe>
+
+    <!-- Script tag widget -->
+    <script
+      src="http://localhost:3001/embed-assets/embed.js"
+      data-chatbot-key="ek_2cfb1f9cf467cd29a5ac873ee62a8127c7ad4e283ac288aa"
+    ></script>
+  </body>
+</html>
