@@ -52,7 +52,11 @@ const defaultFilters: DocumentFilters = {
   sortBy: 'Newest',
 }
 
-export const createChatbotSlice: StateCreator<ChatbotSlice> = (set, get) => ({
+export const createChatbotSlice: StateCreator<
+  ChatbotSlice,
+  [['zustand/devtools', never]],
+  []
+> = (set, get) => ({
   // Chatbot state
   chatbots: [],
   currentChatbot: null,
@@ -73,7 +77,7 @@ export const createChatbotSlice: StateCreator<ChatbotSlice> = (set, get) => ({
     if (!response.data.data) {
       throw new Error('No data received from server')
     }
-    set({ chatbots: response.data.data })
+    set({ chatbots: response.data.data }, undefined, '[Chat Bot] Set Chat Bots')
   },
 
   getChatbot: async (chatbotId?: string) => {
@@ -84,7 +88,7 @@ export const createChatbotSlice: StateCreator<ChatbotSlice> = (set, get) => ({
       throw new Error('No chatbot ID provided and no current chatbot set')
     }
 
-    set({ isLoadingChatbot: true })
+    set({ isLoadingChatbot: true }, undefined, '[Chat Bot] Set Chat Bot Loading')
     try {
       const filters = state.documentFilters
       const response = await chatbotService.getChatbot(id, filters)
@@ -93,9 +97,9 @@ export const createChatbotSlice: StateCreator<ChatbotSlice> = (set, get) => ({
       if (!chatbot) {
         throw new Error('Chatbot not found')
       }
-      set({ currentChatbot: chatbot })
+      set({ currentChatbot: chatbot }, undefined, '[Chat Bot] Set Current Chat Bot')
     } finally {
-      set({ isLoadingChatbot: false })
+      set({ isLoadingChatbot: false }, undefined, '[Chat Bot] Set Chat Bot Loading')
     }
   },
 
@@ -103,10 +107,10 @@ export const createChatbotSlice: StateCreator<ChatbotSlice> = (set, get) => ({
     set(state => {
       const currentChatbot = state.chatbots.find(chatbot => chatbot.id === chatbotId)
       return { currentChatbot }
-    })
+    }, undefined, '[Chat Bot] Set Current Chat')
   },
 
-  clearCurrentChatbot: () => set({ currentChatbot: null }),
+  clearCurrentChatbot: () => set({ currentChatbot: null }, undefined, '[Chat Bot] Clear Current Chat Bot'),
 
   updateChatbot: async (data: Partial<Chatbot>) => {
     const state = get()
@@ -126,7 +130,7 @@ export const createChatbotSlice: StateCreator<ChatbotSlice> = (set, get) => ({
     set(state => ({
       currentChatbot: updatedChatbot,
       chatbots: state.chatbots.map(bot => (bot.id === id ? updatedChatbot : bot)),
-    }))
+    }), undefined, '[Chat Bot] Update Chat Bot')
 
     return updatedChatbot
   },
@@ -141,32 +145,32 @@ export const createChatbotSlice: StateCreator<ChatbotSlice> = (set, get) => ({
       } else {
         return { chatbots: [chatbot, ...state.chatbots] }
       }
-    }),
+    }, undefined, '[Chat Bot] Clear Current Chat Bot'),
 
-  deleteChatbot: id => set(state => ({ chatbots: state.chatbots.filter(bot => bot.id !== id) })),
+  deleteChatbot: id => set(state => ({ chatbots: state.chatbots.filter(bot => bot.id !== id) }), undefined, '[Chat Bot] Delete Chat Bot'),
 
-  clearChatbots: () => set({ chatbots: [] }),
+  clearChatbots: () => set({ chatbots: [] }, undefined, '[Chat Bot] Clear Chat Bots'),
 
   // Chat session actions
 
   getChatSessions: async (chatbotId: string) => {
-    set({ isLoadingSessions: true })
+    set({ isLoadingSessions: true }, undefined, '[Chat Bot] Set isLoading Session True')
     try {
       const response = await chatService.getChatSessions(chatbotId)
       if (!response.data.data) {
         throw new Error('No data received from server')
       }
-      set({ chatSessions: response.data.data, isLoadingSessions: false })
+      set({ chatSessions: response.data.data, isLoadingSessions: false }, undefined, '[Chat Bot] Set Chat Session')
     } finally {
-      set({ isLoadingSessions: false })
+      set({ isLoadingSessions: false }, undefined, '[Chat Bot] Set isLoading Session False')
       console.log('Sessions fetch completed')
     }
   },
 
-  setChatSessions: (sessions: ChatSession[]) => set({ chatSessions: sessions }),
+  setChatSessions: (sessions: ChatSession[]) => set({ chatSessions: sessions }, undefined, '[Chat Bot] Set Chat Sessions'),
 
   getSessionDetails: async (chatbotId: string, sessionId: string) => {
-    set({ isLoadingSessionDetails: true })
+    set({ isLoadingSessionDetails: true }, undefined, '[Chat Bot] Set isLoading Session Details True')
     try {
       const response = await chatService.getChatSession(chatbotId, sessionId)
       const chatSession = response.data.data?.chatSession
@@ -175,7 +179,7 @@ export const createChatbotSlice: StateCreator<ChatbotSlice> = (set, get) => ({
       }
       get().updateSessionMessages(sessionId, chatSession.messages || [])
     } finally {
-      set({ isLoadingSessionDetails: false })
+      set({ isLoadingSessionDetails: false }, undefined, '[Chat Bot] Set isLoading Session Details False')
     }
   },
 
@@ -184,9 +188,9 @@ export const createChatbotSlice: StateCreator<ChatbotSlice> = (set, get) => ({
       chatSessions: state.chatSessions.map(session =>
         session.id === sessionId ? { ...session, messages } : session
       ),
-    })),
+    }), undefined, '[Chat Bot] Update Session Messages'),
 
-  clearChatSessions: () => set({ chatSessions: [] }),
+  clearChatSessions: () => set({ chatSessions: [] }, undefined, '[Chat Bot] Clear Chat Sessions'),
 
   // Document actions
 
@@ -217,9 +221,9 @@ export const createChatbotSlice: StateCreator<ChatbotSlice> = (set, get) => ({
   },
 
   setDocumentFilters: filter =>
-    set(state => ({ documentFilters: { ...state.documentFilters, ...filter } })),
+    set(state => ({ documentFilters: { ...state.documentFilters, ...filter } }), undefined, '[Chat Bot] Set Document Filters'),
 
-  resetDocumentFilters: () => set({ documentFilters: defaultFilters }),
+  resetDocumentFilters: () => set({ documentFilters: defaultFilters }, undefined, '[Chat Bot] Reset Document Filters'),
 
   // Global
 
@@ -231,5 +235,5 @@ export const createChatbotSlice: StateCreator<ChatbotSlice> = (set, get) => ({
       chatSessions: [],
       isLoadingSessionDetails: false,
       isLoadingChatbot: false,
-    }),
+    }, undefined, '[Chat Bot] Clear Chat Bot State'),
 })
