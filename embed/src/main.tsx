@@ -5,7 +5,7 @@ import "./widget.css";
 // Dev mode: render with a test embed key
 const params = new URLSearchParams(window.location.search);
 const embedKey =
-  params.get("key") || "ek_2cfb1f9cf467cd29a5ac873ee62a8127c7ad4e283ac288aa";
+  params.get("key") || "ek_2c7dd050c64d904a7d5abcadb1012365548a7066455ab1bb";
 const apiBase = "http://localhost:3001";
 
 render(
