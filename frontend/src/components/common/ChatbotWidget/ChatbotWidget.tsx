@@ -44,7 +44,9 @@ export const ChatbotWidget: React.FC<ChatbotWidgetProps> = ({
   }
 
   const handleSuggestionClick = (suggestion: string) => {
-    setInputValue(suggestion)
+    if (!suggestion.trim()) return
+    onSendMessage?.(suggestion)
+    setInputValue('')
   }
 
   const handleCopy = (messageId: string, content: string) => {

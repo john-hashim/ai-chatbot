@@ -62,17 +62,22 @@ export function ChatInput({
       )}
 
       <div className={`cbw-input-box ${isDark ? "cbw-input-box--dark" : ""}`}>
-        <textarea
-          className={`cbw-textarea ${isDark ? "cbw-textarea--dark" : ""}`}
-          dir="auto"
-          maxLength={8000}
-          rows={1}
-          placeholder={messagePlaceholder || "Type message here.."}
-          value={value}
-          onInput={(e) => onChange((e.target as HTMLTextAreaElement).value)}
-          onKeyDown={handleKeyDown}
-          disabled={disabled}
-        />
+        <div className="cbw-input-inner">
+          <textarea
+            className={`cbw-textarea ${isDark ? "cbw-textarea--dark" : ""}`}
+            id="message"
+            name="message"
+            dir="auto"
+            maxLength={8000}
+            rows={1}
+            tabIndex={0}
+            placeholder={messagePlaceholder || "Type message here.."}
+            value={value}
+            onInput={(e) => onChange((e.target as HTMLTextAreaElement).value)}
+            onKeyDown={handleKeyDown}
+            disabled={disabled}
+          />
+        </div>
         <button
           className={`cbw-send-btn ${isDark ? "cbw-send-btn--dark" : ""}`}
           type="button"
