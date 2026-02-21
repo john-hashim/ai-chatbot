@@ -248,9 +248,69 @@
   color: #f4f4f5;
 }
 
+.cbw-msg-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  height: 100%;
+}
+
 .cbw-msg-text {
-  white-space: pre-wrap;
   word-break: break-word;
+}
+
+/* Markdown prose styles */
+.cbw-msg-text p { margin: 0 0 8px; }
+.cbw-msg-text p:last-child { margin-bottom: 0; }
+.cbw-msg-text h1, .cbw-msg-text h2, .cbw-msg-text h3,
+.cbw-msg-text h4, .cbw-msg-text h5, .cbw-msg-text h6 {
+  font-weight: 600;
+  margin: 8px 0 4px;
+  line-height: 1.3;
+}
+.cbw-msg-text h1 { font-size: 1.2em; }
+.cbw-msg-text h2 { font-size: 1.1em; }
+.cbw-msg-text h3 { font-size: 1em; }
+.cbw-msg-text ul, .cbw-msg-text ol {
+  padding-left: 20px;
+  margin: 4px 0;
+}
+.cbw-msg-text li { margin: 2px 0; }
+.cbw-msg-text code {
+  font-family: ui-monospace, monospace;
+  font-size: 0.875em;
+  background: rgba(0,0,0,0.07);
+  border-radius: 4px;
+  padding: 1px 4px;
+}
+.cbw-msg--dark .cbw-msg-text code {
+  background: rgba(255,255,255,0.1);
+}
+.cbw-msg-text pre {
+  background: rgba(0,0,0,0.07);
+  border-radius: 8px;
+  padding: 10px 12px;
+  overflow-x: auto;
+  margin: 6px 0;
+}
+.cbw-msg--dark .cbw-msg-text pre {
+  background: rgba(255,255,255,0.08);
+}
+.cbw-msg-text pre code {
+  background: none;
+  padding: 0;
+  font-size: 0.8em;
+}
+.cbw-msg-text a {
+  color: inherit;
+  text-decoration: underline;
+}
+.cbw-msg-text blockquote {
+  border-left: 3px solid currentColor;
+  opacity: 0.7;
+  padding-left: 10px;
+  margin: 4px 0;
 }
 
 /* Message row */
@@ -314,12 +374,17 @@
 .cbw-typing--dark {
   background: #27272a;
 }
+.cbw-dots {
+  display: flex;
+  gap: 4px;
+}
 .cbw-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
   background: #71717a;
   animation: cbw-bounce 0.6s infinite alternate;
+  animation-duration: 0.6s;
 }
 .cbw-typing--dark .cbw-dot {
   background: #a1a1aa;
@@ -331,6 +396,22 @@
   }
   to {
     transform: translateY(-6px);
+  }
+}
+
+/* Message entrance animation */
+.cbw-animate-message-in {
+  animation: cbw-message-in 0.3s ease-out;
+}
+
+@keyframes cbw-message-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
