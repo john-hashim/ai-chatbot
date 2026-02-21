@@ -10,8 +10,9 @@ import {
   Rocket,
   Menu,
   Play,
-  Users,
-  Zap,
+  // Users,
+  // Zap,
+  CalendarDays,
 } from 'lucide-react'
 import { useStore } from '@/store'
 
@@ -41,23 +42,29 @@ const navItems = [
     description: 'Monitor conversations',
   },
   {
+    icon: CalendarDays,
+    label: 'Appointments',
+    path: 'bookings',
+    description: 'Appointments management',
+  },
+  {
     icon: ChartLine,
     label: 'Analytics',
     path: 'analytics',
     description: 'Check performance',
   },
-  {
-    icon: Users,
-    label: 'Contacts',
-    path: 'contacts',
-    description: 'Manage your chatbot contacts',
-  },
-  {
-    icon: Zap,
-    label: 'Automations',
-    path: 'automations',
-    description: 'Set up automated workflows',
-  },
+  // {
+  //   icon: Users,
+  //   label: 'Contacts',
+  //   path: 'contacts',
+  //   description: 'Manage your chatbot contacts',
+  // },
+  // {
+  //   icon: Zap,
+  //   label: 'Automations',
+  //   path: 'automations',
+  //   description: 'Set up automated workflows',
+  // },
   {
     icon: Rocket,
     label: 'Deploy',

@@ -41,6 +41,7 @@ import { Analytics } from './feature/analytics/Analytics'
 import { Contacts } from './feature/contacts/Contacts'
 import { Automations } from './feature/automations/Automations'
 import { Deploy } from './feature/deploy/Deploy'
+import { Bookings } from './feature/bookings/Bookings'
 
 const theme = createTheme({
   colors: {
@@ -170,9 +171,10 @@ function AppRoutes() {
           <Route path="customize" element={<Customize />} />
           <Route path="knowledge-base" element={<KnowledgeBase />} />
           <Route path="chats" element={<Chats />} />
+          <Route path="bookings" element={<Bookings />} />
+          <Route path="deploy" element={<Deploy />} />
           <Route path="analytics" element={<Analytics />} />
           <Route path="contacts" element={<Contacts />} />
-          <Route path="automations" element={<Automations />} />
           <Route path="deploy" element={<Deploy />} />
         </Route>
       </Route>
