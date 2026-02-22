@@ -8,6 +8,7 @@ import {
   ChartLine,
   Rocket,
   Menu,
+  X,
   Play,
   // Users,
   // Zap,
@@ -163,22 +164,23 @@ export const ChatbotSidebar: React.FC<ChatbotSidebarProps> = ({
 
   return (
     <>
-      {/* Mobile menu handle */}
-      {isMobile && !mobileOpen && (
+      {/* Mobile menu handle — fixed to viewport so it sits inside the Header bar */}
+      {isMobile && (
         <UnstyledButton
-          onClick={handleMobileOpen}
+          onClick={mobileOpen ? handleMobileClose : handleMobileOpen}
           style={{
-            position: 'absolute',
-            top: 16,
-            right: 16,
-            zIndex: 100,
-            padding: 8,
+            position: 'fixed',
+            top: 2,
+            right: 40,
+            zIndex: 200,
+            padding: '6px 8px',
             borderRadius: 8,
-            backgroundColor: '#fff',
-            border: '1px solid var(--color-border-week)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
           }}
         >
-          <Menu size={20} strokeWidth={1.5} />
+          {mobileOpen ? <X size={20} strokeWidth={1.5} /> : <Menu size={20} strokeWidth={1.5} />}
         </UnstyledButton>
       )}
 
