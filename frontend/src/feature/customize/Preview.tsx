@@ -47,7 +47,7 @@ export const Preview: React.FC = () => {
   return (
     <div className="flex h-full items-center justify-center p-4">
       <div className="relative mx-auto flex h-full max-h-180 w-full max-w-102 flex-1 flex-col">
-        <div className="flex flex-1 shrink-0 flex-col overflow-hidden rounded-[20px] border border-zinc-200 shadow-lg dark:border-zinc-800">
+        <div className="flex flex-1 shrink-0 flex-col overflow-hidden rounded-[20px] border border-zinc-200 shadow-lg">
           <ChatbotWidget
             name={name || 'Chatbot'}
             profilePicture={profilePicture}

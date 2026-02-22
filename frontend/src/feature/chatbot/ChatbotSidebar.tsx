@@ -23,72 +23,48 @@ const navItems = [
     icon: Play,
     label: 'Playground',
     path: 'playground',
-    description: 'Test your chatbot in real-time',
   },
   {
     icon: Sliders,
     label: 'Customize',
     path: 'customize',
-    description: 'Define how the bot behaves & looks',
   },
   {
     icon: Database,
     label: 'Knowledge Base',
     path: 'knowledge-base',
-    description: 'Teach it information',
   },
   {
     icon: MessageSquareText,
     label: 'Chats',
     path: 'chats',
-    description: 'Monitor conversations',
   },
   {
     icon: CalendarDays,
     label: 'Appointments',
     path: 'bookings',
-    description: 'Appointments management',
   },
   {
     icon: ChartLine,
     label: 'Analytics',
     path: 'analytics',
-    description: 'Check performance',
   },
   // {
   //   icon: Users,
   //   label: 'Contacts',
   //   path: 'contacts',
-  //   description: 'Manage your chatbot contacts',
   // },
   // {
   //   icon: Zap,
   //   label: 'Automations',
   //   path: 'automations',
-  //   description: 'Set up automated workflows',
   // },
   {
     icon: Rocket,
     label: 'Deploy',
     path: 'deploy',
-    description: 'Publish your chatbot',
   },
 ]
-
-// Static tooltip labels — extracted at module level so they are never recreated on re-render
-const tooltipLabels: Record<string, React.ReactNode> = Object.fromEntries(
-  navItems.map(item => [
-    item.path,
-    <div key={item.path}>
-      <Text size="sm" fw={500}>
-        {item.label}
-      </Text>
-      <Text size="xs" c="dimmed">
-        {item.description}
-      </Text>
-    </div>,
-  ])
-)
 
 const ITEM_HEIGHT = 36.3
 
@@ -275,57 +251,48 @@ export const ChatbotSidebar: React.FC<ChatbotSidebarProps> = ({
               const isActive = activePath === item.path
               const isHovered = hoveredItem === item.path
               return (
-                <Tooltip
+                <UnstyledButton
                   key={item.path}
-                  label={tooltipLabels[item.path]}
-                  position="right"
-                  disabled={pinned}
-                  transitionProps={{ duration: 150 }}
-                  multiline
-                  w={200}
+                  data-path={item.path}
+                  onClick={handleNavItemClick}
+                  onMouseEnter={handleNavItemEnter}
+                  onMouseLeave={handleNavItemLeave}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    padding: '6px 10px',
+                    borderRadius: 6,
+                    backgroundColor:
+                      isHovered && !isActive ? 'rgba(0, 0, 0, 0.04)' : 'transparent',
+                    color: isActive || isHovered ? '#000' : 'var(--mantine-color-gray-7)',
+                    position: 'relative',
+                    zIndex: 1,
+                    opacity: isActive || isHovered ? 1 : 0.85,
+                    transition:
+                      'background-color 200ms ease, opacity 200ms ease, color 200ms ease',
+                  }}
                 >
-                  <UnstyledButton
-                    data-path={item.path}
-                    onClick={handleNavItemClick}
-                    onMouseEnter={handleNavItemEnter}
-                    onMouseLeave={handleNavItemLeave}
+                  <item.icon
+                    size={18}
+                    strokeWidth={isActive ? 2 : 1.5}
+                    style={{ flexShrink: 0 }}
+                  />
+                  <Text
+                    size="sm"
+                    fw={500}
                     style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 10,
-                      padding: '6px 10px',
-                      borderRadius: 6,
-                      backgroundColor:
-                        isHovered && !isActive ? 'rgba(0, 0, 0, 0.04)' : 'transparent',
-                      color: isActive || isHovered ? '#000' : 'var(--mantine-color-gray-7)',
-                      position: 'relative',
-                      zIndex: 1,
-                      opacity: isActive || isHovered ? 1 : 0.85,
-                      transition:
-                        'background-color 200ms ease, opacity 200ms ease, color 200ms ease',
+                      whiteSpace: 'nowrap',
+                      opacity: expanded ? 1 : 0,
+                      transform: expanded ? 'translateX(0)' : 'translateX(-10px)',
+                      transition: expanded
+                        ? 'opacity 150ms ease 80ms, transform 250ms cubic-bezier(0.34, 1.56, 0.64, 1) 80ms'
+                        : 'opacity 150ms ease, transform 150ms ease',
                     }}
                   >
-                    <item.icon
-                      size={18}
-                      strokeWidth={isActive ? 2 : 1.5}
-                      style={{ flexShrink: 0 }}
-                    />
-                    <Text
-                      size="sm"
-                      fw={500}
-                      style={{
-                        whiteSpace: 'nowrap',
-                        opacity: expanded ? 1 : 0,
-                        transform: expanded ? 'translateX(0)' : 'translateX(-10px)',
-                        transition: expanded
-                          ? 'opacity 150ms ease 80ms, transform 250ms cubic-bezier(0.34, 1.56, 0.64, 1) 80ms'
-                          : 'opacity 150ms ease, transform 150ms ease',
-                      }}
-                    >
-                      {item.label}
-                    </Text>
-                  </UnstyledButton>
-                </Tooltip>
+                    {item.label}
+                  </Text>
+                </UnstyledButton>
               )
             })}
           </Stack>
