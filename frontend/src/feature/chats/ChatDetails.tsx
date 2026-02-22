@@ -59,11 +59,11 @@ export const ChatDetails: React.FC<ChatDetailsInterface> = ({ session, handleSes
                   message.role === 'user' ? 'ml-auto bg-black text-white' : 'bg-gray-100'
                 }`}
               >
-                <p className="text-sm leading-6">
+                <div className="text-sm leading-6">
                   <ReactMarkdown remarkPlugins={REMARK_PLUGINS} rehypePlugins={REHYPE_PLUGINS}>
                     {message.content || 'dummy content'}
                   </ReactMarkdown>
-                </p>
+                </div>
                 {message.role === 'assistant' && (
                   <div className="flex gap-1.5 mt-2">
                     {message.confidenceScore !== null && (

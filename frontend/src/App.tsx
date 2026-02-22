@@ -172,9 +172,9 @@ function AppRoutes() {
           <Route path="knowledge-base" element={<KnowledgeBase />} />
           <Route path="chats" element={<Chats />} />
           <Route path="bookings" element={<Bookings />} />
-          <Route path="deploy" element={<Deploy />} />
           <Route path="analytics" element={<Analytics />} />
           <Route path="contacts" element={<Contacts />} />
+          <Route path="automations" element={<Automations />} />
           <Route path="deploy" element={<Deploy />} />
         </Route>
       </Route>

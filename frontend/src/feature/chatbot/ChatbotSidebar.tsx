@@ -127,7 +127,7 @@ export const ChatbotSidebar: React.FC = () => {
         onMouseLeave={() => !isMobile && setExpanded(false)}
         style={{
           width: isMobile ? (expanded ? '100vw' : 0) : expanded ? 220 : 60,
-          transition: 'width 250ms cubic-bezier(0.34, 1.56, 0.64, 1)',
+          transition: 'width 400ms cubic-bezier(0.34, 1.56, 0.64, 1)',
           borderRight: isMobile ? 'none' : '1px solid var(--color-border-week)',
           overflow: 'hidden',
           flexShrink: 0,
@@ -135,6 +135,9 @@ export const ChatbotSidebar: React.FC = () => {
           position: 'absolute',
           zIndex: 100,
           height: '100%',
+          boxShadow: expanded
+            ? '0 10px 15px -3px #0000001a, 0 4px 6px -4px #0000001a'
+            : 'none',
         }}
       >
         <Stack gap={0} h="100%">
