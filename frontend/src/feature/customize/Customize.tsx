@@ -149,7 +149,7 @@ export const Customize: React.FC = () => {
             <div className="flex border-b border-border-week">
               <button onClick={() => setActiveTab('content')} className="px-6 py-2 font-medium">
                 <span
-                  className={`pb-2 border-b-2 text-sm cursor-pointer ${
+                  className={`pb-2 border-b-2 text-sm cursor-pointer transition-colors duration-350 ${
                     activeTab === 'content'
                       ? 'border-primary text-primary'
                       : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -160,7 +160,7 @@ export const Customize: React.FC = () => {
               </button>
               <button onClick={() => setActiveTab('style')} className="px-6 py-2 font-medium">
                 <span
-                  className={`pb-2 border-b-2 text-sm cursor-pointer ${
+                  className={`pb-2 border-b-2 text-sm cursor-pointer transition-colors duration-350 ${
                     activeTab === 'style'
                       ? 'border-primary text-primary'
                       : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -172,7 +172,7 @@ export const Customize: React.FC = () => {
               {!isLargeScreen && (
                 <button onClick={() => setActiveTab('preview')} className="px-6 py-2 font-medium">
                   <span
-                    className={`pb-2 border-b-2 text-sm cursor-pointer ${
+                    className={`pb-2 border-b-2 text-sm cursor-pointer transition-colors duration-350 ${
                       activeTab === 'preview'
                         ? 'border-primary text-primary'
                         : 'border-transparent text-gray-500 hover:text-gray-700'

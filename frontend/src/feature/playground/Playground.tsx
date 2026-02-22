@@ -92,7 +92,7 @@ export const Playground: React.FC = () => {
               <div className="flex border-b border-border-week">
                 <button onClick={() => setActiveTab('settings')} className="px-6 py-2 font-medium">
                   <span
-                    className={`pb-2 border-b-2 text-sm cursor-pointer ${
+                    className={`pb-2 border-b-2 text-sm cursor-pointer transition-colors duration-350 ${
                       activeTab === 'settings'
                         ? 'border-primary text-primary'
                         : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -103,7 +103,7 @@ export const Playground: React.FC = () => {
                 </button>
                 <button onClick={() => setActiveTab('preview')} className="px-6 py-2 font-medium">
                   <span
-                    className={`pb-2 border-b-2 text-sm cursor-pointer ${
+                    className={`pb-2 border-b-2 text-sm cursor-pointer transition-colors duration-350 ${
                       activeTab === 'preview'
                         ? 'border-primary text-primary'
                         : 'border-transparent text-gray-500 hover:text-gray-700'

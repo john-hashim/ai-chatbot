@@ -23,7 +23,15 @@ const DataSourcesPanel: React.FC<{
   untrainedCount: number
   onRetrain: () => void
   isTraining: boolean
-}> = ({ dataSources, totalSize, formatFileSize, lastTrained, untrainedCount, onRetrain, isTraining }) => (
+}> = ({
+  dataSources,
+  totalSize,
+  formatFileSize,
+  lastTrained,
+  untrainedCount,
+  onRetrain,
+  isTraining,
+}) => (
   <div>
     <p className="py-2 font-bold text-lg text-text-primary">Data Sources</p>
     <div className="mt-4 flex flex-col gap-1">
@@ -41,7 +49,9 @@ const DataSourcesPanel: React.FC<{
                 {source.count}&nbsp;{source.label}
               </span>
             </div>
-            <span className="text-sm text-text-primary font-medium">{formatFileSize(source.size)}</span>
+            <span className="text-sm text-text-primary font-medium">
+              {formatFileSize(source.size)}
+            </span>
           </div>
         ))}
     </div>
@@ -58,7 +68,9 @@ const DataSourcesPanel: React.FC<{
           Last trained: {lastTrained ? new Date(lastTrained).toLocaleDateString() : 'Never'}
         </span>
         {untrainedCount > 0 && (
-          <span>{untrainedCount} untrained document{untrainedCount > 1 ? 's' : ''}</span>
+          <span>
+            {untrainedCount} untrained document{untrainedCount > 1 ? 's' : ''}
+          </span>
         )}
       </div>
     </div>
@@ -80,10 +92,7 @@ export const KnowledgeBase: React.FC = () => {
   const { currentChatbot, getChatbot } = useChatbotStore()
   const { formatFileSize } = useFormat()
 
-  const {
-    execute: executeTraining,
-    loading: isTraining,
-  } = useApi<
+  const { execute: executeTraining, loading: isTraining } = useApi<
     ApiResponse<{ documentsProcessed: number; chunksCreated: number }>,
     [string]
   >(documentService.trainDocuments)
@@ -150,7 +159,7 @@ export const KnowledgeBase: React.FC = () => {
                 className="px-6 py-2 font-medium"
               >
                 <span
-                  className={`pb-2 border-b-2 text-sm cursor-pointer ${
+                  className={`pb-2 border-b-2 text-sm cursor-pointer transition-colors duration-350 ${
                     activeTab === tab.key
                       ? 'border-primary text-primary'
                       : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -163,7 +172,7 @@ export const KnowledgeBase: React.FC = () => {
             {!isLargeScreen && (
               <button onClick={() => setActiveTab('details')} className="px-6 py-2 font-medium">
                 <span
-                  className={`pb-2 border-b-2 text-sm cursor-pointer ${
+                  className={`pb-2 border-b-2 text-sm cursor-pointer transition-colors duration-350 ${
                     activeTab === 'details'
                       ? 'border-primary text-primary'
                       : 'border-transparent text-gray-500 hover:text-gray-700'
