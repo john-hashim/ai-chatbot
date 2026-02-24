@@ -71,6 +71,7 @@ model Chatbot {
   instructionType          String        @default("base")
   customInstruction        String?
   embedConfig              EmbedConfig?
+  availabilitySchedules    AvailabilitySchedule[]
 
   @@unique([name, userId])
   @@index([userId])
@@ -161,4 +162,25 @@ model DocumentChunk {
 
   @@index([documentId])
   // Note: Vector similarity index created manually in migration using HNSW
+}
+
+model AvailabilitySchedule {
+  id           String       @id @default(cuid())
+  chatbotId    String
+  chatbot      Chatbot      @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
+
+  timezone     String
+  scheduleType ScheduleType // WEEKLY or SPECIFIC_DATE
+  dayOfWeek    Int?         // 0 (Sun) – 6 (Sat)
+  specificDate DateTime?    @db.Date
+  timeSlots    Json         // [{ startLocalTime, endLocalTime }] | [{ startTime, endTime }]
+
+  createdAt    DateTime     @default(now())
+
+  @@index([chatbotId])
+}
+
+enum ScheduleType {
+  WEEKLY
+  SPECIFIC_DATE
 }

@@ -24,6 +24,7 @@
     "@types/multer": "^2.0.0",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
+    "dayjs": "^1.11.19",
     "dotenv": "^17.2.2",
     "express": "^5.1.0",
     "google-auth-library": "^10.4.0",
