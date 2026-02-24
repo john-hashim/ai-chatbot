@@ -13,7 +13,7 @@ export const Availability: React.FC = () => {
       <div>
         <div className="flex justify-between p-6 border-b border-border-week">
           <div className="lg:w-3/5 w-full">
-            <p className="text-2xl font-semibold">Availability</p>
+            <p className="text-lg font-semibold">Availability</p>
             <p className="text-sm mt-1 font-light text-text-weak max-w-2/3 mx-auto sm:mx-0">
               Set when you are typically available for meetings
             </p>
