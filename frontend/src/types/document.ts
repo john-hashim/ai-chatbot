@@ -12,13 +12,6 @@ export interface Document {
   updatedAt: Date
 }
 
-export interface DocumentFilters {
-  searchParam: string
-  sortBy: SortOption
-}
-
-export type SortOption = 'Default' | 'Oldest' | 'Newest' | 'Alphabetical(A-Z)' | 'Alphabetical(Z-A)'
-
 export type TextDocumentUploadParams = Pick<
   Document,
   'name' | 'type' | 'subtype' | 'content' | 'size' | 'metadata'

@@ -1,8 +1,8 @@
 import { chatbotService } from '@/api/services/chatbot'
 import { documentService } from '@/api/services/document'
 import { chatService } from '@/api/services/chat'
-import type { Chatbot, ChatMessage, ChatSession } from '@/types/chatbot'
-import type { DocumentFilters } from '@/types/document'
+import type { Chatbot, ChatMessage, ChatSession, ChatSessionState } from '@/types/chatbot'
+import type { Filter } from "@/types/common"
 import type { StateCreator } from 'zustand'
 
 export interface ChatbotSlice {
@@ -12,12 +12,12 @@ export interface ChatbotSlice {
   isLoadingChatbot: boolean
 
   // Chat session state
-  chatSessions: ChatSession[]
+  chatSession: ChatSessionState
   isLoadingSessions: boolean
   isLoadingSessionDetails: boolean
 
   // Document state
-  documentFilters: DocumentFilters
+  documentFilters: Filter
 
   // Chatbot actions
   getChatbots: () => Promise<void>
@@ -40,14 +40,14 @@ export interface ChatbotSlice {
   addDocument: () => Promise<void>
   deleteDocument: (documentId: string) => Promise<void>
   deleteMultipleDocuments: (documentIds: string[]) => Promise<number>
-  setDocumentFilters: (filters: Partial<DocumentFilters>) => void
+  setDocumentFilters: (filters: Partial<Filter>) => void
   resetDocumentFilters: () => void
 
   // Global
   clearChatbotState: () => void
 }
 
-const defaultFilters: DocumentFilters = {
+const defaultFilters: Filter = {
   searchParam: '',
   sortBy: 'Newest',
 }
@@ -63,7 +63,10 @@ export const createChatbotSlice: StateCreator<
   isLoadingChatbot: false,
 
   // Chat session state
-  chatSessions: [],
+  chatSession: {
+    chatSessions: [],
+    filters: defaultFilters
+  },
   isLoadingSessions: false,
   isLoadingSessionDetails: false,
 
@@ -160,14 +163,18 @@ export const createChatbotSlice: StateCreator<
       if (!response.data.data) {
         throw new Error('No data received from server')
       }
-      set({ chatSessions: response.data.data, isLoadingSessions: false }, undefined, '[Chat Bot] Set Chat Session')
+      set((state: ChatbotSlice): Partial<ChatbotSlice> => ({
+        chatSession: { chatSessions: response.data?.data ?? [], filters: state.chatSession.filters }
+      }), undefined, '[Chat Bot] Set Chat Session')
     } finally {
       set({ isLoadingSessions: false }, undefined, '[Chat Bot] Set isLoading Session False')
       console.log('Sessions fetch completed')
     }
   },
 
-  setChatSessions: (sessions: ChatSession[]) => set({ chatSessions: sessions }, undefined, '[Chat Bot] Set Chat Sessions'),
+  setChatSessions: (chatSessions: ChatSession[]) => set((state: ChatbotSlice): Partial<ChatbotSlice> => ({
+    chatSession: { ...state.chatSession, chatSessions }
+  }), undefined, '[Chat Bot] Set Chat Sessions'),
 
   getSessionDetails: async (chatbotId: string, sessionId: string) => {
     set({ isLoadingSessionDetails: true }, undefined, '[Chat Bot] Set isLoading Session Details True')
@@ -184,13 +191,16 @@ export const createChatbotSlice: StateCreator<
   },
 
   updateSessionMessages: (sessionId: string, messages: ChatMessage[]) =>
-    set(state => ({
-      chatSessions: state.chatSessions.map(session =>
-        session.id === sessionId ? { ...session, messages } : session
-      ),
+    set((state: ChatbotSlice): Partial<ChatbotSlice> => ({
+      chatSession: {
+        ...state.chatSession,
+        chatSessions: state.chatSession.chatSessions.map(session =>
+          session.id === sessionId ? { ...session, messages } : session
+        )
+      }
     }), undefined, '[Chat Bot] Update Session Messages'),
 
-  clearChatSessions: () => set({ chatSessions: [] }, undefined, '[Chat Bot] Clear Chat Sessions'),
+  clearChatSessions: () => set({ chatSession: { chatSessions: [], filters: defaultFilters } }, undefined, '[Chat Bot] Clear Chat Sessions'),
 
   // Document actions
 
@@ -232,7 +242,10 @@ export const createChatbotSlice: StateCreator<
       chatbots: [],
       currentChatbot: null,
       documentFilters: defaultFilters,
-      chatSessions: [],
+      chatSession: {
+        chatSessions: [],
+        filters: defaultFilters
+      },
       isLoadingSessionDetails: false,
       isLoadingChatbot: false,
     }, undefined, '[Chat Bot] Clear Chat Bot State'),

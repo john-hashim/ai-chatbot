@@ -3,7 +3,7 @@ import apiClient from '../index'
 import { ENDPOINTS } from '../endpoints'
 import type { Chatbot, ChatbotFormData } from '@/types/chatbot'
 import type { ApiResponse } from '@/types/api'
-import type { DocumentFilters } from '@/types/document'
+import type { Filter } from "@/types/common"
 
 export const chatbotService = {
   /**
@@ -53,7 +53,7 @@ export const chatbotService = {
    */
   getChatbot: (
     chatbotId: string,
-    filter?: DocumentFilters
+    filter?: Filter
   ): Promise<AxiosResponse<ApiResponse<Chatbot>>> => {
     return apiClient.get(ENDPOINTS.CHATBOT.GET_BY_ID.replace(':chatbotId', chatbotId), {
       params: filter,

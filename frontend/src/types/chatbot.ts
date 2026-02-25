@@ -1,3 +1,4 @@
+import type { Filter } from './common'
 import type { Document } from './document'
 
 export interface ChatMessage {
@@ -27,7 +28,7 @@ export type ChatSessionSource =
   | 'email'
   | 'salesforce'
 
-export interface ChatSession {
+  export interface ChatSession {
   id: string
   chatbotId: string
   source: ChatSessionSource
@@ -37,6 +38,11 @@ export interface ChatSession {
   _count?: {
     messages: number
   }
+}
+
+export interface ChatSessionState {
+  chatSessions: ChatSession[];
+  filters: Filter;
 }
 
 export interface ChatbotFormData {
