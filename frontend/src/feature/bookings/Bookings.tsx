@@ -1,14 +1,24 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useParams } from 'react-router-dom'
 import { useMediaQuery } from '@mantine/hooks'
 import { Availability } from './Availability'
 import { Appointments } from './Appointments'
 import { BookingSettings } from './BookingSettings'
+import { useBookingStore } from '@/store'
 
 type Tab = 'availability' | 'appointments' | 'settings'
 
 export const Bookings: React.FC = () => {
+  const { chatbotId } = useParams<{ chatbotId: string }>()
+  const { fetchBookingData } = useBookingStore()
   const [activeTab, setActiveTab] = useState<Tab>('availability')
   const isLargeScreen = useMediaQuery('(min-width: 1024px)')
+
+  useEffect(() => {
+    if (chatbotId) {
+      fetchBookingData(chatbotId)
+    }
+  }, [chatbotId, fetchBookingData])
 
   const tabs: { key: Tab; label: string }[] = [
     { key: 'availability', label: 'Availability' },

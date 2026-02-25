@@ -3,8 +3,9 @@ import { devtools, persist } from 'zustand/middleware'
 import { useShallow } from 'zustand/react/shallow'
 import { createUserSlice, type UserSlice } from './slices/userSlice'
 import { createChatbotSlice, type ChatbotSlice } from './slices/chatbotSlice'
+import { createBookingSlice, type BookingSlice } from './slices/bookingSlice'
 
-type StoreState = UserSlice & ChatbotSlice
+type StoreState = UserSlice & ChatbotSlice & BookingSlice
 
 export const useStore = create<StoreState>()(
   devtools(
@@ -12,6 +13,7 @@ export const useStore = create<StoreState>()(
       (...a) => ({
         ...createUserSlice(...a),
         ...createChatbotSlice(...a),
+        ...createBookingSlice(...a),
       }),
       {
         name: 'app-storage',
@@ -33,6 +35,21 @@ export const useUserStore = () =>
       error: state.error,
       googleSignIn: state.googleSignIn,
       logout: state.logout,
+    }))
+  )
+
+export const useBookingStore = () =>
+  useStore(
+    useShallow(state => ({
+      duration: state.duration,
+      timezone: state.timezone,
+      availabilities: state.availabilities,
+      fetchBookingData: state.fetchBookingData,
+      updateDuration: state.updateDuration,
+      updateTimezone: state.updateTimezone,
+      createAvailability: state.createAvailability,
+      updateAvailability: state.updateAvailability,
+      deleteAvailability: state.deleteAvailability,
     }))
   )
 
