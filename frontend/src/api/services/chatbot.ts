@@ -12,7 +12,10 @@ export const chatbotService = {
    * @returns Promise with chatbot data
    */
   createChatbot: (data: ChatbotFormData): Promise<AxiosResponse<ApiResponse<Chatbot>>> => {
-    return apiClient.post(ENDPOINTS.CHATBOT.CREATE, data)
+    return apiClient.post(ENDPOINTS.CHATBOT.CREATE, {
+      ...data,
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    })
   },
   /**
    * Update Chatbot (partial update)

@@ -43,6 +43,14 @@ export const ENDPOINTS = {
     GET: 'chatbot/:chatbotId/embed',
     UPDATE: 'chatbot/:chatbotId/embed',
   },
+  BOOKINGS: {
+    CREATE_AVAILABILITY: 'chatbot/:chatbotId/availability',
+    GET_AVAILABILITY: 'chatbot/:chatbotId/availability',
+    UPDATE_TIMESLOTS: 'chatbot/:chatbotId/availability/:slotId',
+    DELETE_SLOT: 'chatbot/:chatbotId/availability/:slotId',
+    GET_CONFIG: 'chatbot/:chatbotId/booking-config',
+    UPDATE_CONFIG: 'chatbot/:chatbotId/booking-config',
+  },
 } as const
 
 export type EndpointValues = typeof ENDPOINTS

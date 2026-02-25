@@ -9,4 +9,7 @@ router.get('/:chatbotId/availability', bookingsController.getAvailability)
 router.patch('/:chatbotId/availability/:slotId', authMiddleware.authenticateToken, bookingsController.updateTimeSlots)
 router.delete('/:chatbotId/availability/:slotId', authMiddleware.authenticateToken, bookingsController.deleteSlot)
 
+router.get('/:chatbotId/booking-config', authMiddleware.authenticateToken, bookingsController.getBookingConfig)
+router.patch('/:chatbotId/booking-config', authMiddleware.authenticateToken, bookingsController.updateBookingConfig)
+
 export default router

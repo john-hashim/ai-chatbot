@@ -9,6 +9,7 @@ import documentRoutes from './routes/document.routes.js'
 import chatRoutes from './routes/chat.routes.js'
 import analyticsRoutes from './routes/analytics.routes.js'
 import embedRoutes from './routes/embed.routes.js'
+import bookingsRoutes from './routes/bookings.routes.js'
 import { errorHandler } from './middleware/error.middleware.js'
 
 dotenv.config()
@@ -25,6 +26,7 @@ app.use('/api/chatbot', chatbotRoutes)
 app.use('/api/chatbot', documentRoutes)
 app.use('/api/chatbot', chatRoutes)
 app.use('/api/embed', embedRoutes)
+app.use('/api/chatbot', bookingsRoutes)
 
 //Finding embed directory path and provide embed.js ( embed.js is same as embed.tsx from embed app)
 const __filename = fileURLToPath(import.meta.url)

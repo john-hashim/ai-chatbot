@@ -17,6 +17,7 @@ export const createChatbot = async (req: Request, res: Response, next: NextFunct
       profilePicture,
       instructionType,
       customInstruction,
+      timezone,
     } = req.body
 
     const chatbot = await prisma.chatbot.create({
@@ -30,6 +31,12 @@ export const createChatbot = async (req: Request, res: Response, next: NextFunct
         initialMessages: ['Hi! What can I help you with?'],
         instructionType: instructionType || 'base',
         customInstruction: instructionType === 'manual' ? customInstruction || null : null,
+        bookingConfig: {
+          create: {
+            timezone: timezone || 'UTC',
+            appointmentDuration: 30,
+          },
+        },
       },
     })
 

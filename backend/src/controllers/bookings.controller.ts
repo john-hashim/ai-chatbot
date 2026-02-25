@@ -200,6 +200,83 @@ export const updateTimeSlots = async (req: Request, res: Response, next: NextFun
   }
 }
 
+export const getBookingConfig = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { chatbotId } = req.params
+
+    if (!chatbotId) {
+      return res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'Chatbot ID is required',
+      } satisfies ApiResponse)
+    }
+
+    const config = await prisma.bookingConfig.findUnique({
+      where: { chatbotId },
+    })
+
+    return res.status(200).json({
+      status: ApiStatus.SUCCESS,
+      message: 'Booking config fetched successfully',
+      data: config,
+    } satisfies ApiResponse)
+  } catch (error) {
+    next(error)
+  }
+}
+
+export const updateBookingConfig = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { chatbotId } = req.params
+
+    if (!chatbotId) {
+      return res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'Chatbot ID is required',
+      } satisfies ApiResponse)
+    }
+
+    const { isEnabled, timezone: tz, appointmentDuration } = req.body
+
+    if (isEnabled === undefined && tz === undefined && appointmentDuration === undefined) {
+      return res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'At least one field (isEnabled, timezone, appointmentDuration) must be provided',
+      } satisfies ApiResponse)
+    }
+
+    if (appointmentDuration !== undefined && (isNaN(Number(appointmentDuration)) || Number(appointmentDuration) <= 0)) {
+      return res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'appointmentDuration must be a positive number',
+      } satisfies ApiResponse)
+    }
+
+    const config = await prisma.bookingConfig.upsert({
+      where: { chatbotId },
+      update: {
+        ...(isEnabled !== undefined && { isEnabled }),
+        ...(tz !== undefined && { timezone: tz }),
+        ...(appointmentDuration !== undefined && { appointmentDuration: Number(appointmentDuration) }),
+      },
+      create: {
+        chatbotId,
+        isEnabled: isEnabled ?? true,
+        timezone: tz ?? 'UTC',
+        appointmentDuration: appointmentDuration ? Number(appointmentDuration) : 30,
+      },
+    })
+
+    return res.status(200).json({
+      status: ApiStatus.SUCCESS,
+      message: 'Booking config updated successfully',
+      data: config,
+    } satisfies ApiResponse)
+  } catch (error) {
+    next(error)
+  }
+}
+
 export const deleteSlot = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { chatbotId, slotId } = req.params

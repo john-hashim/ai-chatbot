@@ -72,6 +72,7 @@ model Chatbot {
   customInstruction        String?
   embedConfig              EmbedConfig?
   availabilitySchedules    AvailabilitySchedule[]
+  bookingConfig            BookingConfig?
 
   @@unique([name, userId])
   @@index([userId])
@@ -162,6 +163,23 @@ model DocumentChunk {
 
   @@index([documentId])
   // Note: Vector similarity index created manually in migration using HNSW
+}
+
+model BookingConfig {
+  id                  String   @id @default(cuid())
+  chatbotId           String   @unique
+  chatbot             Chatbot  @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
+
+  isEnabled           Boolean  @default(true)
+  timezone            String
+  appointmentDuration Int
+  confirmationMessage String?
+  notificationEmail   String?
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@map("booking_configs")
 }
 
 model AvailabilitySchedule {
