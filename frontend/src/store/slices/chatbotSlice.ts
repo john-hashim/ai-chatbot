@@ -2,7 +2,7 @@ import { chatbotService } from '@/api/services/chatbot'
 import { documentService } from '@/api/services/document'
 import { chatService } from '@/api/services/chat'
 import type { Chatbot, ChatMessage, ChatSession, ChatSessionState } from '@/types/chatbot'
-import type { Filter } from "@/types/common"
+import type {  ChatSessionSortOption, Filter } from "@/types/common"
 import type { StateCreator } from 'zustand'
 
 export interface ChatbotSlice {
@@ -35,6 +35,8 @@ export interface ChatbotSlice {
   getSessionDetails: (chatbotId: string, sessionId: string) => Promise<void>
   updateSessionMessages: (sessionId: string, messages: ChatMessage[]) => void
   clearChatSessions: () => void
+  setChatSessionFilters: (filter: Filter<ChatSessionSortOption>) => void;
+  resetChatSessionFilters: () => void
 
   // Document actions
   addDocument: () => Promise<void>
@@ -47,7 +49,13 @@ export interface ChatbotSlice {
   clearChatbotState: () => void
 }
 
+// TODO: Can be resued across the app.
 const defaultFilters: Filter = {
+  searchParam: '',
+  sortBy: 'Newest',
+}
+
+const defaultChatSessionFilters: Filter<ChatSessionSortOption> = {
   searchParam: '',
   sortBy: 'Newest',
 }
@@ -65,7 +73,7 @@ export const createChatbotSlice: StateCreator<
   // Chat session state
   chatSession: {
     chatSessions: [],
-    filters: defaultFilters
+    filters: defaultChatSessionFilters
   },
   isLoadingSessions: false,
   isLoadingSessionDetails: false,
@@ -159,7 +167,8 @@ export const createChatbotSlice: StateCreator<
   getChatSessions: async (chatbotId: string) => {
     set({ isLoadingSessions: true }, undefined, '[Chat Bot] Set isLoading Session True')
     try {
-      const response = await chatService.getChatSessions(chatbotId)
+      const filter = get().chatSession.filters;
+      const response = await chatService.getChatSessions(chatbotId, filter)
       if (!response.data.data) {
         throw new Error('No data received from server')
       }
@@ -200,7 +209,7 @@ export const createChatbotSlice: StateCreator<
       }
     }), undefined, '[Chat Bot] Update Session Messages'),
 
-  clearChatSessions: () => set({ chatSession: { chatSessions: [], filters: defaultFilters } }, undefined, '[Chat Bot] Clear Chat Sessions'),
+  clearChatSessions: () => set({ chatSession: { chatSessions: [], filters: defaultChatSessionFilters } }, undefined, '[Chat Bot] Clear Chat Sessions'),
 
   // Document actions
 
@@ -235,6 +244,20 @@ export const createChatbotSlice: StateCreator<
 
   resetDocumentFilters: () => set({ documentFilters: defaultFilters }, undefined, '[Chat Bot] Reset Document Filters'),
 
+  setChatSessionFilters: (filter: Filter<ChatSessionSortOption>) => set((state: ChatbotSlice): Partial<ChatbotSlice> => ({
+    chatSession: {
+      ...state.chatSession,
+      filters: filter
+    }
+  }), undefined, '[Chat Bot] Set Chat Session Filters'),
+
+  resetChatSessionFilters: () => set((state: ChatbotSlice): Partial<ChatbotSlice> => ({
+    chatSession: {
+      ...state.chatSession,
+      filters: defaultChatSessionFilters
+    }
+  }), undefined, '[Chat Bot] Reset Chat Session Filters'),
+
   // Global
 
   clearChatbotState: () =>
@@ -244,7 +267,7 @@ export const createChatbotSlice: StateCreator<
       documentFilters: defaultFilters,
       chatSession: {
         chatSessions: [],
-        filters: defaultFilters
+        filters: defaultChatSessionFilters
       },
       isLoadingSessionDetails: false,
       isLoadingChatbot: false,

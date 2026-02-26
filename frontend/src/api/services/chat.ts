@@ -4,6 +4,7 @@ import { ENDPOINTS } from '../endpoints'
 import type { ChatMessage, ChatSession, ChatSessionSource } from '@/types/chatbot'
 import type { ApiResponse } from '@/types/api'
 import { useStore } from '@/store'
+import type { Filter } from '@/types/common'
 
 export const chatService = {
   /**
@@ -30,8 +31,10 @@ export const chatService = {
    * @param chatbotId - ID of the chatbot
    * @returns Promise with array of chat sessions
    */
-  getChatSessions: (chatbotId: string): Promise<AxiosResponse<ApiResponse<ChatSession[]>>> => {
-    return apiClient.get(ENDPOINTS.CHAT.GET_SESSIONS.replace(':chatbotId', chatbotId))
+  getChatSessions: (chatbotId: string, filter: Filter): Promise<AxiosResponse<ApiResponse<ChatSession[]>>> => {
+    return apiClient.get(ENDPOINTS.CHAT.GET_SESSIONS.replace(':chatbotId', chatbotId), {
+      params: filter,
+    })
   },
   /**
    * Get a chat session with all its messages

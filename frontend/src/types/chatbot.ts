@@ -1,4 +1,4 @@
-import type { Filter } from './common'
+import type { ChatSessionSortOption, Filter } from './common'
 import type { Document } from './document'
 
 export interface ChatMessage {
@@ -42,7 +42,7 @@ export type ChatSessionSource =
 
 export interface ChatSessionState {
   chatSessions: ChatSession[];
-  filters: Filter;
+  filters: Filter<ChatSessionSortOption>;
 }
 
 export interface ChatbotFormData {

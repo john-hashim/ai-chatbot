@@ -1,8 +1,8 @@
 import type React from 'react'
 import { useCallback, useEffect, useState } from 'react'
 import { useMediaQuery } from '@mantine/hooks'
-import { Button, Menu, Modal, Text, Tooltip } from '@mantine/core'
-import { Download, FileJson, FileSpreadsheet, FileText, RefreshCw } from 'lucide-react'
+import { Button, Menu, Modal, Select, Text, Tooltip } from '@mantine/core'
+import { ChevronDown, Download, FileJson, FileSpreadsheet, FileText, RefreshCw } from 'lucide-react'
 import { ChatsList } from './ChatsList'
 import { ChatDetails } from './ChatDetails'
 import { useStore } from '@/store'
@@ -12,6 +12,8 @@ import { chatService } from '@/api/services/chat'
 import { type ChatSession } from '@/types/chatbot'
 import type { ApiResponse } from '@/types/api'
 import { showNotification } from '@/utils/notifications'
+import classes from '@/theme.module.css'
+import type { ChatSessionSortOption } from '@/types/common'
 
 export const Chats: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'chatslist' | 'chatdetails'>('chatslist')
@@ -20,19 +22,23 @@ export const Chats: React.FC = () => {
   const isLargeScreen = useMediaQuery('(min-width: 1024px)')
   const {
     currentChatbot,
-    chatSessions,
+    chatSessions = [],
+    chatSessionFilters,
     isLoadingSessions,
     isLoadingSessionDetails,
     getChatSessions,
     getSessionDetails,
+    setChatBotSessionFilters: setChatSessionFilters
   } = useStore(
     useShallow(state => ({
       currentChatbot: state.currentChatbot,
-      chatSessions: state.chatSessions,
+      chatSessions: state.chatSession.chatSessions,
+      chatSessionFilters: state.chatSession.filters,
       isLoadingSessions: state.isLoadingSessions,
       isLoadingSessionDetails: state.isLoadingSessionDetails,
       getChatSessions: state.getChatSessions,
       getSessionDetails: state.getSessionDetails,
+      setChatBotSessionFilters: state.setChatSessionFilters
     }))
   )
   const { execute: exportJSON, loading: jsonLoading } = useApi(chatService.exportChatsAsJSON)
@@ -125,6 +131,13 @@ export const Chats: React.FC = () => {
     }
   }
 
+  const handleSortChange = (value: string | null) => {
+    if (value && !!currentChatbot?.id ) {
+      setChatSessionFilters({ ...chatSessionFilters, sortBy: value as ChatSessionSortOption })
+      getChatSessions(currentChatbot?.id)
+    }
+  }
+
   return (
     <div className="flex h-full">
       <div className="lg:w-[500px] border-r bg-background-dark-week border-r-border-week w-full h-full flex flex-col relative overflow-auto">
@@ -181,6 +194,25 @@ export const Chats: React.FC = () => {
                 </Menu.Dropdown>
               </Menu>
             )}
+          </div>
+        </div>
+        <div className="mx-6 my-2 flex items-center justify-end">
+          <p className="text-xs sm:text-sm mr-2 hidden sm:block">Sort By:</p>
+          <div style={{ width: 'fit-content', minWidth: '100px' }}>
+            <Select
+              placeholder="Sort"
+              data={[
+                'Default',
+                'Oldest',
+                'Newest',
+              ]}
+              checkIconPosition="right"
+              classNames={{ input: classes.selectInputBorderless }}
+              rightSection={<ChevronDown size={16} />}
+              comboboxProps={{ width: 200, position: 'bottom-end' }}
+              value={chatSessionFilters.sortBy}
+              onChange={handleSortChange}
+            />
           </div>
         </div>
         <div className="flex-1 flex flex-col min-h-0">
