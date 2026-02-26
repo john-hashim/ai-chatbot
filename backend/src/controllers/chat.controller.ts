@@ -227,8 +227,6 @@ export const getChatSessions = async (req: Request, res: Response, next: NextFun
           return { createdAt: 'asc' as const }
         case 'Newest':
           return { createdAt: 'desc' as const }
-        case 'Status':
-          return { status: 'asc' as const }
         case 'Default':
         default:
           return { createdAt: 'desc' as const }
