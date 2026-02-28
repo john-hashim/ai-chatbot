@@ -6,6 +6,7 @@ import PDFDocument from 'pdfkit'
 import * as chatService from '../services/chat.service.js'
 import { getSystemInstruction } from '../constants/instructions.js'
 import { resolveCountry } from '../services/geolocation.service.js'
+import type { NestedSort } from '../types/common.js'
 
 export const chatController = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -199,6 +200,7 @@ export const chatController = async (req: Request, res: Response, next: NextFunc
 export const getChatSessions = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { chatbotId } = req.params
+    const { searchParam = '', sortBy = 'Default' } = req.query as { searchParam?: string; sortBy?: string }
 
     if (!chatbotId) {
       return res.status(400).json({
@@ -218,9 +220,22 @@ export const getChatSessions = async (req: Request, res: Response, next: NextFun
       } satisfies ApiResponse)
     }
 
+    // Get sort order
+    const getOrderBy = (filter: string): NestedSort => {
+      switch (filter) {
+        case 'Oldest':
+          return { createdAt: 'asc' as const }
+        case 'Newest':
+          return { createdAt: 'desc' as const }
+        case 'Default':
+        default:
+          return { createdAt: 'desc' as const }
+      }
+    }
+
     const sessions = await prisma.chatSession.findMany({
       where: { chatbotId },
-      orderBy: { createdAt: 'desc' },
+      orderBy: getOrderBy(sortBy),
       select: {
         id: true,
         chatbotId: true,

@@ -4,7 +4,8 @@ import { Button, Checkbox, Select, TextInput, Text, Tooltip, Menu } from '@manti
 import type { ApiResponse } from '@/types/api'
 import { useApi } from '@/hooks/useApi'
 import { documentService } from '@/api/services/document'
-import type { Document, SortOption, TextDocumentUploadParams } from '@/types/document'
+import type { Document, TextDocumentUploadParams } from '@/types/document'
+import type { SortOption } from "@/types/common"
 import { ChevronDown, Ellipsis, Loader2, Search, SearchX, Trash } from 'lucide-react'
 import { useChatbotStore } from '@/store'
 import { showLoadingNotification } from '@/utils/notifications'
