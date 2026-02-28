@@ -86,6 +86,7 @@ export const BookingSettings: React.FC = () => {
               value={localDuration}
               onChange={handleDurationChange}
               allowDeselect={false}
+              checkIconPosition="right"
               w={150}
             />
             {selectedDuration && (
@@ -103,6 +104,7 @@ export const BookingSettings: React.FC = () => {
               onChange={handleTimezoneChange}
               allowDeselect={false}
               searchable
+              checkIconPosition="right"
               w={320}
               comboboxProps={{ width: 380 }}
               renderOption={renderTimezoneOption}

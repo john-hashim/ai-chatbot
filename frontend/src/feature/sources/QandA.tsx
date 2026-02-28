@@ -5,7 +5,7 @@ import { useFormat } from '@/hooks/useFormats'
 import { useChatbotStore } from '@/store'
 import type { ApiResponse } from '@/types/api'
 import type { Document, TextDocumentUploadParams } from '@/types/document'
-import type { SortOption } from "@/types/common"
+import type { SortOption } from '@/types/common'
 import { showLoadingNotification } from '@/utils/notifications'
 import { htmlToPlainText, calculateTextSize } from '@/utils/textFormatting'
 import { Button, Checkbox, Select, TextInput, Text, Tooltip, Menu } from '@mantine/core'
@@ -345,7 +345,10 @@ ${answerPlain}`
           <div className="border-b mt-2 border-border-week"></div>
           {isLoadingChatbot ? (
             <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-6 w-6 animate-spin text-text-weak" />
+              <Loader2
+                className="h-6 w-6 animate-spin"
+                style={{ color: 'var(--mantine-color-brand-6)' }}
+              />
             </div>
           ) : currentChatbot.documents && currentChatbot.documents.length > 0 ? (
             currentChatbot.documents

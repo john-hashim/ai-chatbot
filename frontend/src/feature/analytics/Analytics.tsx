@@ -86,6 +86,7 @@ export const Analytics = () => {
             { value: '90d', label: 'Last 90 days' },
             { value: 'all', label: 'All time' },
           ]}
+          checkIconPosition="right"
           w={160}
         />
       </div>

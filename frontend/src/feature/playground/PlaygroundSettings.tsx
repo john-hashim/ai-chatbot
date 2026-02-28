@@ -43,6 +43,7 @@ export const PlaygroundSettings: React.FC = () => {
               value={field.value}
               onChange={val => field.onChange(val ?? 'base')}
               allowDeselect={false}
+              checkIconPosition="right"
             />
           )}
         />

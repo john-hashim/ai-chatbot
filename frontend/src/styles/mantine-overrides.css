@@ -1,3 +1,9 @@
+/* Select: brand color check icon on selected option */
+.mantine-Select-option[data-checked] svg {
+  color: var(--mantine-color-brand-6);
+  opacity: 1;
+}
+
 /* Remove default left border from all notifications */
 .mantine-Notification-root {
   border-left: none !important;
