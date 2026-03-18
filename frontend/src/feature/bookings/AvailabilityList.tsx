@@ -109,7 +109,7 @@ export const AvailabilityList: React.FC<AvailabilityListProps> = ({ createWeekly
                         </div>
                       </div>
                     </Tooltip>
-                    {isCreating && <Loader size="xs" />}
+                    {isCreating && <Loader className="ml-2" size="xs" />}
                   </div>
                 ) : (
                   <div className="flex flex-col gap-2">

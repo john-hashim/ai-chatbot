@@ -1,14 +1,14 @@
 import type React from 'react'
-import { useState } from 'react'
-import { SegmentedControl, Center } from '@mantine/core'
-import { List, Calendar } from 'lucide-react'
-import { AvailabilityCalendar } from './AvailablityCalendar'
+// import { useState } from 'react'
+// import { SegmentedControl, Center } from '@mantine/core'
+// import { List, Calendar } from 'lucide-react'
+// import { AvailabilityCalendar } from './AvailablityCalendar'
 import { AvailabilityList } from './AvailabilityList'
 import type { CreateWeeklyAvailabilityRequest, TimeSlot } from '@/types/bookings'
 import { useStore } from '@/store'
 
 export const Availability: React.FC = () => {
-  const [view, setView] = useState<'List' | 'Calendar'>('List')
+  // const [view, setView] = useState<'List' | 'Calendar'>('List')
   const { timezone, createAvailability, currentChatbot } = useStore()
 
   const getDefaultTimeSlot = (): TimeSlot => ({ startTime: '09:00', endTime: '17:00' })
@@ -34,6 +34,7 @@ export const Availability: React.FC = () => {
               Set when you are typically available for meetings
             </p>
           </div>
+          {/* TODO (john hashim): list/calendar toggle — implement when calendar view is ready
           <div className="hidden lg:flex items-center justify-center ">
             <SegmentedControl
               value={view}
@@ -60,14 +61,17 @@ export const Availability: React.FC = () => {
               ]}
             />
           </div>
+          */}
         </div>
 
         <div className="hidden lg:block">
+          {/* TODO (john hashim): enable calendar view once implemented
           {view === 'Calendar' ? (
             <AvailabilityCalendar />
           ) : (
             <AvailabilityList createWeeklyAvailablity={createWeeklyAvailablity} />
-          )}
+          )} */}
+          <AvailabilityList createWeeklyAvailablity={createWeeklyAvailablity} />
         </div>
         <div className="lg:hidden">
           <AvailabilityList createWeeklyAvailablity={createWeeklyAvailablity} />
