@@ -1,11 +1,10 @@
-import type React from 'react'
-import { useMemo } from 'react'
+import { memo, useMemo } from 'react'
 import { Calendar1, Clock, Plus, X } from 'lucide-react'
 import { Avatar, Loader, Select, Tooltip } from '@mantine/core'
 import dayjs from 'dayjs'
 import customParseFormat from 'dayjs/plugin/customParseFormat'
 import { useStore } from '@/store'
-import type { TimeSlot, UpdateTimeSlotsRequest } from '@/types/bookings'
+import type { UpdateTimeSlotsRequest } from '@/types/bookings'
 
 dayjs.extend(customParseFormat)
 
@@ -23,7 +22,7 @@ export interface AvailabilityListProps {
   createWeeklyAvailablity: (dayOfWeek: number) => void
 }
 
-export const AvailabilityList: React.FC<AvailabilityListProps> = ({ createWeeklyAvailablity }) => {
+export const AvailabilityList = memo<AvailabilityListProps>(({ createWeeklyAvailablity }) => {
   const {
     duration,
     availabilities,
@@ -44,25 +43,24 @@ export const AvailabilityList: React.FC<AvailabilityListProps> = ({ createWeekly
     })
   }, [duration])
 
-  const getDaySchedules = (dayId: number) =>
-    availabilities.filter(a => a.scheduleType === 'WEEKLY' && a.dayOfWeek === dayId)
+  const getDaySchedules = useMemo(() => {
+    return (dayId: number) =>
+      availabilities.filter(a => a.scheduleType === 'WEEKLY' && a.dayOfWeek === dayId)
+  }, [availabilities])
 
-  const handleTimeChange = (
-    scheduleId: string,
-    field: 'startTime' | 'endTime',
-    value: string,
-    currentSlot: TimeSlot
-  ) => {
+  const handleTimeChange = (scheduleId: string, field: 'startTime' | 'endTime', value: string) => {
     if (!currentChatbot) return
+    const current = availabilities.find(a => a.id === scheduleId)
+    if (!current) return
     const data: UpdateTimeSlotsRequest = {
-      timeSlots: [{ ...currentSlot, [field]: value }],
+      timeSlots: [{ ...current.timeSlots[0], [field]: value }],
     }
-    updateAvailability(currentChatbot.id, scheduleId, data)
+    updateAvailability(currentChatbot.id, scheduleId, data).catch(console.error)
   }
 
   const handleDelete = (scheduleId: string) => {
     if (!currentChatbot) return
-    deleteAvailability(currentChatbot.id, scheduleId)
+    deleteAvailability(currentChatbot.id, scheduleId).catch(console.error)
   }
 
   return (
@@ -128,9 +126,7 @@ export const AvailabilityList: React.FC<AvailabilityListProps> = ({ createWeekly
                             size="xs"
                             data={timeOptions}
                             value={slot.startTime}
-                            onChange={val =>
-                              val && handleTimeChange(schedule.id, 'startTime', val, slot)
-                            }
+                            onChange={val => val && handleTimeChange(schedule.id, 'startTime', val)}
                             className="w-28"
                             checkIconPosition="right"
                           />
@@ -139,9 +135,7 @@ export const AvailabilityList: React.FC<AvailabilityListProps> = ({ createWeekly
                             size="xs"
                             data={timeOptions}
                             value={slot.endTime}
-                            onChange={val =>
-                              val && handleTimeChange(schedule.id, 'endTime', val, slot)
-                            }
+                            onChange={val => val && handleTimeChange(schedule.id, 'endTime', val)}
                             className="w-28"
                             checkIconPosition="right"
                           />
@@ -203,4 +197,4 @@ export const AvailabilityList: React.FC<AvailabilityListProps> = ({ createWeekly
       </div>
     </div>
   )
-}
+})

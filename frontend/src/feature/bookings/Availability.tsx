@@ -6,6 +6,7 @@ import type React from 'react'
 import { AvailabilityList } from './AvailabilityList'
 import type { CreateWeeklyAvailabilityRequest, TimeSlot } from '@/types/bookings'
 import { useStore } from '@/store'
+import { useCallback } from 'react'
 
 export const Availability: React.FC = () => {
   // const [view, setView] = useState<'List' | 'Calendar'>('List')
@@ -13,16 +14,24 @@ export const Availability: React.FC = () => {
 
   const getDefaultTimeSlot = (): TimeSlot => ({ startTime: '09:00', endTime: '17:00' })
 
-  const createWeeklyAvailablity = async (dayOfWeek: number) => {
-    const timeSlot = getDefaultTimeSlot()
-    const payload: CreateWeeklyAvailabilityRequest = {
-      timezone: timezone,
-      timeSlots: [timeSlot],
-      scheduleType: 'WEEKLY',
-      dayOfWeek,
-    }
-    if (currentChatbot) await createAvailability(currentChatbot?.id, payload)
-  }
+  const createWeeklyAvailablity = useCallback(
+    async (dayOfWeek: number) => {
+      if (!currentChatbot) return
+      const timeSlot = getDefaultTimeSlot()
+      const payload: CreateWeeklyAvailabilityRequest = {
+        timezone,
+        timeSlots: [timeSlot],
+        scheduleType: 'WEEKLY',
+        dayOfWeek,
+      }
+      try {
+        await createAvailability(currentChatbot.id, payload)
+      } catch (error) {
+        console.error('Failed to create availability:', error)
+      }
+    },
+    [currentChatbot, timezone, createAvailability]
+  )
 
   return (
     <div className="m-5 min-h-[calc(100%-40px)] border border-border-week bg-white rounded-xl">
