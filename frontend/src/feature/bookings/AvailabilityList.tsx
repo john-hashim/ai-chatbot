@@ -65,14 +65,12 @@ export const AvailabilityList = memo<AvailabilityListProps>(({ createWeeklyAvail
 
   return (
     <div className="flex flex-col lg:flex-row flex-wrap">
-      <div className="lg:w-1/2 p-6">
+      <div className="lg:w-1/2 pl-6 py-6">
         <div className="flex items-center gap-2">
           <Clock size={18} className="text-text-weak" />
           <p className="font-bold text-sm">Weekly Hours</p>
         </div>
-        <p className="text-xs mt-1 font-light text-text-weak max-w-2/3 mx-auto sm:mx-0">
-          Set time based on weekly schedule
-        </p>
+        <p className="text-xs mt-1 font-light text-text-weak">Set time based on weekly schedule</p>
         <div className="mt-6">
           {days.map(day => {
             const schedules = getDaySchedules(day.id)
@@ -114,7 +112,7 @@ export const AvailabilityList = memo<AvailabilityListProps>(({ createWeeklyAvail
                     {schedules.map((schedule, index) => {
                       const slot = schedule.timeSlots[0]
                       return (
-                        <div key={schedule.id} className="flex items-center gap-2">
+                        <div key={schedule.id} className="flex items-center gap-1 sm:gap-2">
                           {index === 0 ? (
                             <Avatar size="sm" color="brand">
                               {day.avatarLabel}
@@ -127,7 +125,7 @@ export const AvailabilityList = memo<AvailabilityListProps>(({ createWeeklyAvail
                             data={timeOptions}
                             value={slot.startTime}
                             onChange={val => val && handleTimeChange(schedule.id, 'startTime', val)}
-                            className="w-28"
+                            className="w-24 ml-2"
                             checkIconPosition="right"
                           />
                           <span className="text-xs text-text-weak">–</span>
@@ -136,7 +134,7 @@ export const AvailabilityList = memo<AvailabilityListProps>(({ createWeeklyAvail
                             data={timeOptions}
                             value={slot.endTime}
                             onChange={val => val && handleTimeChange(schedule.id, 'endTime', val)}
-                            className="w-28"
+                            className="w-24"
                             checkIconPosition="right"
                           />
                           <Tooltip
