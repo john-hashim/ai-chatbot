@@ -3,7 +3,8 @@ import type React from 'react'
 // import { SegmentedControl, Center } from '@mantine/core'
 // import { List, Calendar } from 'lucide-react'
 // import { AvailabilityCalendar } from './AvailablityCalendar'
-import { AvailabilityList } from './AvailabilityList'
+import { WeeklyAvailability } from './WeeklyAvailability'
+import { DateSpecificHours } from './DateSpecificHours'
 import type { CreateWeeklyAvailabilityRequest, TimeSlot } from '@/types/bookings'
 import { useStore } from '@/store'
 import { useCallback } from 'react'
@@ -80,17 +81,19 @@ export const Availability: React.FC = () => {
           */}
         </div>
 
-        <div className="hidden lg:block">
+        <div className="hidden lg:flex lg:flex-row flex-wrap">
           {/* TODO (john hashim): enable calendar view once implemented
           {view === 'Calendar' ? (
             <AvailabilityCalendar />
           ) : (
-            <AvailabilityList createWeeklyAvailablity={createWeeklyAvailablity} />
+            <WeeklyAvailability createWeeklyAvailablity={createWeeklyAvailablity} />
           )} */}
-          <AvailabilityList createWeeklyAvailablity={createWeeklyAvailablity} />
+          <WeeklyAvailability createWeeklyAvailablity={createWeeklyAvailablity} />
+          <DateSpecificHours />
         </div>
-        <div className="lg:hidden">
-          <AvailabilityList createWeeklyAvailablity={createWeeklyAvailablity} />
+        <div className="lg:hidden flex flex-col">
+          <WeeklyAvailability createWeeklyAvailablity={createWeeklyAvailablity} />
+          <DateSpecificHours />
         </div>
       </div>
     </div>

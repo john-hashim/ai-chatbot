@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useMediaQuery } from '@mantine/hooks'
-import { Availability } from './Availability'
+import { Availability } from './availability/Availability'
 import { Appointments } from './Appointments'
 import { BookingSettings } from './BookingSettings'
 import { useBookingStore } from '@/store'
