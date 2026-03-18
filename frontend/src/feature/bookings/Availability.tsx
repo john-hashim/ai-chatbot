@@ -4,13 +4,29 @@ import { SegmentedControl, Center } from '@mantine/core'
 import { List, Calendar } from 'lucide-react'
 import { AvailabilityCalendar } from './AvailablityCalendar'
 import { AvailabilityList } from './AvailabilityList'
+import type { CreateWeeklyAvailabilityRequest, TimeSlot } from '@/types/bookings'
+import { useStore } from '@/store'
 
 export const Availability: React.FC = () => {
   const [view, setView] = useState<'List' | 'Calendar'>('List')
+  const { timezone, createAvailability, currentChatbot } = useStore()
+
+  const getDefaultTimeSlot = (): TimeSlot => ({ startTime: '09:00', endTime: '17:00' })
+
+  const createWeeklyAvailablity = async (dayOfWeek: number) => {
+    const timeSlot = getDefaultTimeSlot()
+    const payload: CreateWeeklyAvailabilityRequest = {
+      timezone: timezone,
+      timeSlots: [timeSlot],
+      scheduleType: 'WEEKLY',
+      dayOfWeek,
+    }
+    if (currentChatbot) await createAvailability(currentChatbot?.id, payload)
+  }
 
   return (
     <div className="m-5 min-h-[calc(100%-40px)] border border-border-week bg-white rounded-xl">
-      <div>
+      <div className="pb-16">
         <div className="flex justify-between p-6 border-b border-border-week">
           <div className="lg:w-3/5 w-full">
             <p className="text-lg font-semibold">Availability</p>
@@ -47,10 +63,14 @@ export const Availability: React.FC = () => {
         </div>
 
         <div className="hidden lg:block">
-          {view === 'Calendar' ? <AvailabilityCalendar /> : <AvailabilityList />}
+          {view === 'Calendar' ? (
+            <AvailabilityCalendar />
+          ) : (
+            <AvailabilityList createWeeklyAvailablity={createWeeklyAvailablity} />
+          )}
         </div>
         <div className="lg:hidden">
-          <AvailabilityList />
+          <AvailabilityList createWeeklyAvailablity={createWeeklyAvailablity} />
         </div>
       </div>
     </div>

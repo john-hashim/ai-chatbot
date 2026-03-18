@@ -191,7 +191,7 @@ model AvailabilitySchedule {
   scheduleType ScheduleType // WEEKLY or SPECIFIC_DATE
   dayOfWeek    Int?         // 0 (Sun) – 6 (Sat)
   specificDate DateTime?    @db.Date
-  timeSlots    Json         // [{ startLocalTime, endLocalTime }] | [{ startTime, endTime }]
+  timeSlots    Json         // [{ startTime: "HH:mm", endTime: "HH:mm" }]
 
   createdAt    DateTime     @default(now())
 

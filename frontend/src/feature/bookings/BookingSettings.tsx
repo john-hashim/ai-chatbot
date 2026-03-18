@@ -6,8 +6,6 @@ import { rawTimeZones } from '@vvo/tzdb'
 import { useBookingStore } from '@/store'
 
 const DURATION_OPTIONS = [
-  { value: '10', label: '10 minutes' },
-  { value: '15', label: '15 minutes' },
   { value: '30', label: '30 minutes' },
   { value: '60', label: '1 hour' },
 ]

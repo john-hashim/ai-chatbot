@@ -12,6 +12,11 @@ export interface BookingSlice {
   timezone: string
   availabilities: AvailabilitySchedule[]
 
+  // Loading states
+  creatingDayId: number | null
+  updatingSlotId: string | null
+  deletingSlotId: string | null
+
   // Actions
   fetchBookingData: (chatbotId: string) => Promise<void>
   updateDuration: (chatbotId: string, duration: number) => Promise<void>
@@ -23,7 +28,6 @@ export interface BookingSlice {
     data: UpdateTimeSlotsRequest
   ) => Promise<void>
   deleteAvailability: (chatbotId: string, slotId: string) => Promise<void>
-
 }
 
 export const createBookingSlice: StateCreator<
@@ -34,6 +38,9 @@ export const createBookingSlice: StateCreator<
   duration: 30,
   timezone: 'UTC',
   availabilities: [],
+  creatingDayId: null,
+  updatingSlotId: null,
+  deletingSlotId: null,
 
   fetchBookingData: async (chatbotId: string) => {
     const [configRes, availabilityRes] = await Promise.all([
@@ -70,39 +77,62 @@ export const createBookingSlice: StateCreator<
   },
 
   createAvailability: async (chatbotId: string, data: CreateAvailabilityRequest) => {
-    const response = await bookingsService.createAvailability(chatbotId, data)
-    const schedule = response.data.data
-    if (!schedule) throw new Error('Failed to create availability')
-    set(
-      state => ({
-        availabilities: [...state.availabilities, schedule],
-      }),
-      undefined,
-      '[Booking] Create Availability'
-    )
+    const dayId = data.scheduleType === 'WEEKLY' ? data.dayOfWeek : null
+    set({ creatingDayId: dayId }, undefined, '[Booking] Creating Availability')
+    try {
+      const response = await bookingsService.createAvailability(chatbotId, data)
+      const schedule = response.data.data
+      if (!schedule) throw new Error('Failed to create availability')
+      set(
+        state => ({ availabilities: [...state.availabilities, schedule] }),
+        undefined,
+        '[Booking] Create Availability'
+      )
+    } finally {
+      set({ creatingDayId: null }, undefined, '[Booking] Creating Availability Done')
+    }
   },
 
   updateAvailability: async (chatbotId: string, slotId: string, data: UpdateTimeSlotsRequest) => {
-    const response = await bookingsService.updateTimeSlots(chatbotId, slotId, data)
-    const updated = response.data.data
-    if (!updated) throw new Error('Failed to update availability')
     set(
       state => ({
-        availabilities: state.availabilities.map(a => (a.id === slotId ? updated : a)),
+        updatingSlotId: slotId,
+        availabilities: state.availabilities.map(a =>
+          a.id === slotId ? { ...a, timeSlots: data.timeSlots } : a
+        ),
       }),
       undefined,
-      '[Booking] Update Availability'
+      '[Booking] Update Availability Optimistic'
     )
+    try {
+      const response = await bookingsService.updateTimeSlots(chatbotId, slotId, data)
+      const updated = response.data.data
+      if (!updated) throw new Error('Failed to update availability')
+      set(
+        state => ({
+          availabilities: state.availabilities.map(a => (a.id === slotId ? updated : a)),
+        }),
+        undefined,
+        '[Booking] Update Availability'
+      )
+    } finally {
+      set({ updatingSlotId: null }, undefined, '[Booking] Updating Availability Done')
+    }
   },
 
   deleteAvailability: async (chatbotId: string, slotId: string) => {
-    await bookingsService.deleteSlot(chatbotId, slotId)
     set(
       state => ({
+        deletingSlotId: slotId,
         availabilities: state.availabilities.filter(a => a.id !== slotId),
       }),
       undefined,
-      '[Booking] Delete Availability'
+      '[Booking] Delete Availability Optimistic'
     )
+    try {
+      await bookingsService.deleteSlot(chatbotId, slotId)
+    } finally {
+      set({ deletingSlotId: null }, undefined, '[Booking] Deleting Availability Done')
+    }
   },
 })

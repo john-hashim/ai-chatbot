@@ -25,6 +25,7 @@
     "axios": "^1.12.2",
     "color": "^5.0.2",
     "date-fns": "^4.1.0",
+    "dayjs": "^1.11.20",
     "emoji-picker-react": "^4.16.1",
     "lucide-react": "^0.545.0",
     "motion": "^12.23.24",

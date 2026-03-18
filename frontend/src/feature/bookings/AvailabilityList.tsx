@@ -1,6 +1,13 @@
 import type React from 'react'
-import { Calendar1, Clock } from 'lucide-react'
-import { Avatar } from '@mantine/core'
+import { useMemo } from 'react'
+import { Calendar1, Clock, Plus, X } from 'lucide-react'
+import { Avatar, Loader, Select, Tooltip } from '@mantine/core'
+import dayjs from 'dayjs'
+import customParseFormat from 'dayjs/plugin/customParseFormat'
+import { useStore } from '@/store'
+import type { TimeSlot, UpdateTimeSlotsRequest } from '@/types/bookings'
+
+dayjs.extend(customParseFormat)
 
 const days = [
   { label: 'Sunday', id: 0, avatarLabel: 'S' },
@@ -12,7 +19,52 @@ const days = [
   { label: 'Saturday', id: 6, avatarLabel: 'S' },
 ]
 
-export const AvailabilityList: React.FC = () => {
+export interface AvailabilityListProps {
+  createWeeklyAvailablity: (dayOfWeek: number) => void
+}
+
+export const AvailabilityList: React.FC<AvailabilityListProps> = ({ createWeeklyAvailablity }) => {
+  const {
+    duration,
+    availabilities,
+    updateAvailability,
+    deleteAvailability,
+    currentChatbot,
+    creatingDayId,
+  } = useStore()
+
+  const timeOptions = useMemo(() => {
+    const steps = Math.floor((24 * 60) / duration)
+    return Array.from({ length: steps }, (_, i) => {
+      const totalMins = i * duration
+      const h = Math.floor(totalMins / 60)
+      const m = totalMins % 60
+      const value = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+      return { value, label: dayjs(value, 'HH:mm').format('h:mm A') }
+    })
+  }, [duration])
+
+  const getDaySchedules = (dayId: number) =>
+    availabilities.filter(a => a.scheduleType === 'WEEKLY' && a.dayOfWeek === dayId)
+
+  const handleTimeChange = (
+    scheduleId: string,
+    field: 'startTime' | 'endTime',
+    value: string,
+    currentSlot: TimeSlot
+  ) => {
+    if (!currentChatbot) return
+    const data: UpdateTimeSlotsRequest = {
+      timeSlots: [{ ...currentSlot, [field]: value }],
+    }
+    updateAvailability(currentChatbot.id, scheduleId, data)
+  }
+
+  const handleDelete = (scheduleId: string) => {
+    if (!currentChatbot) return
+    deleteAvailability(currentChatbot.id, scheduleId)
+  }
+
   return (
     <div className="flex flex-col lg:flex-row flex-wrap">
       <div className="lg:w-1/2 p-6">
@@ -24,13 +76,119 @@ export const AvailabilityList: React.FC = () => {
           Set time based on weekly schedule
         </p>
         <div className="mt-6">
-          {days.map(day => (
-            <div className="mt-2">
-              <Avatar size="md" color="brand">
-                {day.avatarLabel}
-              </Avatar>
-            </div>
-          ))}
+          {days.map(day => {
+            const schedules = getDaySchedules(day.id)
+            const isCreating = creatingDayId === day.id
+            return (
+              <div key={day.id} className="mt-6">
+                {schedules.length === 0 ? (
+                  <div className="flex items-center">
+                    <Avatar size="sm" color="brand">
+                      {day.avatarLabel}
+                    </Avatar>
+                    <p className="ml-8 text-xs text-text-weak">Unavailable</p>
+                    <Tooltip
+                      label={`New interval for ${day.label}`}
+                      transitionProps={{ duration: 150 }}
+                    >
+                      <div
+                        className="ml-2 cursor-pointer rounded p-1.5 hover:bg-gray-100"
+                        onClick={() => !isCreating && createWeeklyAvailablity(day.id)}
+                      >
+                        <div
+                          className={`p-px rounded-full border ${isCreating ? 'border-gray-300 opacity-40' : 'border-color-primary'}`}
+                        >
+                          <Plus
+                            className="h-3 w-3"
+                            style={{
+                              color: isCreating
+                                ? 'var(--mantine-color-gray-5)'
+                                : 'var(--mantine-color-brand-6)',
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </Tooltip>
+                    {isCreating && <Loader size="xs" />}
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    {schedules.map((schedule, index) => {
+                      const slot = schedule.timeSlots[0]
+                      return (
+                        <div key={schedule.id} className="flex items-center gap-2">
+                          {index === 0 ? (
+                            <Avatar size="sm" color="brand">
+                              {day.avatarLabel}
+                            </Avatar>
+                          ) : (
+                            <div className="w-[26px]" />
+                          )}
+                          <Select
+                            size="xs"
+                            data={timeOptions}
+                            value={slot.startTime}
+                            onChange={val =>
+                              val && handleTimeChange(schedule.id, 'startTime', val, slot)
+                            }
+                            className="w-28"
+                            checkIconPosition="right"
+                          />
+                          <span className="text-xs text-text-weak">–</span>
+                          <Select
+                            size="xs"
+                            data={timeOptions}
+                            value={slot.endTime}
+                            onChange={val =>
+                              val && handleTimeChange(schedule.id, 'endTime', val, slot)
+                            }
+                            className="w-28"
+                            checkIconPosition="right"
+                          />
+                          <Tooltip
+                            label={`Remove ${day.label} interval ${index + 1}`}
+                            transitionProps={{ duration: 150 }}
+                          >
+                            <div
+                              className="cursor-pointer rounded p-1.5 hover:bg-gray-100"
+                              onClick={() => handleDelete(schedule.id)}
+                            >
+                              <X className="h-3.5 w-3.5 text-text-weak" />
+                            </div>
+                          </Tooltip>
+                          {index === 0 && (
+                            <Tooltip
+                              label={`New interval for ${day.label}`}
+                              transitionProps={{ duration: 150 }}
+                            >
+                              <div
+                                className="cursor-pointer rounded p-1.5 hover:bg-gray-100"
+                                onClick={() => !isCreating && createWeeklyAvailablity(day.id)}
+                              >
+                                <div
+                                  className={`p-px rounded-full border ${isCreating ? 'border-gray-300 opacity-40' : 'border-color-primary'}`}
+                                >
+                                  <Plus
+                                    className="h-3 w-3"
+                                    style={{
+                                      color: isCreating
+                                        ? 'var(--mantine-color-gray-5)'
+                                        : 'var(--mantine-color-brand-6)',
+                                    }}
+                                  />
+                                </div>
+                              </div>
+                            </Tooltip>
+                          )}
+                          {index === 0 && isCreating && <Loader size="xs" />}
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            )
+          })}
         </div>
       </div>
 

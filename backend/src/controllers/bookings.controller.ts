@@ -138,7 +138,7 @@ export const getAvailability = async (req: Request, res: Response, next: NextFun
 }
 
 // PATCH /:chatbotId/availability/:slotId
-// Payload for WEEKLY:        { timeSlots: [{ startLocalTime: "09:00", endLocalTime: "12:00" }] }
+// Payload for WEEKLY:        { timeSlots: [{ startTime: "09:00", endTime: "12:00" }] }
 // Payload for SPECIFIC_DATE: { specificDate: "2026-02-24", timeSlots: [{ startTime: "09:00", endTime: "12:00" }] }
 export const updateTimeSlots = async (req: Request, res: Response, next: NextFunction) => {
   try {
