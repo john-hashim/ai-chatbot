@@ -13,12 +13,14 @@ export interface BookingSlice {
   availabilities: AvailabilitySchedule[]
 
   // Loading states
+  fetchingAvailabilities: boolean
   creatingDayId: number | null
   updatingSlotId: string | null
   deletingSlotId: string | null
 
   // Actions
   fetchBookingData: (chatbotId: string) => Promise<void>
+  clearAvailabilities: () => void
   updateDuration: (chatbotId: string, duration: number) => Promise<void>
   updateTimezone: (chatbotId: string, timezone: string) => Promise<void>
   createAvailability: (chatbotId: string, data: CreateAvailabilityRequest) => Promise<void>
@@ -38,26 +40,36 @@ export const createBookingSlice: StateCreator<
   duration: 30,
   timezone: 'UTC',
   availabilities: [],
+  fetchingAvailabilities: false,
   creatingDayId: null,
   updatingSlotId: null,
   deletingSlotId: null,
 
+  clearAvailabilities: () => {
+    set({ availabilities: [] }, undefined, '[Booking] Clear Availabilities')
+  },
+
   fetchBookingData: async (chatbotId: string) => {
-    const [configRes, availabilityRes] = await Promise.all([
-      bookingsService.getBookingConfig(chatbotId),
-      bookingsService.getAvailability(chatbotId),
-    ])
-    const config = configRes.data.data
-    const availabilities = availabilityRes.data.data ?? []
-    set(
-      {
-        duration: config?.appointmentDuration ?? 30,
-        timezone: config?.timezone ?? 'UTC',
-        availabilities,
-      },
-      undefined,
-      '[Booking] Fetch Booking Data'
-    )
+    set({ fetchingAvailabilities: true }, undefined, '[Booking] Fetching Booking Data')
+    try {
+      const [configRes, availabilityRes] = await Promise.all([
+        bookingsService.getBookingConfig(chatbotId),
+        bookingsService.getAvailability(chatbotId),
+      ])
+      const config = configRes.data.data
+      const availabilities = availabilityRes.data.data ?? []
+      set(
+        {
+          duration: config?.appointmentDuration ?? 30,
+          timezone: config?.timezone ?? 'UTC',
+          availabilities,
+        },
+        undefined,
+        '[Booking] Fetch Booking Data'
+      )
+    } finally {
+      set({ fetchingAvailabilities: false }, undefined, '[Booking] Fetching Booking Data Done')
+    }
   },
 
   updateDuration: async (chatbotId: string, duration: number) => {

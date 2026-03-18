@@ -7,10 +7,12 @@ import { AvailabilityList } from './AvailabilityList'
 import type { CreateWeeklyAvailabilityRequest, TimeSlot } from '@/types/bookings'
 import { useStore } from '@/store'
 import { useCallback } from 'react'
+import { Loader } from '@mantine/core'
 
 export const Availability: React.FC = () => {
   // const [view, setView] = useState<'List' | 'Calendar'>('List')
-  const { timezone, createAvailability, currentChatbot } = useStore()
+  const { timezone, createAvailability, currentChatbot, fetchingAvailabilities, availabilities } =
+    useStore()
 
   const getDefaultTimeSlot = (): TimeSlot => ({ startTime: '09:00', endTime: '17:00' })
 
@@ -38,7 +40,12 @@ export const Availability: React.FC = () => {
       <div className="pb-16">
         <div className="flex justify-between p-6 border-b border-border-week">
           <div className="lg:w-3/5 w-full">
-            <p className="text-lg font-semibold">Availability</p>
+            <div className="flex items-center">
+              <p className="text-lg font-semibold">Availability</p>
+              {fetchingAvailabilities && availabilities.length === 0 && (
+                <Loader size="xs" className="ml-2" />
+              )}
+            </div>
             <p className="text-sm mt-1 font-light text-text-weak">
               Set when you are typically available for meetings
             </p>
