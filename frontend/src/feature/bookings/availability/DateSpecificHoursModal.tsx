@@ -68,6 +68,7 @@ export const DateSpecificHoursModal = ({
   }, [])
 
   const onCreateAvailability = () => {
+    if (value.length === 0 || schedules.length === 0) return
     schedules.forEach(({ startTime, endTime }) => {
       createDateSpecificAvailability(value, startTime, endTime)
     })
