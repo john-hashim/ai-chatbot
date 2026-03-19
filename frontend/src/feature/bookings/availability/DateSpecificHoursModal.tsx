@@ -160,7 +160,12 @@ export const DateSpecificHoursModal = ({
       )}
 
       <div className="flex gap-2 mt-6">
-        <Button variant="secondary" className="flex-1" disabled={isCreating} onClick={() => modals.closeAll()}>
+        <Button
+          variant="secondary"
+          className="flex-1"
+          disabled={isCreating}
+          onClick={() => modals.closeAll()}
+        >
           Cancel
         </Button>
         <Button className="flex-1" loading={isCreating} onClick={onCreateAvailability}>

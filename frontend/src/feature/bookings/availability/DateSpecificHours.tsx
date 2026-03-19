@@ -67,11 +67,11 @@ export const DateSpecificHours = memo<DateSpecificHoursProps>(
         </div>
 
         {specificSchedules.length > 0 && (
-          <div className="mt-6 flex flex-col gap-3">
+          <div className="mt-4 flex flex-col gap-3">
             {specificSchedules.map(schedule => (
               <div
                 key={schedule.id}
-                className="flex items-start px-4 py-2 bg-background-dark-week rounded-xl mt-2 gap-6"
+                className="flex items-start px-4 py-2 bg-background-dark-week rounded-xl gap-6"
               >
                 <div className="w-20 shrink-0">
                   <p className="text-xs font-semibold">
