@@ -51,6 +51,26 @@ export const createAvailability = async (req: Request, res: Response, next: Next
         } satisfies ApiResponse)
       }
 
+      const existing = await prisma.availabilitySchedule.findFirst({
+        where: { chatbotId, scheduleType: 'WEEKLY', dayOfWeek: Number(dayOfWeek) },
+      })
+
+      if (existing) {
+        const merged = [
+          ...(existing.timeSlots as { startTime: string; endTime: string }[]),
+          ...timeSlots,
+        ]
+        const updated = await prisma.availabilitySchedule.update({
+          where: { id: existing.id },
+          data: { timeSlots: merged },
+        })
+        return res.status(200).json({
+          status: ApiStatus.SUCCESS,
+          message: 'Time slot appended successfully',
+          data: updated,
+        } satisfies ApiResponse)
+      }
+
       const availability = await prisma.availabilitySchedule.create({
         data: {
           chatbotId,
@@ -69,36 +89,55 @@ export const createAvailability = async (req: Request, res: Response, next: Next
     }
 
     if (scheduleType === 'SPECIFIC_DATE') {
-      const { specificDate } = req.body
+      const { specificDates } = req.body
 
-      if (!specificDate) {
+      if (!Array.isArray(specificDates) || specificDates.length === 0) {
         return res.status(400).json({
           status: ApiStatus.FAILURE,
-          message: 'specificDate is required for SPECIFIC_DATE schedule',
+          message: 'specificDates array is required for SPECIFIC_DATE schedule',
         } satisfies ApiResponse)
       }
 
-      const normalizedSlots = timeSlots.map(
-        ({ startTime, endTime }: { startTime: string; endTime: string }) => ({
-          startTime: localToUTC(specificDate, startTime, tz),
-          endTime: localToUTC(specificDate, endTime, tz),
+      const results = await Promise.all(
+        specificDates.map(async (date: string) => {
+          const normalizedSlots = timeSlots.map(
+            ({ startTime, endTime }: { startTime: string; endTime: string }) => ({
+              startTime: localToUTC(date, startTime, tz),
+              endTime: localToUTC(date, endTime, tz),
+            })
+          )
+
+          const existing = await prisma.availabilitySchedule.findFirst({
+            where: { chatbotId, scheduleType: 'SPECIFIC_DATE', specificDate: new Date(date) },
+          })
+
+          if (existing) {
+            const merged = [
+              ...(existing.timeSlots as { startTime: string; endTime: string }[]),
+              ...normalizedSlots,
+            ]
+            return prisma.availabilitySchedule.update({
+              where: { id: existing.id },
+              data: { timeSlots: merged },
+            })
+          }
+
+          return prisma.availabilitySchedule.create({
+            data: {
+              chatbotId,
+              timezone: tz,
+              scheduleType,
+              specificDate: new Date(date),
+              timeSlots: normalizedSlots,
+            },
+          })
         })
       )
-
-      const availability = await prisma.availabilitySchedule.create({
-        data: {
-          chatbotId,
-          timezone: tz,
-          scheduleType,
-          specificDate: new Date(specificDate),
-          timeSlots: normalizedSlots,
-        },
-      })
 
       return res.status(201).json({
         status: ApiStatus.SUCCESS,
         message: 'Availability created successfully',
-        data: availability,
+        data: results,
       } satisfies ApiResponse)
     }
 
@@ -245,7 +284,10 @@ export const updateBookingConfig = async (req: Request, res: Response, next: Nex
       } satisfies ApiResponse)
     }
 
-    if (appointmentDuration !== undefined && (isNaN(Number(appointmentDuration)) || Number(appointmentDuration) <= 0)) {
+    if (
+      appointmentDuration !== undefined &&
+      (isNaN(Number(appointmentDuration)) || Number(appointmentDuration) <= 0)
+    ) {
       return res.status(400).json({
         status: ApiStatus.FAILURE,
         message: 'appointmentDuration must be a positive number',
@@ -257,7 +299,9 @@ export const updateBookingConfig = async (req: Request, res: Response, next: Nex
       update: {
         ...(isEnabled !== undefined && { isEnabled }),
         ...(tz !== undefined && { timezone: tz }),
-        ...(appointmentDuration !== undefined && { appointmentDuration: Number(appointmentDuration) }),
+        ...(appointmentDuration !== undefined && {
+          appointmentDuration: Number(appointmentDuration),
+        }),
       },
       create: {
         chatbotId,

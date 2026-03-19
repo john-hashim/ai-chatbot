@@ -43,24 +43,38 @@ export const WeeklyAvailability = memo<WeeklyAvailabilityProps>(({ createWeeklyA
     })
   }, [duration])
 
-  const getDaySchedules = useMemo(() => {
+  const getDaySchedule = useMemo(() => {
     return (dayId: number) =>
-      availabilities.filter(a => a.scheduleType === 'WEEKLY' && a.dayOfWeek === dayId)
+      availabilities.find(a => a.scheduleType === 'WEEKLY' && a.dayOfWeek === dayId) ?? null
   }, [availabilities])
 
-  const handleTimeChange = (scheduleId: string, field: 'startTime' | 'endTime', value: string) => {
+  const handleTimeChange = (
+    scheduleId: string,
+    slotIndex: number,
+    field: 'startTime' | 'endTime',
+    value: string
+  ) => {
     if (!currentChatbot) return
     const current = availabilities.find(a => a.id === scheduleId)
     if (!current) return
     const data: UpdateTimeSlotsRequest = {
-      timeSlots: [{ ...current.timeSlots[0], [field]: value }],
+      timeSlots: current.timeSlots.map((s, i) => (i === slotIndex ? { ...s, [field]: value } : s)),
     }
     updateAvailability(currentChatbot.id, scheduleId, data).catch(console.error)
   }
 
-  const handleDelete = (scheduleId: string) => {
+  const handleDelete = (scheduleId: string, slotIndex: number) => {
     if (!currentChatbot) return
-    deleteAvailability(currentChatbot.id, scheduleId).catch(console.error)
+    const current = availabilities.find(a => a.id === scheduleId)
+    if (!current) return
+    if (current.timeSlots.length === 1) {
+      deleteAvailability(currentChatbot.id, scheduleId).catch(console.error)
+    } else {
+      const data: UpdateTimeSlotsRequest = {
+        timeSlots: current.timeSlots.filter((_, i) => i !== slotIndex),
+      }
+      updateAvailability(currentChatbot.id, scheduleId, data).catch(console.error)
+    }
   }
 
   return (
@@ -72,11 +86,11 @@ export const WeeklyAvailability = memo<WeeklyAvailabilityProps>(({ createWeeklyA
       <p className="text-xs mt-1 font-light text-text-weak">Set time based on weekly schedule</p>
       <div className="mt-6">
         {days.map(day => {
-          const schedules = getDaySchedules(day.id)
+          const schedule = getDaySchedule(day.id)
           const isCreating = creatingDayId === day.id
           return (
             <div key={day.id} className="mt-6">
-              {schedules.length === 0 ? (
+              {!schedule ? (
                 <div className="flex items-center">
                   <Avatar size="sm" color="brand">
                     {day.avatarLabel}
@@ -108,73 +122,76 @@ export const WeeklyAvailability = memo<WeeklyAvailabilityProps>(({ createWeeklyA
                 </div>
               ) : (
                 <div className="flex flex-col gap-2">
-                  {schedules.map((schedule, index) => {
-                    const slot = schedule.timeSlots[0]
-                    return (
-                      <div key={schedule.id} className="flex items-center gap-1 sm:gap-2">
-                        {index === 0 ? (
-                          <Avatar size="sm" color="brand">
-                            {day.avatarLabel}
-                          </Avatar>
-                        ) : (
-                          <div className="w-[26px]" />
-                        )}
-                        <Select
-                          size="xs"
-                          data={timeOptions}
-                          value={slot.startTime}
-                          onChange={val => val && handleTimeChange(schedule.id, 'startTime', val)}
-                          className="w-24 ml-2"
-                          checkIconPosition="right"
-                        />
-                        <span className="text-xs text-text-weak">–</span>
-                        <Select
-                          size="xs"
-                          data={timeOptions}
-                          value={slot.endTime}
-                          onChange={val => val && handleTimeChange(schedule.id, 'endTime', val)}
-                          className="w-24"
-                          checkIconPosition="right"
-                        />
+                  {schedule.timeSlots.map((slot, slotIndex) => (
+                    <div key={slotIndex} className="flex items-center gap-1 sm:gap-2">
+                      {slotIndex === 0 ? (
+                        <Avatar size="sm" color="brand">
+                          {day.avatarLabel}
+                        </Avatar>
+                      ) : (
+                        <div className="w-[26px]" />
+                      )}
+                      <Select
+                        size="xs"
+                        data={timeOptions}
+                        value={slot.startTime}
+                        onChange={val =>
+                          val && handleTimeChange(schedule.id, slotIndex, 'startTime', val)
+                        }
+                        className="w-24 ml-2"
+                        checkIconPosition="right"
+                      />
+                      <span className="text-xs text-text-weak">–</span>
+                      <Select
+                        size="xs"
+                        data={timeOptions}
+                        value={slot.endTime}
+                        onChange={val =>
+                          val && handleTimeChange(schedule.id, slotIndex, 'endTime', val)
+                        }
+                        className="w-24"
+                        checkIconPosition="right"
+                      />
+                      <Tooltip
+                        label={`Remove ${day.label} interval ${slotIndex + 1}`}
+                        transitionProps={{ duration: 150 }}
+                      >
+                        <div
+                          className="cursor-pointer rounded p-1.5 hover:bg-gray-100"
+                          onClick={() => handleDelete(schedule.id, slotIndex)}
+                        >
+                          <X className="h-3.5 w-3.5 text-text-weak" />
+                        </div>
+                      </Tooltip>
+                      {slotIndex === schedule.timeSlots.length - 1 && (
                         <Tooltip
-                          label={`Remove ${day.label} interval ${index + 1}`}
+                          label={`New interval for ${day.label}`}
                           transitionProps={{ duration: 150 }}
                         >
                           <div
                             className="cursor-pointer rounded p-1.5 hover:bg-gray-100"
-                            onClick={() => handleDelete(schedule.id)}
-                          >
-                            <X className="h-3.5 w-3.5 text-text-weak" />
-                          </div>
-                        </Tooltip>
-                        {index === 0 && (
-                          <Tooltip
-                            label={`New interval for ${day.label}`}
-                            transitionProps={{ duration: 150 }}
+                            onClick={() => !isCreating && createWeeklyAvailablity(day.id)}
                           >
                             <div
-                              className="cursor-pointer rounded p-1.5 hover:bg-gray-100"
-                              onClick={() => !isCreating && createWeeklyAvailablity(day.id)}
+                              className={`p-px rounded-full border ${isCreating ? 'border-gray-300 opacity-40' : 'border-color-primary'}`}
                             >
-                              <div
-                                className={`p-px rounded-full border ${isCreating ? 'border-gray-300 opacity-40' : 'border-color-primary'}`}
-                              >
-                                <Plus
-                                  className="h-3 w-3"
-                                  style={{
-                                    color: isCreating
-                                      ? 'var(--mantine-color-gray-5)'
-                                      : 'var(--mantine-color-brand-6)',
-                                  }}
-                                />
-                              </div>
+                              <Plus
+                                className="h-3 w-3"
+                                style={{
+                                  color: isCreating
+                                    ? 'var(--mantine-color-gray-5)'
+                                    : 'var(--mantine-color-brand-6)',
+                                }}
+                              />
                             </div>
-                          </Tooltip>
-                        )}
-                        {index === 0 && isCreating && <Loader size="xs" />}
-                      </div>
-                    )
-                  })}
+                          </div>
+                        </Tooltip>
+                      )}
+                      {slotIndex === schedule.timeSlots.length - 1 && isCreating && (
+                        <Loader size="xs" />
+                      )}
+                    </div>
+                  ))}
                 </div>
               )}
             </div>

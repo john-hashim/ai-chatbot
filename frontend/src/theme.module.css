@@ -1,6 +1,8 @@
 /* Button styles */
 /* Default variant - Black background with white text */
-.buttonRoot:not([data-variant='filled']):not([data-variant='light']):not([data-variant='outline']):not([data-variant='secondary']) {
+.buttonRoot:not([data-variant='filled']):not([data-variant='light']):not(
+    [data-variant='outline']
+  ):not([data-variant='secondary']):not([data-variant='compact']) {
   border: 1px solid black !important;
   background-color: black !important;
   color: white !important;
@@ -8,7 +10,7 @@
 
 .buttonRoot:not([data-variant='filled']):not([data-variant='light']):not(
     [data-variant='outline']
-  ):not([data-variant='secondary']):hover {
+  ):not([data-variant='secondary']):not([data-variant='compact']):hover {
   border: 1px solid #333 !important;
   background-color: #333 !important;
 }
@@ -50,7 +52,9 @@
   font-size: 13px !important;
 }
 
-.buttonRoot:not([data-variant='filled']):not([data-variant='light']):not([data-variant='outline']):not([data-variant='secondary'])
+.buttonRoot:not([data-variant='filled']):not([data-variant='light']):not(
+    [data-variant='outline']
+  ):not([data-variant='secondary']):not([data-variant='compact'])
   .buttonLabel {
   color: white !important;
 }
@@ -64,9 +68,32 @@
   margin-inline-end: 2px !important;
 }
 
-.buttonRoot:not([data-variant='filled']):not([data-variant='light']):not([data-variant='outline']):not([data-variant='secondary'])
+.buttonRoot:not([data-variant='filled']):not([data-variant='light']):not(
+    [data-variant='outline']
+  ):not([data-variant='secondary']):not([data-variant='compact'])
   .buttonSection {
   color: white !important;
+}
+
+/* Compact variant - reduced padding, primary color border */
+.buttonRoot[data-variant='compact'] {
+  padding: 6px !important;
+  border: 1px solid var(--color-color-primary) !important;
+  background-color: transparent !important;
+  color: var(--color-color-primary) !important;
+}
+
+.buttonRoot[data-variant='compact']:hover {
+  background-color: var(--mantine-color-brand-0) !important;
+  border: 1px solid var(--color-color-primary) !important;
+}
+
+.buttonRoot[data-variant='compact'] .buttonLabel {
+  color: var(--color-color-primary) !important;
+}
+
+.buttonRoot[data-variant='compact'] .buttonSection {
+  color: var(--color-color-primary) !important;
 }
 
 /* Input styles */

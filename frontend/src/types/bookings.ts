@@ -27,7 +27,7 @@ export interface CreateWeeklyAvailabilityRequest {
 export interface CreateSpecificDateAvailabilityRequest {
   timezone: string
   scheduleType: 'SPECIFIC_DATE'
-  specificDate: string
+  specificDates: string[]
   timeSlots: TimeSlot[]
 }
 

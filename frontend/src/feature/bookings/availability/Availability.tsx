@@ -5,7 +5,11 @@ import type React from 'react'
 // import { AvailabilityCalendar } from './AvailablityCalendar'
 import { WeeklyAvailability } from './WeeklyAvailability'
 import { DateSpecificHours } from './DateSpecificHours'
-import type { CreateWeeklyAvailabilityRequest, TimeSlot } from '@/types/bookings'
+import type {
+  CreateSpecificDateAvailabilityRequest,
+  CreateWeeklyAvailabilityRequest,
+  TimeSlot,
+} from '@/types/bookings'
 import { useStore } from '@/store'
 import { useCallback } from 'react'
 import { Loader } from '@mantine/core'
@@ -26,6 +30,25 @@ export const Availability: React.FC = () => {
         timeSlots: [timeSlot],
         scheduleType: 'WEEKLY',
         dayOfWeek,
+      }
+      try {
+        await createAvailability(currentChatbot.id, payload)
+      } catch (error) {
+        console.error('Failed to create availability:', error)
+      }
+    },
+    [currentChatbot, timezone, createAvailability]
+  )
+
+  const createDateSpecificAvailability = useCallback(
+    async (specificDates: string[], startTime: string, endTime: string) => {
+      if (!currentChatbot) return
+      const timeSlot = { startTime, endTime }
+      const payload: CreateSpecificDateAvailabilityRequest = {
+        timezone,
+        timeSlots: [timeSlot],
+        scheduleType: 'SPECIFIC_DATE',
+        specificDates,
       }
       try {
         await createAvailability(currentChatbot.id, payload)
@@ -89,11 +112,11 @@ export const Availability: React.FC = () => {
             <WeeklyAvailability createWeeklyAvailablity={createWeeklyAvailablity} />
           )} */}
           <WeeklyAvailability createWeeklyAvailablity={createWeeklyAvailablity} />
-          <DateSpecificHours />
+          <DateSpecificHours createDateSpecificAvailability={createDateSpecificAvailability} />
         </div>
         <div className="lg:hidden flex flex-col">
           <WeeklyAvailability createWeeklyAvailablity={createWeeklyAvailablity} />
-          <DateSpecificHours />
+          <DateSpecificHours createDateSpecificAvailability={createDateSpecificAvailability} />
         </div>
       </div>
     </div>
