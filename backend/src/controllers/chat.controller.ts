@@ -7,6 +7,7 @@ import * as chatService from '../services/chat.service.js'
 import { getSystemInstruction } from '../constants/instructions.js'
 import { resolveCountry } from '../services/geolocation.service.js'
 import type { NestedSort } from '../types/common.js'
+import { getAvailabilitiesAsString } from '../services/booking.service.js'
 
 export const chatController = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -151,18 +152,72 @@ export const chatController = async (req: Request, res: Response, next: NextFunc
 
     // --- Stream LLM response ---
     let fullResponse = ''
+    const ACTION_TOKEN = '__ACTION:BOOKING__'
+    let bookingDetected = false
+    let confirmedNormal = false
+    let bufferedTokens: string[] = []
 
     await chatService.streamLLMResponse({
       message,
       context,
       chatHistory,
       systemInstruction,
-      onToken: (token: string) => {
+      onToken: async (token: string) => {
         fullResponse += token
-        sendSSE({ type: 'token', token })
+
+        if (bookingDetected) return
+
+        if (confirmedNormal) {
+          sendSSE({ type: 'token', token })
+          return
+        }
+
+        if (fullResponse.includes(ACTION_TOKEN)) {
+          bookingDetected = true
+          bufferedTokens = []
+          return
+        }
+
+        // Check if accumulated response could still become the action token
+        const trimmed = fullResponse.trimStart()
+        if (trimmed.length < ACTION_TOKEN.length && ACTION_TOKEN.startsWith(trimmed)) {
+          // Still potentially the action token — buffer and wait
+          bufferedTokens.push(token)
+        } else {
+          // Confirmed normal response — flush buffer and continue streaming
+          confirmedNormal = true
+          for (const t of bufferedTokens) {
+            sendSSE({ type: 'token', token: t })
+          }
+          bufferedTokens = []
+          sendSSE({ type: 'token', token })
+        }
       },
       onComplete: async () => {
         const responseTime = Date.now() - startTime
+
+        if (bookingDetected) {
+          const dates = await getAvailabilitiesAsString(chatbotId)
+
+          const bookingMessage =
+            dates.length === 0
+              ? "Sorry, there are no available dates right now. Please check back later."
+              : `Here are the available dates for booking:\n${dates.join('\n')}\n\nPlease let me know which date works best for you!`
+
+          const words = bookingMessage.split(/(\s+)/)
+          for (const word of words) {
+            if (!word) continue
+            await new Promise(r => setTimeout(r, 20))
+            sendSSE({ type: 'token', token: word })
+          }
+
+          fullResponse = bookingMessage
+        } else if (!confirmedNormal && bufferedTokens.length > 0) {
+          // Edge case: stream ended while still buffering (very short response)
+          for (const t of bufferedTokens) {
+            sendSSE({ type: 'token', token: t })
+          }
+        }
 
         // Save assistant message to DB
         const assistantMessage = await prisma.chatMessage.create({
@@ -180,9 +235,27 @@ export const chatController = async (req: Request, res: Response, next: NextFunc
         sendSSE({ type: 'done', message: assistantMessage })
         res.end()
       },
-      onError: (error: Error) => {
+      onError: async (error: Error) => {
         console.error('LLM streaming error:', error)
-        sendSSE({ type: 'error', message: 'Failed to generate response' })
+        const errorMessage = 'Something went wrong, please try again later.'
+        const words = errorMessage.split(/(\s+)/)
+        for (const word of words) {
+          if (!word) continue
+          await new Promise(r => setTimeout(r, 20))
+          sendSSE({ type: 'token', token: word })
+        }
+        const assistantMessage = await prisma.chatMessage.create({
+          data: {
+            sessionId,
+            role: 'assistant',
+            content: errorMessage,
+            model: 'meta-llama/Llama-3.1-8B-Instruct',
+            responseTime: Date.now() - startTime,
+            sources: [],
+            confidenceScore: 0,
+          },
+        })
+        sendSSE({ type: 'done', message: assistantMessage })
         res.end()
       },
     })
@@ -200,7 +273,10 @@ export const chatController = async (req: Request, res: Response, next: NextFunc
 export const getChatSessions = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { chatbotId } = req.params
-    const { searchParam = '', sortBy = 'Default' } = req.query as { searchParam?: string; sortBy?: string }
+    const { searchParam = '', sortBy = 'Default' } = req.query as {
+      searchParam?: string
+      sortBy?: string
+    }
 
     if (!chatbotId) {
       return res.status(400).json({
