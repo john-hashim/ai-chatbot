@@ -117,7 +117,15 @@ export async function streamLLMResponse({
     for await (const chunk of stream) {
       const token = chunk.choices?.[0]?.delta?.content
       if (token) {
-        onToken(token)
+        // Splits each chunk into words and emits them one by one with a delay,
+        // creating a typewriter effect on any frontend consuming this stream.
+        // To disable and send raw chunks instead, replace the loop below with: onToken(token)
+        const words = token.split(/(\s+)/)
+        for (const word of words) {
+          if (!word) continue
+          await new Promise(r => setTimeout(r, 20))
+          onToken(word)
+        }
       }
     }
 
