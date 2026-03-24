@@ -152,7 +152,7 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                 chat.role === 'assistant' && index === messages.length - 1 && generating
               return (
                 <div
-                  key={chat.id}
+                  key={index}
                   data-message
                   className={`flex flex-col ${chat.role === 'user' ? 'items-end' : 'items-start'}`}
                 >
