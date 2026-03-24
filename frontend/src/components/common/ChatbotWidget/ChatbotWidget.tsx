@@ -21,7 +21,6 @@ export const ChatbotWidget: React.FC<ChatbotWidgetProps> = ({
   readOnly = false,
   onSendMessage,
   onFeedback,
-  onRetry,
   onCopy,
   onReset,
   generating,
@@ -79,7 +78,6 @@ export const ChatbotWidget: React.FC<ChatbotWidgetProps> = ({
           contrastColor={headerContrast.contrastHex}
           onSuggestionClick={handleSuggestionClick}
           onFeedback={onFeedback}
-          onRetry={onRetry}
           onCopy={handleCopy}
           generating={generating}
         />

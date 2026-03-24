@@ -28,7 +28,6 @@ export interface ChatbotWidgetProps {
   // Callbacks
   onSendMessage?: (message: string) => void
   onFeedback?: (messageId: string, type: string) => void
-  onRetry?: (messageId: string) => void
   onCopy?: (messageId: string, content: string) => void
   onReset?: () => void
 }
@@ -55,7 +54,6 @@ export interface ChatMessagesProps {
   contrastColor: string
   onSuggestionClick?: (suggestion: string) => void
   onFeedback?: (messageId: string, type: 'like' | 'dislike') => void
-  onRetry?: (messageId: string) => void
   onCopy?: (messageId: string, content: string) => void
   generating: boolean
 }

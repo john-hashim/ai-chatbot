@@ -1,5 +1,5 @@
 import { Tooltip } from '@mantine/core'
-import { ArrowDown, Copy, RotateCcw, ThumbsDown, ThumbsUp } from 'lucide-react'
+import { ArrowDown, Copy, ThumbsDown, ThumbsUp } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import rehypeRaw from 'rehype-raw'
@@ -44,7 +44,6 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
   generating = false,
   onSuggestionClick,
   onFeedback,
-  onRetry,
   onCopy,
 }) => {
   const [showScrollButton, setShowScrollButton] = useState(false)
@@ -109,7 +108,7 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
             {initialMessages.map((message, index) => (
               <div
                 key={index}
-                className={`relative flex w-fit max-w-[85%] flex-col items-start gap-2 px-4 py-3 text-sm leading-normal tracking-tight ${
+                className={`relative flex max-w-full flex-col items-start gap-2 px-4 py-3 text-sm leading-normal tracking-tight ${
                   isDark ? 'bg-zinc-800 text-zinc-100' : 'bg-zinc-100 text-zinc-900'
                 } ${
                   index === 0
@@ -157,7 +156,7 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                   className={`flex flex-col ${chat.role === 'user' ? 'items-end' : 'items-start'}`}
                 >
                   <div
-                    className={`relative flex w-fit max-w-[85%] flex-col items-start gap-2 rounded-[20px] px-4 py-3 text-sm leading-normal tracking-tight ${
+                    className={`relative flex max-w-full flex-col items-start gap-2 rounded-[20px] px-4 py-3 text-sm leading-normal tracking-tight ${
                       chat.role === 'assistant' && !(isGenerating && !chat.content)
                         ? isDark
                           ? 'bg-zinc-800 text-zinc-100'
@@ -258,12 +257,6 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                           />
                         }
                         onClick={() => onFeedback?.(chat.id, 'dislike')}
-                      />
-                      <ActionButton
-                        isDark={isDark}
-                        label="Retry"
-                        icon={<RotateCcw className="h-3 w-3" />}
-                        onClick={() => onRetry?.(chat.id)}
                       />
                       {/* <span className={`ml-1 text-[10px] ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>
                         {formatRelativeDate(chat.createdAt)}
