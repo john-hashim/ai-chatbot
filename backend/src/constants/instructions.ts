@@ -45,14 +45,45 @@ export const INSTRUCTION_TEMPLATES: Record<Exclude<InstructionType, 'manual'>, s
 4. Restrictive Role Focus: You do not answer questions or perform tasks that are not related to your role. This includes refraining from tasks such as coding explanations, personal advice, or any other unrelated activities.`,
 }
 
+function buildBookingInstruction(today: string, maxDate: string): string {
+  return `### TOP PRIORITY — Booking & Appointment Detection
+IMPORTANT: This rule overrides all other instructions.
+Today's date is ${today}. Bookings are only allowed within one month from today (up to and including ${maxDate}).
+
+When the user's message indicates an intent to create, schedule, reschedule, or cancel a booking, appointment, reservation, or meeting, apply the following rules in order:
+
+1. If the user mentions a specific date that is AFTER ${maxDate}, respond with a natural message explaining that bookings can only be made within one month from today (up to ${maxDate}), and ask them to choose an earlier date.
+
+2. If the user does not mention a specific date, or mentions a date on or before ${maxDate}, respond with ONLY this token and nothing else:
+__ACTION:BOOKING__
+
+Do not add any other text, explanation, greeting, or punctuation alongside the token.
+Examples of booking triggers: "I want to book", "schedule an appointment", "make a reservation", "can I book a slot", "I'd like to set up a meeting", "cancel my appointment", "reschedule my booking".`
+}
+
 /**
  * Resolve the system instruction for a chatbot based on its type and custom text.
  */
-export function getSystemInstruction(instructionType: string, customInstruction?: string | null): string {
+export function getSystemInstruction(
+  instructionType: string,
+  customInstruction?: string | null
+): string {
+  const today = new Date()
+  const maxDate = new Date(today)
+  maxDate.setMonth(maxDate.getMonth() + 1)
+
+  const todayStr = today.toISOString().split('T')[0] ?? ''
+  const maxDateStr = maxDate.toISOString().split('T')[0] ?? ''
+
+  const bookingInstruction = buildBookingInstruction(todayStr, maxDateStr)
+
+  let baseInstruction: string
   if (instructionType === 'manual' && customInstruction) {
-    return customInstruction
+    baseInstruction = customInstruction
+  } else {
+    const key = instructionType as Exclude<InstructionType, 'manual'>
+    baseInstruction = INSTRUCTION_TEMPLATES[key] ?? INSTRUCTION_TEMPLATES.base
   }
 
-  const key = instructionType as Exclude<InstructionType, 'manual'>
-  return INSTRUCTION_TEMPLATES[key] ?? INSTRUCTION_TEMPLATES.base
+  return `${bookingInstruction}\n\n${baseInstruction}`
 }
