@@ -15,6 +15,7 @@ const USE_GROQ = process.env.USE_GROQ === 'true'
 const LLM_MODEL = 'meta-llama/Llama-3.1-8B-Instruct'
 // const GROQ_MODEL = 'gemma2-9b-it'
 const GROQ_MODEL = 'llama-3.3-70b-versatile'
+export const ACTIVE_MODEL = USE_GROQ ? GROQ_MODEL : LLM_MODEL
 const SIMILARITY_THRESHOLD = 0.4
 const MAX_CONTEXT_CHARS = 4000
 
@@ -69,8 +70,8 @@ interface StreamLLMParams {
   chatHistory?: { role: string; content: string }[]
   systemInstruction: string
   onToken: (token: string) => void
-  onComplete: () => void
-  onError: (error: Error) => void
+  onComplete: () => Promise<void>
+  onError: (error: Error) => Promise<void>
 }
 
 /**
@@ -111,8 +112,8 @@ export async function streamLLMResponse({
 interface StreamHFParams {
   messages: { role: 'system' | 'user' | 'assistant'; content: string }[]
   onToken: (token: string) => void
-  onComplete: () => void
-  onError: (error: Error) => void
+  onComplete: () => Promise<void>
+  onError: (error: Error) => Promise<void>
 }
 
 async function streamHFResponse({
@@ -123,7 +124,7 @@ async function streamHFResponse({
 }: StreamHFParams): Promise<void> {
   const apiKey = process.env.HUGGINGFACE_API_KEY
   if (!apiKey) {
-    onError(new Error('HUGGINGFACE_API_KEY environment variable is not set'))
+    await onError(new Error('HUGGINGFACE_API_KEY environment variable is not set'))
     return
   }
 
@@ -152,13 +153,13 @@ async function streamHFResponse({
         }
       }
 
-      onComplete()
+      await onComplete()
       return
     } catch (error) {
       if (attempt < MAX_RETRIES) {
         await new Promise(r => setTimeout(r, 1000))
       } else {
-        onError(error instanceof Error ? error : new Error(String(error)))
+        await onError(error instanceof Error ? error : new Error(String(error)))
       }
     }
   }
@@ -167,8 +168,8 @@ async function streamHFResponse({
 interface StreamGroqParams {
   messages: { role: 'system' | 'user' | 'assistant'; content: string }[]
   onToken: (token: string) => void
-  onComplete: () => void
-  onError: (error: Error) => void
+  onComplete: () => Promise<void>
+  onError: (error: Error) => Promise<void>
 }
 
 async function streamGroqResponse({
@@ -179,7 +180,7 @@ async function streamGroqResponse({
 }: StreamGroqParams): Promise<void> {
   const apiKey = process.env.GROQ_API_KEY
   if (!apiKey) {
-    onError(new Error('GROQ_API_KEY environment variable is not set'))
+    await onError(new Error('GROQ_API_KEY environment variable is not set'))
     return
   }
   try {
@@ -200,12 +201,12 @@ async function streamGroqResponse({
 
     if (!response.ok) {
       const error = await response.text()
-      onError(new Error(`Groq API error: ${response.status} - ${error}`))
+      await onError(new Error(`Groq API error: ${response.status} - ${error}`))
       return
     }
 
     if (!response.body) {
-      onError(new Error('Groq response body is null'))
+      await onError(new Error('Groq response body is null'))
       return
     }
 
@@ -225,7 +226,7 @@ async function streamGroqResponse({
         if (line.startsWith('data: ')) {
           const data = line.slice(6)
           if (data === '[DONE]') {
-            onComplete()
+            await onComplete()
             return
           }
           try {
@@ -246,9 +247,9 @@ async function streamGroqResponse({
       }
     }
 
-    onComplete()
+    await onComplete()
   } catch (error) {
-    onError(error instanceof Error ? error : new Error(String(error)))
+    await onError(error instanceof Error ? error : new Error(String(error)))
   }
 }
 

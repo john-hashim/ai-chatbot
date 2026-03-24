@@ -114,12 +114,23 @@ export const chatController = async (req: Request, res: Response, next: NextFunc
     // Send sessionId immediately
     sendSSE({ type: 'session', sessionId })
 
-    // --- RAG: embed + search ---
+    // --- RAG: embed + search, parallel with chat history fetch ---
     const startTime = Date.now()
 
     let queryEmbedding: number[]
+    let recentMessages: Awaited<ReturnType<typeof prisma.chatMessage.findMany>>
+
     try {
-      queryEmbedding = await chatService.generateEmbedding(message)
+      const results = await Promise.all([
+        chatService.generateEmbedding(message),
+        prisma.chatMessage.findMany({
+          where: { sessionId },
+          orderBy: { createdAt: 'desc' },
+          take: 10,
+        }),
+      ])
+      queryEmbedding = results[0]
+      recentMessages = results[1]
     } catch (err) {
       sendSSE({ type: 'error', message: 'Failed to generate embedding' })
       res.end()
@@ -136,12 +147,6 @@ export const chatController = async (req: Request, res: Response, next: NextFunc
         ? relevantChunks.reduce((sum, c) => sum + c.similarity, 0) / relevantChunks.length
         : 0
 
-    // Fetch last 10 messages (desc to get most recent, then reverse for chronological order)
-    const recentMessages = await prisma.chatMessage.findMany({
-      where: { sessionId },
-      orderBy: { createdAt: 'desc' },
-      take: 10,
-    })
     const chatHistory = recentMessages
       .reverse()
       .slice(0, -1) // exclude the user message we just saved
@@ -225,7 +230,7 @@ export const chatController = async (req: Request, res: Response, next: NextFunc
             sessionId,
             role: 'assistant',
             content: fullResponse,
-            model: 'meta-llama/Llama-3.1-8B-Instruct',
+            model: chatService.ACTIVE_MODEL,
             responseTime,
             sources: sourceDocIds,
             confidenceScore,
@@ -249,7 +254,7 @@ export const chatController = async (req: Request, res: Response, next: NextFunc
             sessionId,
             role: 'assistant',
             content: errorMessage,
-            model: 'meta-llama/Llama-3.1-8B-Instruct',
+            model: chatService.ACTIVE_MODEL,
             responseTime: Date.now() - startTime,
             sources: [],
             confidenceScore: 0,
