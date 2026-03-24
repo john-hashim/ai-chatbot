@@ -13,8 +13,9 @@ import { generateEmbedding } from './embedding.service.js'
 const USE_GROQ = process.env.USE_GROQ === 'true'
 
 const LLM_MODEL = 'meta-llama/Llama-3.1-8B-Instruct'
-const GROQ_MODEL = 'llama-3.1-8b-instant'
-const SIMILARITY_THRESHOLD = USE_GROQ ? 0.0 : 0.4
+// const GROQ_MODEL = 'gemma2-9b-it'
+const GROQ_MODEL = 'llama-3.3-70b-versatile'
+const SIMILARITY_THRESHOLD = 0.4
 const MAX_CONTEXT_CHARS = 4000
 
 export interface RelevantChunk {
