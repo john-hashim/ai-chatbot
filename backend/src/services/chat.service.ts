@@ -3,19 +3,16 @@
  *
  * Handles RAG (Retrieval-Augmented Generation) for chatbot conversations:
  * 1. Vector search for relevant document chunks
- * 2. LLM response streaming via Hugging Face Inference API or Groq
+ * 2. LLM response streaming via Groq SDK
  */
 
-import { InferenceClient } from '@huggingface/inference'
+import Groq from 'groq-sdk'
 import { prisma } from '../prisma/client.js'
 import { generateEmbedding } from './embedding.service.js'
 
-const USE_GROQ = process.env.USE_GROQ === 'true'
-
-const LLM_MODEL = 'meta-llama/Llama-3.1-8B-Instruct'
 // const GROQ_MODEL = 'gemma2-9b-it'
 const GROQ_MODEL = 'llama-3.3-70b-versatile'
-export const ACTIVE_MODEL = USE_GROQ ? GROQ_MODEL : LLM_MODEL
+export const ACTIVE_MODEL = GROQ_MODEL
 const SIMILARITY_THRESHOLD = 0.4
 const MAX_CONTEXT_CHARS = 4000
 
@@ -75,7 +72,7 @@ interface StreamLLMParams {
 }
 
 /**
- * Stream an LLM response using Hugging Face or Groq based on USE_GROQ env var
+ * Stream an LLM response via Groq SDK
  */
 export async function streamLLMResponse({
   message,
@@ -102,147 +99,25 @@ export async function streamLLMResponse({
     { role: 'user', content: message },
   ]
 
-  if (USE_GROQ) {
-    await streamGroqResponse({ messages, onToken, onComplete, onError })
-  } else {
-    await streamHFResponse({ messages, onToken, onComplete, onError })
-  }
-}
+  const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
 
-interface StreamHFParams {
-  messages: { role: 'system' | 'user' | 'assistant'; content: string }[]
-  onToken: (token: string) => void
-  onComplete: () => Promise<void>
-  onError: (error: Error) => Promise<void>
-}
-
-async function streamHFResponse({
-  messages,
-  onToken,
-  onComplete,
-  onError,
-}: StreamHFParams): Promise<void> {
-  const apiKey = process.env.HUGGINGFACE_API_KEY
-  if (!apiKey) {
-    await onError(new Error('HUGGINGFACE_API_KEY environment variable is not set'))
-    return
-  }
-
-  const hf = new InferenceClient(apiKey)
-  const MAX_RETRIES = 2
-
-  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-    try {
-      const stream = hf.chatCompletionStream({
-        model: LLM_MODEL,
-        messages,
-        max_tokens: 512,
-        temperature: 0.7,
-        top_p: 0.95,
-      })
-
-      for await (const chunk of stream) {
-        const token = chunk.choices?.[0]?.delta?.content
-        if (token) {
-          const words = token.split(/(\s+)/)
-          for (const word of words) {
-            if (!word) continue
-            await new Promise(r => setTimeout(r, 20))
-            onToken(word)
-          }
-        }
-      }
-
-      await onComplete()
-      return
-    } catch (error) {
-      if (attempt < MAX_RETRIES) {
-        await new Promise(r => setTimeout(r, 1000))
-      } else {
-        await onError(error instanceof Error ? error : new Error(String(error)))
-      }
-    }
-  }
-}
-
-interface StreamGroqParams {
-  messages: { role: 'system' | 'user' | 'assistant'; content: string }[]
-  onToken: (token: string) => void
-  onComplete: () => Promise<void>
-  onError: (error: Error) => Promise<void>
-}
-
-async function streamGroqResponse({
-  messages,
-  onToken,
-  onComplete,
-  onError,
-}: StreamGroqParams): Promise<void> {
-  const apiKey = process.env.GROQ_API_KEY
-  if (!apiKey) {
-    await onError(new Error('GROQ_API_KEY environment variable is not set'))
-    return
-  }
   try {
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: GROQ_MODEL,
-        messages,
-        max_tokens: 512,
-        temperature: 0.7,
-        stream: true,
-      }),
+    const stream = await groq.chat.completions.create({
+      model: GROQ_MODEL,
+      messages,
+      max_tokens: 512,
+      temperature: 0.7,
+      stream: true,
     })
 
-    if (!response.ok) {
-      const error = await response.text()
-      await onError(new Error(`Groq API error: ${response.status} - ${error}`))
-      return
-    }
-
-    if (!response.body) {
-      await onError(new Error('Groq response body is null'))
-      return
-    }
-
-    const reader = response.body.getReader()
-    const decoder = new TextDecoder()
-    let buffer = ''
-
-    while (true) {
-      const { done, value } = await reader.read()
-      if (done) break
-
-      buffer += decoder.decode(value, { stream: true })
-      const lines = buffer.split('\n')
-      buffer = lines.pop() || ''
-
-      for (const line of lines) {
-        if (line.startsWith('data: ')) {
-          const data = line.slice(6)
-          if (data === '[DONE]') {
-            await onComplete()
-            return
-          }
-          try {
-            const parsed = JSON.parse(data)
-            const token = parsed.choices?.[0]?.delta?.content
-            if (token) {
-              const words = token.split(/(\s+)/)
-              for (const word of words) {
-                if (!word) continue
-                await new Promise(r => setTimeout(r, 20))
-                onToken(word)
-              }
-            }
-          } catch {
-            // Skip malformed JSON
-          }
+    for await (const chunk of stream) {
+      const token = chunk.choices[0]?.delta?.content
+      if (token) {
+        const words = token.split(/(\s+)/)
+        for (const word of words) {
+          if (!word) continue
+          await new Promise(r => setTimeout(r, 20))
+          onToken(word)
         }
       }
     }

@@ -28,6 +28,7 @@
     "dotenv": "^17.2.2",
     "express": "^5.1.0",
     "google-auth-library": "^10.4.0",
+    "groq-sdk": "^1.1.1",
     "mammoth": "^1.11.0",
     "multer": "^2.0.2",
     "pdf-parse": "^2.4.5",
