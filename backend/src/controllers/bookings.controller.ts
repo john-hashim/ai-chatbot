@@ -492,6 +492,9 @@ export const confirmBooking = async (req: Request, res: Response, next: NextFunc
       } satisfies ApiResponse)
     }
 
+    // TODO: Race condition — two users can pass this check simultaneously before either inserts.
+    // Fix: add @@unique([chatbotId, date, timeslot, status]) to Appointment schema
+    // and catch Prisma P2002 error on create instead of relying on this check alone.
     const existing = await prisma.appointment.findFirst({
       where: { chatbotId, date, timeslot, status: 'CONFIRMED' },
     })
@@ -533,6 +536,44 @@ export const confirmBooking = async (req: Request, res: Response, next: NextFunc
       status: ApiStatus.SUCCESS,
       message: 'Appointment confirmed successfully',
       data: { appointment, message },
+    } satisfies ApiResponse)
+  } catch (error) {
+    next(error)
+  }
+}
+
+export const cancelBookingFlow = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { chatbotId } = req.params
+    const { sessionId } = req.body
+
+    if (!chatbotId) {
+      return res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'Chatbot ID is required',
+      } satisfies ApiResponse)
+    }
+
+    if (!sessionId) {
+      return res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'sessionId is required',
+      } satisfies ApiResponse)
+    }
+
+    const message = await prisma.chatMessage.create({
+      data: {
+        sessionId,
+        role: 'assistant',
+        content: 'No problem! Is there anything else I can help you with?',
+        sources: [],
+      },
+    })
+
+    return res.status(200).json({
+      status: ApiStatus.SUCCESS,
+      message: 'Booking flow cancelled',
+      data: { message },
     } satisfies ApiResponse)
   } catch (error) {
     next(error)
