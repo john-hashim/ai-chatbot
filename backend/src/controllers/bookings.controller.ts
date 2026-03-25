@@ -5,6 +5,7 @@ import timezone from 'dayjs/plugin/timezone.js'
 import customParseFormat from 'dayjs/plugin/customParseFormat.js'
 import { ApiStatus, type ApiResponse } from '../types/api.js'
 import { prisma } from '../prisma/client.js'
+import { error } from 'console'
 
 dayjs.extend(utc)
 dayjs.extend(timezone)
@@ -348,6 +349,93 @@ export const deleteSlot = async (req: Request, res: Response, next: NextFunction
     return res.status(200).json({
       status: ApiStatus.SUCCESS,
       message: 'Availability slot deleted successfully',
+    } satisfies ApiResponse)
+  } catch (error) {
+    next(error)
+  }
+}
+
+export const getTimeSlotsForDate = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { chatbotId } = req.params
+    const { sessionId, date } = req.body
+
+    if (!chatbotId) {
+      return res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'Chatbot ID is required',
+      } satisfies ApiResponse)
+    }
+
+    if (!sessionId || !date) {
+      return res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'sessionId and date are required',
+      } satisfies ApiResponse)
+    }
+
+    const parsedDate = dayjs(date)
+    if (!parsedDate.isValid()) {
+      return res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'Invalid date format',
+      } satisfies ApiResponse)
+    }
+
+    const dayOfWeek = parsedDate.day()
+
+    const [availabilities, bookingConfig] = await Promise.all([
+      prisma.availabilitySchedule.findMany({
+        where: {
+          chatbotId,
+          OR: [
+            { scheduleType: 'SPECIFIC_DATE', specificDate: parsedDate.toDate() },
+            { scheduleType: 'WEEKLY', dayOfWeek },
+          ],
+        },
+      }),
+      prisma.bookingConfig.findUnique({ where: { chatbotId } }),
+    ])
+
+    const duration = bookingConfig?.appointmentDuration ?? 30
+
+    const timeslots = availabilities
+      .flatMap(a => a.timeSlots as { startTime: string; endTime: string }[])
+      .flatMap(slot => {
+        const isISO = slot.startTime.includes('T')
+        const start = isISO ? dayjs(slot.startTime) : dayjs(`${date} ${slot.startTime}`, 'YYYY-MM-DD HH:mm')
+        const end = isISO ? dayjs(slot.endTime) : dayjs(`${date} ${slot.endTime}`, 'YYYY-MM-DD HH:mm')
+
+        const slots: string[] = []
+        let current = start
+        while (current.isBefore(end)) {
+          slots.push(current.format('HH:mm'))
+          current = current.add(duration, 'minute')
+        }
+        return slots
+      })
+      .sort()
+
+    const uniqueTimeslots = [...new Set(timeslots)]
+
+    const messageContent =
+      uniqueTimeslots.length === 0
+        ? `Sorry, there are no available time slots for ${date}.`
+        : `Here are the available time slots for ${date}: ${uniqueTimeslots.join(', ')}. Please select one.`
+
+    const message = await prisma.chatMessage.create({
+      data: {
+        sessionId,
+        role: 'assistant',
+        content: messageContent,
+        sources: [],
+      },
+    })
+
+    return res.status(200).json({
+      status: ApiStatus.SUCCESS,
+      message: 'Time slots fetched successfully',
+      data: { date, timeslots: uniqueTimeslots, message },
     } satisfies ApiResponse)
   } catch (error) {
     next(error)
