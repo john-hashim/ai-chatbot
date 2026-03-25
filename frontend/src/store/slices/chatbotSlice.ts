@@ -84,11 +84,16 @@ export const createChatbotSlice: StateCreator<
   // Chatbot actions
 
   getChatbots: async () => {
-    const response = await chatbotService.getChabots()
-    if (!response.data.data) {
-      throw new Error('No data received from server')
+    set({ isLoadingChatbot: true }, undefined, '[Chat Bot] Set Chat Bots Loading')
+    try {
+      const response = await chatbotService.getChabots()
+      if (!response.data.data) {
+        throw new Error('No data received from server')
+      }
+      set({ chatbots: response.data.data }, undefined, '[Chat Bot] Set Chat Bots')
+    } finally {
+      set({ isLoadingChatbot: false }, undefined, '[Chat Bot] Set Chat Bots Loading Done')
     }
-    set({ chatbots: response.data.data }, undefined, '[Chat Bot] Set Chat Bots')
   },
 
   getChatbot: async (chatbotId?: string) => {

@@ -27,6 +27,7 @@ export const Landing: React.FC = () => {
     chatbots,
     deleteChatbot,
     clearChatSessions,
+    isLoadingChatbot,
   } = useChatbotStore()
   const { clearAvailabilities } = useBookingStore()
   const { user } = useUserStore()
@@ -92,7 +93,27 @@ export const Landing: React.FC = () => {
 
   return (
     <main className="px-5 py-6 lg:px-10">
-      {chatbots && chatbots.length > 0 ? (
+      {isLoadingChatbot ? (
+        <div>
+          <div className="mt-5 flex items-center justify-between">
+            <p className="text-3xl font-semibold">Chatbots</p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-12 mt-6">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div
+                key={i}
+                className="border border-border-week rounded-lg overflow-hidden max-w-sm animate-pulse"
+              >
+                <div className="h-40 bg-gray-100" />
+                <div className="p-4 border-t border-border-week">
+                  <div className="h-3.5 bg-gray-200 rounded w-1/2 mb-2" />
+                  <div className="h-3 bg-gray-100 rounded w-2/3" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : chatbots && chatbots.length > 0 ? (
         <div>
           <div className="mt-5 flex items-center justify-between">
             <p className="text-3xl font-semibold">Chatbots</p>
