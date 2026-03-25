@@ -50,6 +50,9 @@ export const ENDPOINTS = {
     DELETE_SLOT: 'chatbot/:chatbotId/availability/:slotId',
     GET_CONFIG: 'chatbot/:chatbotId/booking-config',
     UPDATE_CONFIG: 'chatbot/:chatbotId/booking-config',
+    GET_TIMESLOTS: 'chatbot/:chatbotId/booking/timeslots',
+    CONFIRM: 'chatbot/:chatbotId/booking/confirm',
+    CANCEL: 'chatbot/:chatbotId/booking/cancel',
   },
 } as const
 

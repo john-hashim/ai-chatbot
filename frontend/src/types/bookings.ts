@@ -57,3 +57,51 @@ export interface UpdateBookingConfigRequest {
   timezone?: string
   appointmentDuration?: number
 }
+
+export interface GetTimeSlotsRequest {
+  sessionId: string
+  date: string
+}
+
+export interface GetTimeSlotsResponse {
+  date: string
+  timeslots: string[]
+  message: ChatMessage
+}
+
+export interface ConfirmBookingRequest {
+  sessionId: string
+  date: string
+  timeslot: string
+  email: string
+}
+
+export interface Appointment {
+  id: string
+  chatbotId: string
+  sessionId: string
+  email: string
+  date: string
+  timeslot: string
+  status: 'PENDING' | 'CONFIRMED' | 'CANCELLED'
+  createdAt: string
+  updatedAt: string
+}
+
+export interface ConfirmBookingResponse {
+  appointment: Appointment
+  message: ChatMessage
+}
+
+export interface CancelBookingResponse {
+  message: ChatMessage
+}
+
+export interface ChatMessage {
+  id: string
+  sessionId: string
+  role: 'user' | 'assistant'
+  content: string
+  sources: string[]
+  createdAt: string
+}

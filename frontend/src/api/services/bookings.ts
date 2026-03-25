@@ -8,6 +8,11 @@ import type {
   UpdateTimeSlotsRequest,
   BookingConfig,
   UpdateBookingConfigRequest,
+  GetTimeSlotsRequest,
+  GetTimeSlotsResponse,
+  ConfirmBookingRequest,
+  ConfirmBookingResponse,
+  CancelBookingResponse,
 } from '@/types/bookings'
 
 export const bookingsService = {
@@ -64,6 +69,36 @@ export const bookingsService = {
     return apiClient.patch(
       ENDPOINTS.BOOKINGS.UPDATE_CONFIG.replace(':chatbotId', chatbotId),
       data
+    )
+  },
+
+  getTimeSlotsForDate: (
+    chatbotId: string,
+    data: GetTimeSlotsRequest
+  ): Promise<AxiosResponse<ApiResponse<GetTimeSlotsResponse>>> => {
+    return apiClient.post(
+      ENDPOINTS.BOOKINGS.GET_TIMESLOTS.replace(':chatbotId', chatbotId),
+      data
+    )
+  },
+
+  confirmBooking: (
+    chatbotId: string,
+    data: ConfirmBookingRequest
+  ): Promise<AxiosResponse<ApiResponse<ConfirmBookingResponse>>> => {
+    return apiClient.post(
+      ENDPOINTS.BOOKINGS.CONFIRM.replace(':chatbotId', chatbotId),
+      data
+    )
+  },
+
+  cancelBookingFlow: (
+    chatbotId: string,
+    sessionId: string
+  ): Promise<AxiosResponse<ApiResponse<CancelBookingResponse>>> => {
+    return apiClient.post(
+      ENDPOINTS.BOOKINGS.CANCEL.replace(':chatbotId', chatbotId),
+      { sessionId }
     )
   },
 }
