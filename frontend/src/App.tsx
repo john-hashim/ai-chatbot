@@ -19,32 +19,35 @@ import {
   Tabs,
   NumberInput,
   Textarea,
+  LoadingOverlay,
 } from '@mantine/core'
 import { Notifications } from '@mantine/notifications'
 import { ModalsProvider } from '@mantine/modals'
 
-import Login from '@/feature/auth/Login'
+import { lazy, Suspense } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { GoogleOAuthProvider } from '@react-oauth/google'
 import { Dropzone } from '@mantine/dropzone'
 import { ProtectedRoute } from '@/routes/ProtectedRoute'
 import { MainLayout } from '@/components/layout/MainLayout'
 import { useStore } from '@/store'
-import { Landing } from '@/feature/Landing/Landing'
-import { ChatbotBasicSetup } from './feature/create-chatbot/ChatbotBasicSetup'
-import { ChatbotKnowledgeBaseSetup } from './feature/create-chatbot/ChatbotKnowledgeBaseSetup'
-import { ChatbotDashboard } from './feature/chatbot/ChatbotDashboard'
-import { Playground } from './feature/playground/Playground'
-import { Customize } from './feature/customize/Customize'
-import { KnowledgeBase } from './feature/knowledgebase/KnowledgeBase'
-import { Chats } from './feature/chats/Chats'
-import { Analytics } from './feature/analytics/Analytics'
-import { Contacts } from './feature/contacts/Contacts'
-import { Automations } from './feature/automations/Automations'
-import { Deploy } from './feature/deploy/Deploy'
-import { Bookings } from './feature/bookings/Bookings'
-import { AccountSettings } from './feature/account/AccountSettings'
-import { Billing } from './feature/billing/Billing'
+
+const Login = lazy(() => import('@/feature/auth/Login'))
+const Landing = lazy(() => import('@/feature/Landing/Landing').then(m => ({ default: m.Landing })))
+const ChatbotBasicSetup = lazy(() => import('./feature/create-chatbot/ChatbotBasicSetup').then(m => ({ default: m.ChatbotBasicSetup })))
+const ChatbotKnowledgeBaseSetup = lazy(() => import('./feature/create-chatbot/ChatbotKnowledgeBaseSetup').then(m => ({ default: m.ChatbotKnowledgeBaseSetup })))
+const ChatbotDashboard = lazy(() => import('./feature/chatbot/ChatbotDashboard').then(m => ({ default: m.ChatbotDashboard })))
+const Playground = lazy(() => import('./feature/playground/Playground').then(m => ({ default: m.Playground })))
+const Customize = lazy(() => import('./feature/customize/Customize').then(m => ({ default: m.Customize })))
+const KnowledgeBase = lazy(() => import('./feature/knowledgebase/KnowledgeBase').then(m => ({ default: m.KnowledgeBase })))
+const Chats = lazy(() => import('./feature/chats/Chats').then(m => ({ default: m.Chats })))
+const Analytics = lazy(() => import('./feature/analytics/Analytics').then(m => ({ default: m.Analytics })))
+const Contacts = lazy(() => import('./feature/contacts/Contacts').then(m => ({ default: m.Contacts })))
+const Automations = lazy(() => import('./feature/automations/Automations').then(m => ({ default: m.Automations })))
+const Deploy = lazy(() => import('./feature/deploy/Deploy').then(m => ({ default: m.Deploy })))
+const Bookings = lazy(() => import('./feature/bookings/Bookings').then(m => ({ default: m.Bookings })))
+const AccountSettings = lazy(() => import('./feature/account/AccountSettings').then(m => ({ default: m.AccountSettings })))
+const Billing = lazy(() => import('./feature/billing/Billing').then(m => ({ default: m.Billing })))
 
 const theme = createTheme({
   colors: {
@@ -150,48 +153,50 @@ function AppRoutes() {
   const token = useStore(state => state.token)
 
   return (
-    <Routes>
-      <Route
-        path="/login"
-        element={token ? <Navigate to="/chatbot/landing" replace /> : <Login />}
-      />
-      <Route
-        element={
-          <ProtectedRoute>
-            <MainLayout />
-          </ProtectedRoute>
-        }
-      >
-        <Route path="/landing" element={<Navigate to="/chatbot/landing" replace />} />
-        <Route path="/chatbot/landing" element={<Landing />} />
-        <Route path="/account" element={<AccountSettings />} />
-        <Route path="/billing" element={<Billing />} />
-        <Route path="/chatbot/new" element={<ChatbotBasicSetup />} />
+    <Suspense fallback={<LoadingOverlay visible zIndex={1000} overlayProps={{ blur: 2 }} />}>
+      <Routes>
         <Route
-          path="/chatbot/:chatbotId/setup-knowledgebase"
-          element={<ChatbotKnowledgeBaseSetup />}
+          path="/login"
+          element={token ? <Navigate to="/chatbot/landing" replace /> : <Login />}
         />
-        <Route path="/chatbot/:chatbotId" element={<ChatbotDashboard />}>
-          <Route index element={<Playground />} />
-          <Route path="playground" element={<Playground />} />
-          <Route path="customize" element={<Customize />} />
-          <Route path="knowledge-base" element={<KnowledgeBase />} />
-          <Route path="chats" element={<Chats />} />
-          <Route path="bookings" element={<Bookings />} />
-          <Route path="analytics" element={<Analytics />} />
-          <Route path="contacts" element={<Contacts />} />
-          <Route path="automations" element={<Automations />} />
-          <Route path="deploy" element={<Deploy />} />
+        <Route
+          element={
+            <ProtectedRoute>
+              <MainLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route path="/landing" element={<Navigate to="/chatbot/landing" replace />} />
+          <Route path="/chatbot/landing" element={<Landing />} />
+          <Route path="/account" element={<AccountSettings />} />
+          <Route path="/billing" element={<Billing />} />
+          <Route path="/chatbot/new" element={<ChatbotBasicSetup />} />
+          <Route
+            path="/chatbot/:chatbotId/setup-knowledgebase"
+            element={<ChatbotKnowledgeBaseSetup />}
+          />
+          <Route path="/chatbot/:chatbotId" element={<ChatbotDashboard />}>
+            <Route index element={<Playground />} />
+            <Route path="playground" element={<Playground />} />
+            <Route path="customize" element={<Customize />} />
+            <Route path="knowledge-base" element={<KnowledgeBase />} />
+            <Route path="chats" element={<Chats />} />
+            <Route path="bookings" element={<Bookings />} />
+            <Route path="analytics" element={<Analytics />} />
+            <Route path="contacts" element={<Contacts />} />
+            <Route path="automations" element={<Automations />} />
+            <Route path="deploy" element={<Deploy />} />
+          </Route>
         </Route>
-      </Route>
-      <Route
-        path="/"
-        element={
-          token ? <Navigate to="/chatbot/landing" replace /> : <Navigate to="/login" replace />
-        }
-      />
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+        <Route
+          path="/"
+          element={
+            token ? <Navigate to="/chatbot/landing" replace /> : <Navigate to="/login" replace />
+          }
+        />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Suspense>
   )
 }
 
