@@ -71,3 +71,31 @@ th {
   animation: none !important;
   opacity: 1 !important;
 }
+
+/* User menu popup buttons */
+.menu-btn {
+  font-size: 14px;
+  cursor: pointer;
+  color: var(--color-text-weak);
+  border-radius: 10px;
+  background: transparent;
+  border: none;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  text-align: left;
+  transition: background-color 0.4s ease, color 0.4s ease;
+}
+.menu-btn:hover {
+  background-color: var(--color-icon-bg-hover);
+  color: var(--color-text-primary);
+}
+.menu-btn-danger {
+  color: #f87171;
+}
+.menu-btn-danger:hover {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #f87171;
+}

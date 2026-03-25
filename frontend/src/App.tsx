@@ -43,6 +43,8 @@ import { Contacts } from './feature/contacts/Contacts'
 import { Automations } from './feature/automations/Automations'
 import { Deploy } from './feature/deploy/Deploy'
 import { Bookings } from './feature/bookings/Bookings'
+import { AccountSettings } from './feature/account/AccountSettings'
+import { Billing } from './feature/billing/Billing'
 
 const theme = createTheme({
   colors: {
@@ -160,7 +162,10 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       >
+        <Route path="/landing" element={<Navigate to="/chatbot/landing" replace />} />
         <Route path="/chatbot/landing" element={<Landing />} />
+        <Route path="/account" element={<AccountSettings />} />
+        <Route path="/billing" element={<Billing />} />
         <Route path="/chatbot/new" element={<ChatbotBasicSetup />} />
         <Route
           path="/chatbot/:chatbotId/setup-knowledgebase"
