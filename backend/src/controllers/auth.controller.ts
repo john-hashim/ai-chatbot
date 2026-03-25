@@ -3,6 +3,7 @@ import crypto from 'crypto'
 import { prisma } from '../prisma/client.js'
 import { OAuth2Client } from 'google-auth-library'
 import { ApiStatus, type ApiResponse } from '../types/api.js'
+import * as r2Service from '../services/r2.service.js'
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID)
 
@@ -138,6 +139,121 @@ export const googleSignIn = async (req: Request, res: Response, next: NextFuncti
       return
     }
 
+    next(error)
+  }
+}
+
+export const updateAvatar = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const userId = req.user?.id
+    const { avatar } = req.body
+
+    // If removing, delete old file from R2
+    if (avatar === null || avatar === '') {
+      const existing = await prisma.user.findUnique({ where: { id: userId }, select: { avatar: true } })
+      if (existing?.avatar) {
+        try {
+          await r2Service.deleteFile(existing.avatar)
+        } catch {
+          // Continue even if R2 delete fails
+        }
+      }
+    }
+
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data: { avatar: avatar || null },
+      select: { id: true, email: true, name: true, avatar: true },
+    })
+
+    res.status(200).json({
+      status: ApiStatus.SUCCESS,
+      message: 'Avatar updated successfully',
+      data: user,
+    } satisfies ApiResponse)
+  } catch (error) {
+    next(error)
+  }
+}
+
+export const updateName = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const userId = req.user?.id
+    const { name } = req.body
+
+    if (!name || typeof name !== 'string' || !name.trim()) {
+      res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'Name is required',
+      } satisfies ApiResponse)
+      return
+    }
+
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data: { name: name.trim() },
+      select: { id: true, email: true, name: true, avatar: true },
+    })
+
+    res.status(200).json({
+      status: ApiStatus.SUCCESS,
+      message: 'Name updated successfully',
+      data: user,
+    } satisfies ApiResponse)
+  } catch (error) {
+    next(error)
+  }
+}
+
+export const updateEmail = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const userId = req.user?.id
+    const { email } = req.body
+
+    if (!email || typeof email !== 'string' || !email.trim()) {
+      res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'Email is required',
+      } satisfies ApiResponse)
+      return
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email.trim())) {
+      res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'Invalid email address',
+      } satisfies ApiResponse)
+      return
+    }
+
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data: { email: email.trim() },
+      select: { id: true, email: true, name: true, avatar: true },
+    })
+
+    res.status(200).json({
+      status: ApiStatus.SUCCESS,
+      message: 'Email updated successfully',
+      data: user,
+    } satisfies ApiResponse)
+  } catch (error) {
+    next(error)
+  }
+}
+
+export const deleteAccount = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const userId = req.user?.id
+
+    await prisma.user.delete({ where: { id: userId } })
+
+    res.status(200).json({
+      status: ApiStatus.SUCCESS,
+      message: 'Account deleted successfully',
+    } satisfies ApiResponse)
+  } catch (error) {
     next(error)
   }
 }

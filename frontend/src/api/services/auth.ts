@@ -30,4 +30,20 @@ export const authService = {
   logout: (): Promise<AxiosResponse<ApiResponse>> => {
     return apiClient.post(ENDPOINTS.AUTH.LOGOUT)
   },
+
+  updateAvatar: (avatar: string | null): Promise<AxiosResponse<ApiResponse<User>>> => {
+    return apiClient.patch(ENDPOINTS.AUTH.UPDATE_AVATAR, { avatar })
+  },
+
+  updateName: (name: string): Promise<AxiosResponse<ApiResponse<User>>> => {
+    return apiClient.patch(ENDPOINTS.AUTH.UPDATE_NAME, { name })
+  },
+
+  updateEmail: (email: string): Promise<AxiosResponse<ApiResponse<User>>> => {
+    return apiClient.patch(ENDPOINTS.AUTH.UPDATE_EMAIL, { email })
+  },
+
+  deleteAccount: (): Promise<AxiosResponse<ApiResponse>> => {
+    return apiClient.delete(ENDPOINTS.AUTH.DELETE_ACCOUNT)
+  },
 }

@@ -12,6 +12,7 @@ export interface UserSlice {
 
   googleSignIn: (data: GoogleSignInRequest) => Promise<void>
   logout: () => void
+  updateUser: (updates: Partial<User>) => void
 }
 
 export const createUserSlice: StateCreator<UserSlice> = set => ({
@@ -49,4 +50,6 @@ export const createUserSlice: StateCreator<UserSlice> = set => ({
     }
   },
   logout: () => set({ user: null, token: null, isAuthenticated: false, error: null }),
+  updateUser: (updates: Partial<User>) =>
+    set(state => ({ user: state.user ? { ...state.user, ...updates } : state.user })),
 })

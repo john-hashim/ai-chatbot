@@ -35,6 +35,7 @@ export const useUserStore = () =>
       error: state.error,
       googleSignIn: state.googleSignIn,
       logout: state.logout,
+      updateUser: state.updateUser,
     }))
   )
 

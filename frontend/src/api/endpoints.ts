@@ -3,6 +3,10 @@ export const ENDPOINTS = {
   AUTH: {
     GET_ME: '/auth/me',
     LOGOUT: '/auth/logout',
+    UPDATE_AVATAR: '/auth/me/avatar',
+    UPDATE_NAME: '/auth/me/name',
+    UPDATE_EMAIL: '/auth/me/email',
+    DELETE_ACCOUNT: '/auth/me',
     GOOGLE: {
       SIGNIN: '/auth/google/signin', // POST - API-based Google sign-in
     },
