@@ -29,11 +29,14 @@ export const Header: React.FC = () => {
     logout()
   }, [executeLogout, clearChatbotState, logout])
 
-  const handleNav = useCallback((path: string) => {
-    setPopoverOpen(false)
-    const resolved = path === '/landing' ? '/chatbot/landing' : path
-    if (location.pathname !== resolved) navigate(path)
-  }, [location.pathname, navigate])
+  const handleNav = useCallback(
+    (path: string) => {
+      setPopoverOpen(false)
+      const resolved = path === '/landing' ? '/chatbot/landing' : path
+      if (location.pathname !== resolved) navigate(path)
+    },
+    [location.pathname, navigate]
+  )
 
   const onWorkspaceClick = useCallback(() => {
     if (location.pathname !== '/chatbot/landing') navigate('/landing')
@@ -41,7 +44,12 @@ export const Header: React.FC = () => {
 
   const initials = useMemo(() => {
     if (!user?.name) return '?'
-    return user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+    return user.name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2)
   }, [user?.name])
 
   return (
@@ -65,6 +73,9 @@ export const Header: React.FC = () => {
                 <span className="text-text-primary font-semibold truncate max-w-[100px] md:max-w-[200px]">
                   {currentChatbot.name}
                 </span>
+                <span className="ml-2 px-2 py-0.5 text-xs font-medium text-gray-500 bg-gray-100 border border-gray-300 rounded-full whitespace-nowrap">
+                  Chatbot
+                </span>
               </>
             )}
           </div>
@@ -73,12 +84,20 @@ export const Header: React.FC = () => {
 
       <div className="flex-1" />
 
-      <Popover opened={popoverOpen} onChange={setPopoverOpen} position="bottom-end" offset={8} shadow="md" width={220} transitionProps={{ transition: 'pop-top-right', duration: 180 }}>
+      <Popover
+        opened={popoverOpen}
+        onChange={setPopoverOpen}
+        position="bottom-end"
+        offset={8}
+        shadow="md"
+        width={220}
+        transitionProps={{ transition: 'pop-top-right', duration: 180 }}
+      >
         <Popover.Target>
           <Avatar
             src={user?.avatar}
             alt={user?.name}
-            size={28}
+            size={24}
             radius="xl"
             className="cursor-pointer"
             color="brand"
@@ -94,9 +113,7 @@ export const Header: React.FC = () => {
             <p className="text-[12px] font-semibold text-text-primary leading-[1.3]">
               {user?.name}
             </p>
-            <p className="text-[12px] text-text-weak mt-0.5 truncate">
-              {user?.email}
-            </p>
+            <p className="text-[12px] text-text-weak mt-0.5 truncate">{user?.email}</p>
           </div>
 
           <Divider my={8} />
