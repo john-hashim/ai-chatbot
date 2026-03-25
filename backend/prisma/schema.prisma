@@ -73,6 +73,7 @@ model Chatbot {
   embedConfig              EmbedConfig?
   availabilitySchedules    AvailabilitySchedule[]
   bookingConfig            BookingConfig?
+  appointments             Appointment[]
 
   @@unique([name, userId])
   @@index([userId])
@@ -201,4 +202,28 @@ model AvailabilitySchedule {
 enum ScheduleType {
   WEEKLY
   SPECIFIC_DATE
+}
+
+model Appointment {
+    id         String            @id @default(cuid())                                                            
+    chatbotId  String
+    sessionId  String                                                                                            
+    email      String
+    date       String            // "YYYY-MM-DD"
+    timeslot   String            // "HH:mm"                                                                      
+    status     AppointmentStatus @default(PENDING)
+    createdAt  DateTime          @default(now())                                                                 
+    updatedAt  DateTime          @updatedAt
+                                                                                                 
+    chatbot    Chatbot           @relation(fields: [chatbotId], references: [id], onDelete: Cascade)             
+
+    @@index([chatbotId])                                                                                         
+    @@index([sessionId])
+    @@map("appointments")     
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
 }

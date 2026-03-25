@@ -35,6 +35,7 @@ export const createChatbot = async (req: Request, res: Response, next: NextFunct
           create: {
             timezone: timezone || 'UTC',
             appointmentDuration: 30,
+            notificationEmail: user.email,
           },
         },
       },

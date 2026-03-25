@@ -35,6 +35,7 @@
     "pdfkit": "^0.17.2",
     "pgvector": "^0.2.1",
     "playwright": "^1.57.0",
+    "resend": "^6.9.4",
     "word-extractor": "^1.0.4"
   },
   "devDependencies": {

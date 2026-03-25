@@ -5,7 +5,10 @@ import timezone from 'dayjs/plugin/timezone.js'
 import customParseFormat from 'dayjs/plugin/customParseFormat.js'
 import { ApiStatus, type ApiResponse } from '../types/api.js'
 import { prisma } from '../prisma/client.js'
-import { error } from 'console'
+import {
+  sendBookingConfirmationToUser,
+  sendBookingNotificationToOwner,
+} from '../services/email.service.js'
 
 dayjs.extend(utc)
 dayjs.extend(timezone)
@@ -276,12 +279,18 @@ export const updateBookingConfig = async (req: Request, res: Response, next: Nex
       } satisfies ApiResponse)
     }
 
-    const { isEnabled, timezone: tz, appointmentDuration } = req.body
+    const { isEnabled, timezone: tz, appointmentDuration, notificationEmail } = req.body
 
-    if (isEnabled === undefined && tz === undefined && appointmentDuration === undefined) {
+    if (
+      isEnabled === undefined &&
+      tz === undefined &&
+      appointmentDuration === undefined &&
+      notificationEmail === undefined
+    ) {
       return res.status(400).json({
         status: ApiStatus.FAILURE,
-        message: 'At least one field (isEnabled, timezone, appointmentDuration) must be provided',
+        message:
+          'At least one field (isEnabled, timezone, appointmentDuration, notificationEmail) must be provided',
       } satisfies ApiResponse)
     }
 
@@ -303,12 +312,14 @@ export const updateBookingConfig = async (req: Request, res: Response, next: Nex
         ...(appointmentDuration !== undefined && {
           appointmentDuration: Number(appointmentDuration),
         }),
+        ...(notificationEmail !== undefined && { notificationEmail }),
       },
       create: {
         chatbotId,
         isEnabled: isEnabled ?? true,
         timezone: tz ?? 'UTC',
         appointmentDuration: appointmentDuration ? Number(appointmentDuration) : 30,
+        notificationEmail: notificationEmail ?? null,
       },
     })
 
@@ -403,8 +414,12 @@ export const getTimeSlotsForDate = async (req: Request, res: Response, next: Nex
       .flatMap(a => a.timeSlots as { startTime: string; endTime: string }[])
       .flatMap(slot => {
         const isISO = slot.startTime.includes('T')
-        const start = isISO ? dayjs(slot.startTime) : dayjs(`${date} ${slot.startTime}`, 'YYYY-MM-DD HH:mm')
-        const end = isISO ? dayjs(slot.endTime) : dayjs(`${date} ${slot.endTime}`, 'YYYY-MM-DD HH:mm')
+        const start = isISO
+          ? dayjs(slot.startTime)
+          : dayjs(`${date} ${slot.startTime}`, 'YYYY-MM-DD HH:mm')
+        const end = isISO
+          ? dayjs(slot.endTime)
+          : dayjs(`${date} ${slot.endTime}`, 'YYYY-MM-DD HH:mm')
 
         const slots: string[] = []
         let current = start
@@ -418,10 +433,18 @@ export const getTimeSlotsForDate = async (req: Request, res: Response, next: Nex
 
     const uniqueTimeslots = [...new Set(timeslots)]
 
+    // Filter out already booked slots
+    const bookedAppointments = await prisma.appointment.findMany({
+      where: { chatbotId, date, status: 'CONFIRMED' },
+      select: { timeslot: true },
+    })
+    const bookedTimes = new Set(bookedAppointments.map(a => a.timeslot))
+    const availableTimeslots = uniqueTimeslots.filter(t => !bookedTimes.has(t))
+
     const messageContent =
-      uniqueTimeslots.length === 0
+      availableTimeslots.length === 0
         ? `Sorry, there are no available time slots for ${date}.`
-        : `Here are the available time slots for ${date}: ${uniqueTimeslots.join(', ')}. Please select one.`
+        : `Here are the available time slots for ${date}: ${availableTimeslots.join(', ')}. Please select one.`
 
     const message = await prisma.chatMessage.create({
       data: {
@@ -435,7 +458,81 @@ export const getTimeSlotsForDate = async (req: Request, res: Response, next: Nex
     return res.status(200).json({
       status: ApiStatus.SUCCESS,
       message: 'Time slots fetched successfully',
-      data: { date, timeslots: uniqueTimeslots, message },
+      data: { date, timeslots: availableTimeslots, message },
+    } satisfies ApiResponse)
+  } catch (error) {
+    next(error)
+  }
+}
+
+export const confirmBooking = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { chatbotId } = req.params
+    const { sessionId, date, timeslot, email } = req.body
+
+    if (!chatbotId) {
+      return res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'Chatbot ID is required',
+      } satisfies ApiResponse)
+    }
+
+    if (!sessionId || !date || !timeslot || !email) {
+      return res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'sessionId, date, timeslot and email are required',
+      } satisfies ApiResponse)
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'Invalid email address',
+      } satisfies ApiResponse)
+    }
+
+    const existing = await prisma.appointment.findFirst({
+      where: { chatbotId, date, timeslot, status: 'CONFIRMED' },
+    })
+
+    if (existing) {
+      return res.status(409).json({
+        status: ApiStatus.FAILURE,
+        message: 'This time slot has just been booked. Please select another.',
+      } satisfies ApiResponse)
+    }
+
+    const bookingConfig = await prisma.bookingConfig.findUnique({ where: { chatbotId } })
+
+    const appointment = await prisma.appointment.create({
+      data: { chatbotId, sessionId, date, timeslot, email, status: 'CONFIRMED' },
+    })
+
+    const confirmationText =
+      bookingConfig?.confirmationMessage ||
+      `Your appointment on ${date} at ${timeslot} is confirmed. We'll see you then!`
+
+    const message = await prisma.chatMessage.create({
+      data: {
+        sessionId,
+        role: 'assistant',
+        content: confirmationText,
+        sources: [],
+      },
+    })
+
+    sendBookingConfirmationToUser(email, date, timeslot).catch(console.error)
+    if (bookingConfig?.notificationEmail) {
+      sendBookingNotificationToOwner(bookingConfig.notificationEmail, email, date, timeslot).catch(
+        console.error
+      )
+    }
+
+    return res.status(201).json({
+      status: ApiStatus.SUCCESS,
+      message: 'Appointment confirmed successfully',
+      data: { appointment, message },
     } satisfies ApiResponse)
   } catch (error) {
     next(error)

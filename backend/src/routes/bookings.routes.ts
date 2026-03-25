@@ -33,5 +33,6 @@ router.patch(
 )
 
 router.post('/:chatbotId/booking/timeslots', bookingsController.getTimeSlotsForDate)
+router.post('/:chatbotId/booking/confirm', bookingsController.confirmBooking)
 
 export default router
