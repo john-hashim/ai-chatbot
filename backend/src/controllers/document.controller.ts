@@ -204,6 +204,7 @@ export const crawlWebsite = async (req: Request, res: Response, next: NextFuncti
 
 export const uploadDocument = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const user = req.user
     const files = req.files as Express.Multer.File[]
     const { chatbotId } = req.params
 
@@ -221,7 +222,7 @@ export const uploadDocument = async (req: Request, res: Response, next: NextFunc
       } satisfies ApiResponse)
     }
 
-    // Verify chatbot exists
+    // Verify chatbot exists and belongs to the authenticated user
     const chatbot = await prisma.chatbot.findUnique({
       where: { id: chatbotId },
     })
@@ -233,91 +234,73 @@ export const uploadDocument = async (req: Request, res: Response, next: NextFunc
       } satisfies ApiResponse)
     }
 
+    if (chatbot.userId !== user?.id) {
+      return res.status(403).json({
+        status: ApiStatus.FAILURE,
+        message: 'Forbidden',
+      } satisfies ApiResponse)
+    }
+
     const processedFiles = await Promise.all(
       files.map(async file => {
         let textContent = ''
         if (file.mimetype === 'application/pdf') {
           const parser = new PDFParse({ data: file.buffer })
           const result = await parser.getText()
-          textContent = result.text
-
-          return {
-            name: file.originalname,
-            type: 'document',
-            subtype: 'pdf',
-            size: file.size,
-            content: textContent,
-            chatbotId: chatbotId,
-          }
-        }
-        // Handle .doc files (old Word format)
-        if (file.mimetype === 'application/msword') {
+          textContent = result.text.replace(/\0/g, '')
+        } else if (file.mimetype === 'application/msword') {
+          // Handle .doc files (old Word format)
           const extractor = new WordExtractor()
           const extracted = await extractor.extract(file.buffer)
-          textContent = extracted.getBody()
-
-          return {
-            name: file.originalname,
-            type: 'document',
-            subtype: 'doc',
-            content: textContent,
-            size: file.size,
-            chatbotId: chatbotId,
-          }
-        }
-
-        // Handle .docx files (newer Word format)
-        if (
+          textContent = extracted.getBody().replace(/\0/g, '')
+        } else if (
           file.mimetype ===
           'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
         ) {
+          // Handle .docx files (newer Word format)
           const result = await mammoth.extractRawText({ buffer: file.buffer })
-          textContent = result.value
-
-          return {
-            name: file.originalname,
-            type: 'document',
-            subtype: 'docx',
-            size: file.size,
-            content: textContent,
-            chatbotId: chatbotId,
-          }
+          textContent = result.value.replace(/\0/g, '')
+        } else if (file.mimetype === 'text/plain') {
+          textContent = file.buffer.toString('utf-8').replace(/\0/g, '')
+        } else {
+          throw new Error(`Unsupported file type: ${file.mimetype} for file ${file.originalname}`)
         }
 
-        if (file.mimetype === 'text/plain') {
-          textContent = file.buffer.toString('utf-8')
-          return {
-            name: file.originalname,
-            type: 'document',
-            subtype: 'txt',
-            size: file.size,
-            content: textContent,
-            chatbotId: chatbotId,
-          }
+        if (!textContent.trim()) {
+          throw new Error(
+            `No text could be extracted from "${file.originalname}". The file may be empty or image-only.`
+          )
         }
 
-        throw new Error(`Unsupported file type: ${file.mimetype} for file ${file.originalname}`)
+        const subtypeMap: Record<string, string> = {
+          'application/pdf': 'pdf',
+          'application/msword': 'doc',
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx',
+          'text/plain': 'txt',
+        }
+
+        return {
+          name: file.originalname,
+          type: 'document',
+          subtype: subtypeMap[file.mimetype],
+          size: file.size,
+          content: textContent,
+          chatbotId: chatbotId,
+        }
       })
     )
 
-    // Insert documents into database
-    const createdDocuments = await Promise.all(
-      processedFiles.map(async fileData => {
-        return await prisma.document.create({
-          data: fileData,
-        })
+    // Insert documents and update totalSize in a single transaction
+    const totalNewSize = processedFiles.reduce((sum, f) => sum + f.size, 0)
+    const createdDocuments = await prisma.$transaction(async tx => {
+      const docs = await Promise.all(
+        processedFiles.map(fileData => tx.document.create({ data: fileData }))
+      )
+      await tx.chatbot.update({
+        where: { id: chatbotId },
+        data: { totalSize: { increment: totalNewSize } },
       })
-    )
-
-    // Update chatbot totalSize atomically
-    const totalNewSize = createdDocuments.reduce((sum, doc) => sum + doc.size, 0)
-    await prisma.chatbot.update({
-      where: { id: chatbotId },
-      data: {
-        totalSize: {
-          increment: totalNewSize,
-        },
-      },
+      return docs
     })
 
     res.status(200).json({
