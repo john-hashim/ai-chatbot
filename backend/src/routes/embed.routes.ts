@@ -2,6 +2,7 @@ import express from 'express'
 import * as embedMiddleware from '../middleware/embed.middleware.js'
 import * as embedController from '../controllers/embed.controller.js'
 import * as chatController from '../controllers/chat.controller.js'
+import * as bookingsController from '../controllers/bookings.controller.js'
 
 const router = express.Router()
 
@@ -13,5 +14,9 @@ router.patch(
   embedMiddleware.authenticateEmbed,
   chatController.updateMessage
 )
+
+router.post('/:embedKey/booking/timeslots', embedMiddleware.authenticateEmbed, bookingsController.getTimeSlotsForDate)
+router.post('/:embedKey/booking/confirm', embedMiddleware.authenticateEmbed, bookingsController.confirmBooking)
+router.post('/:embedKey/booking/cancel', embedMiddleware.authenticateEmbed, bookingsController.cancelBookingFlow)
 
 export default router
