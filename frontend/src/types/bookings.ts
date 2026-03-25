@@ -56,6 +56,7 @@ export interface UpdateBookingConfigRequest {
   isEnabled?: boolean
   timezone?: string
   appointmentDuration?: number
+  notificationEmail?: string
 }
 
 export interface GetTimeSlotsRequest {

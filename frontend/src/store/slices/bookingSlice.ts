@@ -10,6 +10,7 @@ export interface BookingSlice {
   // State
   duration: number
   timezone: string
+  notificationEmail: string | null
   availabilities: AvailabilitySchedule[]
 
   // Loading states
@@ -24,6 +25,7 @@ export interface BookingSlice {
   clearAvailabilities: () => void
   updateDuration: (chatbotId: string, duration: number) => Promise<void>
   updateTimezone: (chatbotId: string, timezone: string) => Promise<void>
+  updateNotificationEmail: (chatbotId: string, email: string) => Promise<void>
   createAvailability: (chatbotId: string, data: CreateAvailabilityRequest) => Promise<void>
   updateAvailability: (
     chatbotId: string,
@@ -40,6 +42,7 @@ export const createBookingSlice: StateCreator<
 > = (set, get) => ({
   duration: 30,
   timezone: 'UTC',
+  notificationEmail: null,
   availabilities: [],
   fetchingAvailabilities: false,
   creatingDayId: null,
@@ -47,7 +50,11 @@ export const createBookingSlice: StateCreator<
   deletingSlotId: null,
 
   clearAvailabilities: () => {
-    set({ availabilities: [] }, undefined, '[Booking] Clear Availabilities')
+    set(
+      { availabilities: [], duration: 30, timezone: 'UTC', notificationEmail: null },
+      undefined,
+      '[Booking] Clear Availabilities'
+    )
   },
 
   refreshAvailabilities: async (chatbotId: string) => {
@@ -68,6 +75,7 @@ export const createBookingSlice: StateCreator<
         {
           duration: config?.appointmentDuration ?? 30,
           timezone: config?.timezone ?? 'UTC',
+          notificationEmail: config?.notificationEmail ?? null,
           availabilities,
         },
         undefined,
@@ -92,6 +100,19 @@ export const createBookingSlice: StateCreator<
     const config = response.data.data
     if (!config) throw new Error('Failed to update timezone')
     set({ timezone: config.timezone }, undefined, '[Booking] Update Timezone')
+  },
+
+  updateNotificationEmail: async (chatbotId: string, email: string) => {
+    const response = await bookingsService.updateBookingConfig(chatbotId, {
+      notificationEmail: email,
+    })
+    const config = response.data.data
+    if (!config) throw new Error('Failed to update notification email')
+    set(
+      { notificationEmail: config.notificationEmail || null },
+      undefined,
+      '[Booking] Update Notification Email'
+    )
   },
 
   createAvailability: async (chatbotId: string, data: CreateAvailabilityRequest) => {
