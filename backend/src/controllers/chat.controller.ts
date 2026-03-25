@@ -7,7 +7,7 @@ import * as chatService from '../services/chat.service.js'
 import { getSystemInstruction } from '../constants/instructions.js'
 import { resolveCountry } from '../services/geolocation.service.js'
 import type { NestedSort } from '../types/common.js'
-import { getAvailabilitiesAsString } from '../services/booking.service.js'
+import { actionHandlers } from '../actions/registry.js'
 
 export const chatController = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -157,8 +157,9 @@ export const chatController = async (req: Request, res: Response, next: NextFunc
 
     // --- Stream LLM response ---
     let fullResponse = ''
-    const ACTION_TOKEN = '__ACTION:BOOKING__'
-    let bookingDetected = false
+    const ACTION_TOKEN_REGEX = /__ACTION:(\w+)__/
+    const ACTION_PREFIX = '__ACTION:'
+    let detectedAction: string | null = null
     let confirmedNormal = false
     let bufferedTokens: string[] = []
 
@@ -170,26 +171,26 @@ export const chatController = async (req: Request, res: Response, next: NextFunc
       onToken: async (token: string) => {
         fullResponse += token
 
-        if (bookingDetected) return
+        if (detectedAction) return
 
         if (confirmedNormal) {
           sendSSE({ type: 'token', token })
           return
         }
 
-        if (fullResponse.includes(ACTION_TOKEN)) {
-          bookingDetected = true
+        const match = fullResponse.match(ACTION_TOKEN_REGEX)
+        if (match) {
+          detectedAction = match[1] ?? null
           bufferedTokens = []
           return
         }
 
-        // Check if accumulated response could still become the action token
+        // Check if accumulated response could still become an action token
         const trimmed = fullResponse.trimStart()
-        if (trimmed.length < ACTION_TOKEN.length && ACTION_TOKEN.startsWith(trimmed)) {
-          // Still potentially the action token — buffer and wait
+        const couldBeAction = ACTION_PREFIX.startsWith(trimmed) || trimmed.startsWith(ACTION_PREFIX)
+        if (couldBeAction) {
           bufferedTokens.push(token)
         } else {
-          // Confirmed normal response — flush buffer and continue streaming
           confirmedNormal = true
           for (const t of bufferedTokens) {
             sendSSE({ type: 'token', token: t })
@@ -201,24 +202,19 @@ export const chatController = async (req: Request, res: Response, next: NextFunc
       onComplete: async () => {
         const responseTime = Date.now() - startTime
 
-        if (bookingDetected) {
-          const dates = await getAvailabilitiesAsString(chatbotId)
-
-          const bookingMessage =
-            dates.length === 0
-              ? "Sorry, there are no available dates right now. Please check back later."
-              : `Here are the available dates for booking:\n${dates.join('\n')}\n\nPlease let me know which date works best for you!`
-
-          const words = bookingMessage.split(/(\s+)/)
-          for (const word of words) {
-            if (!word) continue
-            await new Promise(r => setTimeout(r, 20))
-            sendSSE({ type: 'token', token: word })
+        if (detectedAction) {
+          const handler = actionHandlers[detectedAction]
+          if (handler) {
+            const result = await handler(chatbotId)
+            fullResponse = result.message
+            sendSSE({
+              type: 'action',
+              action: detectedAction.toLowerCase(),
+              message: result.message,
+              meta: result.meta ?? null,
+            })
           }
-
-          fullResponse = bookingMessage
         } else if (!confirmedNormal && bufferedTokens.length > 0) {
-          // Edge case: stream ended while still buffering (very short response)
           for (const t of bufferedTokens) {
             sendSSE({ type: 'token', token: t })
           }
