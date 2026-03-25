@@ -211,6 +211,7 @@
 }
 .cbw-msg--user {
   border-radius: 20px;
+  max-width: 85%;
 }
 .cbw-msg--loading {
   padding: 12px 16px;
