@@ -1,12 +1,12 @@
 import type React from 'react'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Button, TextInput, Modal, Text, FileButton, Group, Tooltip } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import { useNavigate } from 'react-router-dom'
 import { ImageUp, Loader2, X } from 'lucide-react'
 import { modals } from '@mantine/modals'
 import { usePageTitle } from '@/hooks/usePageTitle'
-import { useUserStore, useChatbotStore } from '@/store'
+import { useUserStore, useStore } from '@/store'
 import { useApi } from '@/hooks/useApi'
 import { useUserAvatarUpload } from '@/hooks/useUserAvatarUpload'
 import { authService } from '@/api/services/auth'
@@ -19,8 +19,21 @@ export const AccountSettings: React.FC = () => {
   usePageTitle('Account Settings')
 
   const { user, updateUser, logout } = useUserStore()
-  const { clearChatbotState } = useChatbotStore()
+  const {
+    clearChatbotState,
+    clearCurrentChatbot,
+    resetDocumentFilters,
+    clearChatSessions,
+    clearAvailabilities,
+  } = useStore()
   const navigate = useNavigate()
+
+  useEffect(() => {
+    resetDocumentFilters()
+    clearChatSessions()
+    clearCurrentChatbot()
+    clearAvailabilities()
+  }, [clearCurrentChatbot, resetDocumentFilters, clearChatSessions, clearAvailabilities])
 
   const [name, setName] = useState(user?.name ?? '')
   const [email, setEmail] = useState(user?.email ?? '')

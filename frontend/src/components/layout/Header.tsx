@@ -1,6 +1,6 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import { Logo } from '../common/logo'
-import { LogOut } from 'lucide-react'
+import { LogOut, Check, ChevronsUpDown, Plus } from 'lucide-react'
 import { Popover, Avatar, Divider } from '@mantine/core'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useChatbotStore, useUserStore } from '@/store'
@@ -16,10 +16,15 @@ const NAV_ITEMS = [
 
 export const Header: React.FC = () => {
   const [popoverOpen, setPopoverOpen] = useState(false)
+  const [chatbotSwitcherOpen, setChatbotSwitcherOpen] = useState(false)
   const navigate = useNavigate()
   const location = useLocation()
+
   const { logout, user } = useUserStore()
-  const { clearChatbotState, currentChatbot } = useChatbotStore()
+  const { clearChatbotState, currentChatbot, chatbots, getChatbots, setCurrentChatbot } =
+    useChatbotStore()
+
+  const chatbotsFetched = useRef(false)
   const { execute: executeLogout } = useApi<ApiResponse, []>(authService.logout)
 
   const onLogout = useCallback(async () => {
@@ -33,7 +38,7 @@ export const Header: React.FC = () => {
     (path: string) => {
       setPopoverOpen(false)
       const resolved = path === '/landing' ? '/chatbot/landing' : path
-      if (location.pathname !== resolved) navigate(path)
+      if (location.pathname !== resolved) navigate(resolved)
     },
     [location.pathname, navigate]
   )
@@ -41,6 +46,44 @@ export const Header: React.FC = () => {
   const onWorkspaceClick = useCallback(() => {
     if (location.pathname !== '/chatbot/landing') navigate('/landing')
   }, [location.pathname, navigate])
+
+  const handleChatbotSwitcherOpen = useCallback(
+    async (open: boolean) => {
+      setChatbotSwitcherOpen(open)
+      if (open && !chatbotsFetched.current) {
+        chatbotsFetched.current = true
+        try {
+          await getChatbots()
+        } catch {
+          // Allow retry on next open if fetch failed
+          chatbotsFetched.current = false
+        }
+      }
+    },
+    [getChatbots]
+  )
+
+  const handleToggleSwitcher = useCallback(() => {
+    handleChatbotSwitcherOpen(!chatbotSwitcherOpen)
+  }, [handleChatbotSwitcherOpen, chatbotSwitcherOpen])
+
+  const handleSwitchChatbot = useCallback(
+    (chatbotId: string) => {
+      if (chatbotId === currentChatbot?.id) {
+        setChatbotSwitcherOpen(false)
+        return
+      }
+      setChatbotSwitcherOpen(false)
+      setCurrentChatbot(chatbotId)
+      navigate(`/chatbot/${chatbotId}/playground`)
+    },
+    [currentChatbot?.id, setCurrentChatbot, navigate]
+  )
+
+  const handleCreateNew = useCallback(() => {
+    setChatbotSwitcherOpen(false)
+    navigate('/chatbot/new')
+  }, [navigate])
 
   const initials = useMemo(() => {
     if (!user?.name) return '?'
@@ -76,6 +119,54 @@ export const Header: React.FC = () => {
                 <span className="ml-2 px-2 py-0.5 text-xs font-medium text-gray-500 bg-gray-100 border border-gray-300 rounded-full whitespace-nowrap">
                   Chatbot
                 </span>
+                <Popover
+                  opened={chatbotSwitcherOpen}
+                  onChange={handleChatbotSwitcherOpen}
+                  position="bottom-start"
+                  offset={8}
+                  shadow="md"
+                  width={220}
+                  transitionProps={{ transition: 'pop', duration: 150 }}
+                >
+                  <Popover.Target>
+                    <button
+                      onClick={handleToggleSwitcher}
+                      className="ml-1 p-0.5 rounded hover:bg-gray-100 cursor-pointer text-gray-400 hover:text-gray-600 transition-colors"
+                    >
+                      <ChevronsUpDown className="h-3.5 w-3.5" />
+                    </button>
+                  </Popover.Target>
+                  <Popover.Dropdown className="py-2! px-1.5! rounded-xl! overflow-hidden">
+                    <p className="px-2 pb-1.5 text-[11px] font-semibold text-text-weak uppercase tracking-wide">
+                      Switch Chatbot
+                    </p>
+                    <div className="flex flex-col gap-0.5 max-h-60 overflow-y-auto">
+                      {chatbots.length === 0 ? (
+                        <p className="px-2 py-2 text-xs text-text-weak">No chatbots found</p>
+                      ) : (
+                        chatbots.map(chatbot => (
+                          <button
+                            key={chatbot.id}
+                            onClick={() => handleSwitchChatbot(chatbot.id)}
+                            className="menu-btn justify-between text-text-primary"
+                          >
+                            <span className="truncate text-text-primary text-sm">
+                              {chatbot.name}
+                            </span>
+                            {currentChatbot.id === chatbot.id && (
+                              <Check className="h-3.5 w-3.5 shrink-0 ml-2 text-brand" />
+                            )}
+                          </button>
+                        ))
+                      )}
+                    </div>
+                    <Divider my={8} />
+                    <button className="menu-btn text-text-primary" onClick={handleCreateNew}>
+                      <Plus className="h-3.5 w-3.5 shrink-0" />
+                      Create new chatbot
+                    </button>
+                  </Popover.Dropdown>
+                </Popover>
               </>
             )}
           </div>
