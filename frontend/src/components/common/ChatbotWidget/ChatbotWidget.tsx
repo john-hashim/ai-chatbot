@@ -95,7 +95,7 @@ export const ChatbotWidget: React.FC<ChatbotWidgetProps> = ({
           onChange={setInputValue}
           onSubmit={handleSubmit}
           readOnly={readOnly}
-          disabled={messages[messages.length - 1]?.isAction}
+          disabled={messages[messages.length - 1]?.actionType === 'booking'}
         />
       </div>
     </div>

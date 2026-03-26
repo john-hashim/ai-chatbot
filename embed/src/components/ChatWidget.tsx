@@ -62,9 +62,21 @@ export function ChatWidget({ embedKey, apiBase, mode }: Props) {
       setInput("");
 
       // Add user message
-      const userMsg: ChatMessage = { role: "user", content: text, isAction: false, actionType: null, actionMeta: null };
+      const userMsg: ChatMessage = {
+        role: "user",
+        content: text,
+        isAction: false,
+        actionType: null,
+        actionMeta: null,
+      };
       // Add placeholder assistant message
-      const assistantMsg: ChatMessage = { role: "assistant", content: "", isAction: false, actionType: null, actionMeta: null };
+      const assistantMsg: ChatMessage = {
+        role: "assistant",
+        content: "",
+        isAction: false,
+        actionType: null,
+        actionMeta: null,
+      };
       setMessages((prev) => [...prev, userMsg, assistantMsg]);
 
       setStreaming(true);
@@ -138,13 +150,23 @@ export function ChatWidget({ embedKey, apiBase, mode }: Props) {
     setSessionId(null);
   }, []);
 
-  const handleActionSelect = useCallback((actionType: string, value: string) => {
-    console.log("action selected", actionType, value);
-  }, []);
+  const handleActionSelect = useCallback(
+    (actionType: string, value: string) => {
+      if (actionType === "booking") {
+        handleSend(value);
+      }
+    },
+    [handleSend],
+  );
 
-  const handleActionCancel = useCallback((actionType: string) => {
-    console.log("action cancelled", actionType);
-  }, []);
+  const handleActionCancel = useCallback(
+    (actionType: string) => {
+      if (actionType === "booking" || actionType === "booking_step2") {
+        handleSend("cancel booking");
+      }
+    },
+    [handleSend],
+  );
 
   const handleSuggestionClick = useCallback(
     (suggestion: string) => {

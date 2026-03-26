@@ -208,7 +208,7 @@ export const chatController = async (req: Request, res: Response, next: NextFunc
         if (detectedAction) {
           const handler = actionHandlers[detectedAction]
           if (handler) {
-            const result = await handler(chatbotId)
+            const result = await handler(chatbotId, { message, sessionId })
             fullResponse = result.message
             resolvedActionType = detectedAction.toLowerCase()
             resolvedActionMeta = result.meta != null ? (result.meta as Prisma.InputJsonValue) : Prisma.JsonNull
