@@ -126,7 +126,7 @@ export const PlaygroundPreview: React.FC = () => {
   }
 
   const handleActionSelect = (actionType: string, value: string) => {
-    if (actionType === 'booking') {
+    if (actionType === 'booking' || actionType === 'booking_step2') {
       handleSendMessage(value)
     }
   }

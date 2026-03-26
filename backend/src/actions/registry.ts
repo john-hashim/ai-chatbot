@@ -5,6 +5,7 @@ import { getAvailabilitiesAsString, getAvailableTimeslots } from '../services/bo
 dayjs.extend(advancedFormat)
 
 export type AvailableDate = { value: string; label: string }
+export type AvailableTimeslot = { value: string; label: string }
 
 export type ActionResult = {
   message: string
@@ -40,12 +41,16 @@ export const actionHandlers: Record<string, ActionHandler> = {
       return { message: 'I could not determine the date you selected. Please try again.' }
     }
     const date = dateMatch[0]
-    const timeslots = await getAvailableTimeslots(chatbotId, date)
-    if (timeslots.length === 0) {
+    const rawTimeslots = await getAvailableTimeslots(chatbotId, date)
+    if (rawTimeslots.length === 0) {
       return { message: `Sorry, there are no available time slots for ${date}. Please choose a different date.` }
     }
+    const timeslots: AvailableTimeslot[] = rawTimeslots.map(value => ({
+      value,
+      label: dayjs(value, 'HH:mm').format('hh:mm A'),
+    }))
     return {
-      message: `Here are the available time slots for ${date}: ${timeslots.join(', ')}. Please select one.`,
+      message: `Here are the available time slots for ${date}: ${rawTimeslots.join(', ')}. Please select one.`,
       meta: { date, timeslots },
     }
   },

@@ -250,6 +250,34 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                               </div>
                             </div>
                           </div>
+                        ) : chat.isAction && chat.actionType === 'booking_step2' ? (
+                          <div className="animate-message-in">
+                            <p className="text-xs mb-2">
+                              Here are the available time slots, please select one
+                            </p>
+                            <div className="grid grid-cols-2 gap-2">
+                              {(
+                                chat.actionMeta as {
+                                  date: string
+                                  timeslots: { value: string; label: string }[]
+                                }
+                              )?.timeslots?.map(slot => (
+                                <div
+                                  key={slot.value}
+                                  className="py-1 px-3 rounded-lg text-[11px] border border-border-week bg-white cursor-pointer text-center hover:border-border-strong"
+                                  onClick={() => onActionSelect?.(chat.actionType!, slot.value)}
+                                >
+                                  {slot.label}
+                                </div>
+                              ))}
+                              <div
+                                className="py-1 px-3 rounded-lg text-xs border border-red-200 bg-white cursor-pointer text-center text-red-400 hover:border-red-500 hover:text-red-500"
+                                onClick={() => onActionCancel?.(chat.actionType!)}
+                              >
+                                Cancel Appointment
+                              </div>
+                            </div>
+                          </div>
                         ) : (
                           <div className="animate-message-in">
                             <ReactMarkdown

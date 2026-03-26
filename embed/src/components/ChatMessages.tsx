@@ -320,6 +320,31 @@ export function ChatMessages({
                               </div>
                             </div>
                           )
+                          : chat.isAction && chat.actionType === "booking_step2"
+                          ? (
+                            <div className="cbw-booking cbw-animate-message-in">
+                              <p className={`cbw-booking-label${isDark ? " cbw-booking-label--dark" : ""}`}>
+                                Here are the available time slots, please select one
+                              </p>
+                              <div className="cbw-booking-dates">
+                                {(chat.actionMeta as { date: string; timeslots: { value: string; label: string }[] })?.timeslots?.map((slot) => (
+                                  <div
+                                    key={slot.value}
+                                    className={`cbw-booking-date${isDark ? " cbw-booking-date--dark" : ""}`}
+                                    onClick={() => onActionSelect?.(chat.actionType!, slot.value)}
+                                  >
+                                    {slot.label}
+                                  </div>
+                                ))}
+                                <div
+                                  className="cbw-booking-date cbw-booking-date--cancel"
+                                  onClick={() => onActionCancel?.(chat.actionType!)}
+                                >
+                                  Cancel Appointment
+                                </div>
+                              </div>
+                            </div>
+                          )
                           : (
                             <div
                               className="cbw-msg-text cbw-animate-message-in"

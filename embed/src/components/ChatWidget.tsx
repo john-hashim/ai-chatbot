@@ -152,7 +152,7 @@ export function ChatWidget({ embedKey, apiBase, mode }: Props) {
 
   const handleActionSelect = useCallback(
     (actionType: string, value: string) => {
-      if (actionType === "booking") {
+      if (actionType === "booking" || actionType === "booking_step2") {
         handleSend(value);
       }
     },
