@@ -45,6 +45,8 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
   onSuggestionClick,
   onFeedback,
   onCopy,
+  onActionSelect,
+  onActionCancel,
 }) => {
   const [showScrollButton, setShowScrollButton] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -235,11 +237,15 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                                 <div
                                   key={date.value}
                                   className="py-1 px-3 rounded-lg text-[11px] border border-border-week bg-white cursor-pointer text-center wrap-break-word hover:border-border-strong"
+                                  onClick={() => onActionSelect?.(chat.actionType!, date.value)}
                                 >
                                   {date.label}
                                 </div>
                               ))}
-                              <div className="py-1 px-3 rounded-lg text-xs border border-red-200 bg-white cursor-pointer text-center text-red-400 hover:border-red-500 hover:text-red-500">
+                              <div
+                                className="py-1 px-3 rounded-lg text-xs border border-red-200 bg-white cursor-pointer text-center text-red-400 hover:border-red-500 hover:text-red-500"
+                                onClick={() => onActionCancel?.(chat.actionType!)}
+                              >
                                 Cancel Appointment
                               </div>
                             </div>

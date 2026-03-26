@@ -138,6 +138,14 @@ export function ChatWidget({ embedKey, apiBase, mode }: Props) {
     setSessionId(null);
   }, []);
 
+  const handleActionSelect = useCallback((actionType: string, value: string) => {
+    console.log("action selected", actionType, value);
+  }, []);
+
+  const handleActionCancel = useCallback((actionType: string) => {
+    console.log("action cancelled", actionType);
+  }, []);
+
   const handleSuggestionClick = useCallback(
     (suggestion: string) => {
       handleSend(suggestion);
@@ -187,6 +195,8 @@ export function ChatWidget({ embedKey, apiBase, mode }: Props) {
           onSuggestionClick={handleSuggestionClick}
           onFeedback={handleFeedback}
           onCopy={handleCopy}
+          onActionSelect={handleActionSelect}
+          onActionCancel={handleActionCancel}
         />
         <ChatInput
           appearance={config.appearance}

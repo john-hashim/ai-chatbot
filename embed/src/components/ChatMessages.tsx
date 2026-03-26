@@ -16,6 +16,8 @@ interface Props {
   onSuggestionClick: (suggestion: string) => void;
   onFeedback: (messageId: string, type: "like" | "dislike") => void;
   onCopy: (messageId: string, content: string) => void;
+  onActionSelect?: (actionType: string, value: string) => void;
+  onActionCancel?: (actionType: string) => void;
 }
 
 const CopyIcon = () => (
@@ -114,6 +116,8 @@ export function ChatMessages({
   onSuggestionClick,
   onFeedback,
   onCopy,
+  onActionSelect,
+  onActionCancel,
 }: Props) {
   const [showScrollButton, setShowScrollButton] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -302,11 +306,15 @@ export function ChatMessages({
                                   <div
                                     key={date.value}
                                     className={`cbw-booking-date${isDark ? " cbw-booking-date--dark" : ""}`}
+                                    onClick={() => onActionSelect?.(chat.actionType!, date.value)}
                                   >
                                     {date.label}
                                   </div>
                                 ))}
-                                <div className="cbw-booking-date cbw-booking-date--cancel">
+                                <div
+                                  className="cbw-booking-date cbw-booking-date--cancel"
+                                  onClick={() => onActionCancel?.(chat.actionType!)}
+                                >
                                   Cancel Appointment
                                 </div>
                               </div>

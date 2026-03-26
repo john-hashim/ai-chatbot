@@ -125,6 +125,14 @@ export const PlaygroundPreview: React.FC = () => {
     setSessionId(null)
   }
 
+  const handleActionSelect = (actionType: string, value: string) => {
+    console.log('action selected', actionType, value)
+  }
+
+  const handleActionCancel = (actionType: string) => {
+    console.log('action cancelled', actionType)
+  }
+
   return (
     <div className="flex h-full items-center p-6">
       <div className="mx-auto h-full max-h-180 w-full max-w-102 overflow-hidden rounded-[20px] border border-border-week">
@@ -144,6 +152,8 @@ export const PlaygroundPreview: React.FC = () => {
           onSendMessage={handleSendMessage}
           onFeedback={handleFeedback}
           onReset={handleReset}
+          onActionSelect={handleActionSelect}
+          onActionCancel={handleActionCancel}
           generating={generating}
         />
       </div>

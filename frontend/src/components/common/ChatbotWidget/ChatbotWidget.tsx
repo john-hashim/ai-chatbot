@@ -23,6 +23,8 @@ export const ChatbotWidget: React.FC<ChatbotWidgetProps> = ({
   onFeedback,
   onCopy,
   onReset,
+  onActionSelect,
+  onActionCancel,
   generating,
 }) => {
   const [inputValue, setInputValue] = useState('')
@@ -79,6 +81,8 @@ export const ChatbotWidget: React.FC<ChatbotWidgetProps> = ({
           onSuggestionClick={handleSuggestionClick}
           onFeedback={onFeedback}
           onCopy={handleCopy}
+          onActionSelect={onActionSelect}
+          onActionCancel={onActionCancel}
           generating={generating}
         />
 

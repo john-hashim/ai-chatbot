@@ -3,6 +3,7 @@ import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc.js'
 import timezone from 'dayjs/plugin/timezone.js'
 import customParseFormat from 'dayjs/plugin/customParseFormat.js'
+import { Prisma } from '@prisma/client'
 import { ApiStatus, type ApiResponse } from '../types/api.js'
 import { prisma } from '../prisma/client.js'
 import {
@@ -446,12 +447,19 @@ export const getTimeSlotsForDate = async (req: Request, res: Response, next: Nex
         ? `Sorry, there are no available time slots for ${date}.`
         : `Here are the available time slots for ${date}: ${availableTimeslots.join(', ')}. Please select one.`
 
+    const hasSlots = availableTimeslots.length > 0
+
     const message = await prisma.chatMessage.create({
       data: {
         sessionId,
         role: 'assistant',
         content: messageContent,
         sources: [],
+        isAction: hasSlots,
+        actionType: hasSlots ? 'booking_step2' : null,
+        actionMeta: hasSlots
+          ? ({ date, timeslots: availableTimeslots } as Prisma.InputJsonValue)
+          : Prisma.JsonNull,
       },
     })
 
@@ -565,7 +573,7 @@ export const cancelBookingFlow = async (req: Request, res: Response, next: NextF
       data: {
         sessionId,
         role: 'assistant',
-        content: 'No problem! Is there anything else I can help you with?',
+        content: '[Booking cancelled by user] No problem! Is there anything else I can help you with?',
         sources: [],
       },
     })

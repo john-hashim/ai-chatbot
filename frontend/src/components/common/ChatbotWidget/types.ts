@@ -30,6 +30,8 @@ export interface ChatbotWidgetProps {
   onFeedback?: (messageId: string, type: string) => void
   onCopy?: (messageId: string, content: string) => void
   onReset?: () => void
+  onActionSelect?: (actionType: string, value: string) => void
+  onActionCancel?: (actionType: string) => void
 }
 
 export interface ChatHeaderProps {
@@ -55,6 +57,8 @@ export interface ChatMessagesProps {
   onSuggestionClick?: (suggestion: string) => void
   onFeedback?: (messageId: string, type: 'like' | 'dislike') => void
   onCopy?: (messageId: string, content: string) => void
+  onActionSelect?: (actionType: string, value: string) => void
+  onActionCancel?: (actionType: string) => void
   generating: boolean
 }
 
