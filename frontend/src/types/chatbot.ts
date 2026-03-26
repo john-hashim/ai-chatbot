@@ -13,6 +13,9 @@ export interface ChatMessage {
   sources: string[]
   confidenceScore: number | null
   feedback: 'like' | 'dislike' | null
+  isAction: boolean
+  actionType: string | null
+  actionMeta: unknown
   createdAt: string
 }
 

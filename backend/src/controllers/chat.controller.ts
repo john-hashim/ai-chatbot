@@ -202,17 +202,16 @@ export const chatController = async (req: Request, res: Response, next: NextFunc
       onComplete: async () => {
         const responseTime = Date.now() - startTime
 
+        let resolvedActionType: string | null = null
+        let resolvedActionMeta: Prisma.InputJsonValue | typeof Prisma.JsonNull = Prisma.JsonNull
+
         if (detectedAction) {
           const handler = actionHandlers[detectedAction]
           if (handler) {
             const result = await handler(chatbotId)
             fullResponse = result.message
-            sendSSE({
-              type: 'action',
-              action: detectedAction.toLowerCase(),
-              message: result.message,
-              meta: result.meta ?? null,
-            })
+            resolvedActionType = detectedAction.toLowerCase()
+            resolvedActionMeta = result.meta != null ? (result.meta as Prisma.InputJsonValue) : Prisma.JsonNull
           }
         } else if (!confirmedNormal && bufferedTokens.length > 0) {
           for (const t of bufferedTokens) {
@@ -230,6 +229,9 @@ export const chatController = async (req: Request, res: Response, next: NextFunc
             responseTime,
             sources: sourceDocIds,
             confidenceScore,
+            isAction: resolvedActionType !== null,
+            actionType: resolvedActionType,
+            actionMeta: resolvedActionMeta,
           },
         })
 

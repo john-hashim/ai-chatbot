@@ -62,9 +62,9 @@ export function ChatWidget({ embedKey, apiBase, mode }: Props) {
       setInput("");
 
       // Add user message
-      const userMsg: ChatMessage = { role: "user", content: text };
+      const userMsg: ChatMessage = { role: "user", content: text, isAction: false, actionType: null, actionMeta: null };
       // Add placeholder assistant message
-      const assistantMsg: ChatMessage = { role: "assistant", content: "" };
+      const assistantMsg: ChatMessage = { role: "assistant", content: "", isAction: false, actionType: null, actionMeta: null };
       setMessages((prev) => [...prev, userMsg, assistantMsg]);
 
       setStreaming(true);

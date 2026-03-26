@@ -679,6 +679,55 @@
   }
 }
 
+/* ===== Booking action ===== */
+.cbw-booking {
+  width: 100%;
+}
+.cbw-booking-label {
+  font-size: 13px;
+  margin: 0 0 8px;
+  color: #3f3f46;
+}
+.cbw-booking-label--dark {
+  color: #d4d4d8;
+}
+.cbw-booking-dates {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.cbw-booking-date {
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid #e4e4e7;
+  background: #ffffff;
+  font-size: 11px;
+  text-align: center;
+  cursor: pointer;
+  color: #3f3f46;
+  word-break: break-word;
+  transition: border-color 0.15s;
+}
+.cbw-booking-date:hover {
+  border-color: #a1a1aa;
+}
+.cbw-booking-date--dark {
+  background: #3f3f46;
+  border-color: #52525b;
+  color: #f4f4f5;
+}
+.cbw-booking-date--dark:hover {
+  border-color: #71717a;
+}
+.cbw-booking-date--cancel {
+  color: #f87171;
+  border-color: #fecaca;
+}
+.cbw-booking-date--cancel:hover {
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
 /* ===== Mobile ===== */
 @media (max-width: 480px) {
   .cbw-window:not(.cbw-window--iframe) {

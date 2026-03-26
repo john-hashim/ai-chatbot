@@ -291,12 +291,35 @@ export function ChatMessages({
 
                       {/* Message content */}
                       {!(isGenerating && !chat.content) && (
-                        <div
-                          className="cbw-msg-text cbw-animate-message-in"
-                          dangerouslySetInnerHTML={{
-                            __html: snarkdown(chat.content || "dummy content"),
-                          }}
-                        />
+                        chat.isAction && chat.actionType === "booking"
+                          ? (
+                            <div className="cbw-booking cbw-animate-message-in">
+                              <p className={`cbw-booking-label${isDark ? " cbw-booking-label--dark" : ""}`}>
+                                Here are the available dates for booking, please select one
+                              </p>
+                              <div className="cbw-booking-dates">
+                                {(chat.actionMeta as { dates: { value: string; label: string }[] })?.dates?.map((date) => (
+                                  <div
+                                    key={date.value}
+                                    className={`cbw-booking-date${isDark ? " cbw-booking-date--dark" : ""}`}
+                                  >
+                                    {date.label}
+                                  </div>
+                                ))}
+                                <div className="cbw-booking-date cbw-booking-date--cancel">
+                                  Cancel Appointment
+                                </div>
+                              </div>
+                            </div>
+                          )
+                          : (
+                            <div
+                              className="cbw-msg-text cbw-animate-message-in"
+                              dangerouslySetInnerHTML={{
+                                __html: snarkdown(chat.content || "dummy content"),
+                              }}
+                            />
+                          )
                       )}
                     </div>
                   </div>

@@ -122,6 +122,9 @@ model ChatMessage {
   sources         String[]    // document IDs for RAG
   confidenceScore Float?      // RAG confidence score (0-1) for assistant messages
   feedback        String?     // 'like' or 'dislike'
+  isAction        Boolean     @default(false) // true if response was an action (not LLM tokens)
+  actionType      String?     // e.g. 'booking'
+  actionMeta      Json?       // action-specific payload (dates, slots, etc.)
   createdAt    DateTime    @default(now())
   session      ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 

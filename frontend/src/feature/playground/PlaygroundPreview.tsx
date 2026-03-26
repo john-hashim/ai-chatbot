@@ -23,7 +23,9 @@ export const PlaygroundPreview: React.FC = () => {
 
     // Optimistic update
     setMessages(prev =>
-      prev.map(msg => (msg.id === messageId ? { ...msg, feedback: type as ChatMessage['feedback'] } : msg))
+      prev.map(msg =>
+        msg.id === messageId ? { ...msg, feedback: type as ChatMessage['feedback'] } : msg
+      )
     )
 
     try {
@@ -54,6 +56,9 @@ export const PlaygroundPreview: React.FC = () => {
       sources: [],
       confidenceScore: null,
       feedback: null,
+      isAction: false,
+      actionType: null,
+      actionMeta: null,
     }
 
     const assistantId = Math.random().toString()
@@ -71,6 +76,9 @@ export const PlaygroundPreview: React.FC = () => {
       sources: [],
       confidenceScore: null,
       feedback: null,
+      isAction: false,
+      actionType: null,
+      actionMeta: null,
     }
 
     setMessages(prev => [...prev, userMessage, assistantMessage])
@@ -92,6 +100,7 @@ export const PlaygroundPreview: React.FC = () => {
             )
           },
           onDone: (finalMessage: ChatMessage) => {
+            console.log(finalMessage)
             setMessages(prev =>
               prev.map(msg => (msg.id === assistantIdRef.current ? finalMessage : msg))
             )

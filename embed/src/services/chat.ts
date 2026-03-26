@@ -3,6 +3,9 @@ export interface ChatMessage {
   role: 'user' | 'assistant'
   content: string
   feedback?: 'like' | 'dislike' | null
+  isAction?: boolean
+  actionType?: string | null
+  actionMeta?: unknown
 }
 
 interface StreamCallbacks {
@@ -65,6 +68,9 @@ export async function streamChat(
               role: 'assistant',
               content: data.message.content,
               feedback: null,
+              isAction: data.message.isAction ?? false,
+              actionType: data.message.actionType ?? null,
+              actionMeta: data.message.actionMeta ?? null,
             })
             break
           case 'error':

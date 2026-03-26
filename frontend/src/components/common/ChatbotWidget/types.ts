@@ -67,4 +67,5 @@ export interface ChatInputProps {
   onChange: (value: string) => void
   onSubmit: () => void
   readOnly?: boolean
+  disabled: boolean
 }

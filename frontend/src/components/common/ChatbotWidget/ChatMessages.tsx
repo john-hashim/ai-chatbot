@@ -180,6 +180,7 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                           : undefined
                       }
                     >
+                      {/* profile picture and name of chatbot for generated (assistant) messages - starts  */}
                       {chat.role === 'assistant' && !(isGenerating && !chat.content) && (
                         <div className="flex items-center gap-2">
                           {profilePicture && (
@@ -198,12 +199,14 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                           </span>
                         </div>
                       )}
+                      {/* profile picture and name of chatbot for generated (assistant) messages - ends  */}
+
+                      {/* loader -- starts  */}
                       {isGenerating && !chat.content && (
                         <div
                           className={`flex items-center gap-1.5 px-4 py-3 rounded-[20px] ${
                             isDark ? 'bg-zinc-800 text-zinc-100' : 'bg-zinc-100 text-zinc-900'
-                          }
-                    `}
+                          }`}
                         >
                           <span className="flex gap-1">
                             {[0, 1, 2].map(i => (
@@ -216,18 +219,46 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                           </span>
                         </div>
                       )}
-                      {!(isGenerating && !chat.content) && (
-                        <div className="animate-message-in">
-                          <ReactMarkdown
-                            remarkPlugins={REMARK_PLUGINS}
-                            rehypePlugins={REHYPE_PLUGINS}
-                          >
-                            {chat.content || 'dummy content'}
-                          </ReactMarkdown>
-                        </div>
-                      )}
+                      {/* loader -- ends  */}
+
+                      {/* Message content - starts */}
+                      {!(isGenerating && !chat.content) &&
+                        (chat.isAction && chat.actionType === 'booking' ? (
+                          <div className="animate-message-in">
+                            <p className="text-xs mb-2">
+                              Here are the available dates for booking, please select one
+                            </p>
+                            <div className="grid grid-cols-2 gap-2">
+                              {(
+                                chat.actionMeta as { dates: { value: string; label: string }[] }
+                              )?.dates?.map(date => (
+                                <div
+                                  key={date.value}
+                                  className="py-1 px-3 rounded-lg text-[11px] border border-border-week bg-white cursor-pointer text-center wrap-break-word hover:border-border-strong"
+                                >
+                                  {date.label}
+                                </div>
+                              ))}
+                              <div className="py-1 px-3 rounded-lg text-xs border border-red-200 bg-white cursor-pointer text-center text-red-400 hover:border-red-500 hover:text-red-500">
+                                Cancel Appointment
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="animate-message-in">
+                            <ReactMarkdown
+                              remarkPlugins={REMARK_PLUGINS}
+                              rehypePlugins={REHYPE_PLUGINS}
+                            >
+                              {chat.content || 'dummy content'}
+                            </ReactMarkdown>
+                          </div>
+                        ))}
+                      {/* Message content - ends */}
                     </div>
                   </div>
+
+                  {/* like and dislike buttons - starts  */}
                   {chat.role === 'assistant' && !isGenerating && (
                     <div className="relative z-10 ml-6 mt-1 flex flex-row flex-nowrap items-center gap-1">
                       <ActionButton
@@ -263,6 +294,7 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                       </span> */}
                     </div>
                   )}
+                  {/* like and dislike buttons - ends  */}
                 </div>
               )
             })}

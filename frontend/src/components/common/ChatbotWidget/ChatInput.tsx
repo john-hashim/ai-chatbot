@@ -11,6 +11,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   onChange,
   onSubmit,
   readOnly = false,
+  disabled = false,
 }) => {
   const [noticeDismissed, setNoticeDismissed] = useState(false)
   const isDark = appearance === 'dark'
@@ -82,6 +83,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               value={value}
               onChange={e => onChange(e.target.value)}
               onKeyDown={handleKeyDown}
+              disabled={disabled}
             />
           )}
         </div>
