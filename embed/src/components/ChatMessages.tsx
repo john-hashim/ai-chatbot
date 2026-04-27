@@ -2,6 +2,61 @@ import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 import snarkdown from "snarkdown";
 import type { ChatMessage } from "../services/chat";
 
+const MONTH_NAMES = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+];
+const WEEKDAY_NAMES = [
+  "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday",
+];
+
+const ordinalSuffix = (n: number): string => {
+  const v = n % 100;
+  if (v >= 11 && v <= 13) return "th";
+  switch (n % 10) {
+    case 1: return "st";
+    case 2: return "nd";
+    case 3: return "rd";
+    default: return "th";
+  }
+};
+
+const parseBookingPayload = (content: string): { date?: string; time?: string } | null => {
+  if (!content || content[0] !== "{") return null;
+  try {
+    const parsed = JSON.parse(content);
+    const date =
+      typeof parsed?.booking_confirm_date === "string" ? parsed.booking_confirm_date : undefined;
+    const time =
+      typeof parsed?.booking_confirm_time === "string" ? parsed.booking_confirm_time : undefined;
+    if (date || time) return { date, time };
+  } catch {
+    /* not JSON */
+  }
+  return null;
+};
+
+const formatBookingDate = (dateStr: string): string => {
+  const [yStr, mStr, dStr] = dateStr.split("-");
+  const y = Number(yStr);
+  const m = Number(mStr);
+  const d = Number(dStr);
+  if (!y || !m || !d) return dateStr;
+  const dt = new Date(y, m - 1, d);
+  const month = MONTH_NAMES[m - 1] ?? "";
+  const weekday = WEEKDAY_NAMES[dt.getDay()] ?? "";
+  return `${d}${ordinalSuffix(d)} ${month} ${y}, ${weekday}`;
+};
+
+const formatBookingTime = (time: string): string => {
+  const [hStr, mStr] = time.split(":");
+  const h = Number(hStr);
+  if (Number.isNaN(h) || !mStr) return time;
+  const period = h >= 12 ? "PM" : "AM";
+  const hour12 = ((h + 11) % 12) + 1;
+  return `${String(hour12).padStart(2, "0")}:${mStr} ${period}`;
+};
+
 interface Props {
   name: string;
   profilePicture: string | null;
@@ -225,6 +280,10 @@ export function ChatMessages({
                 index === messages.length - 1 &&
                 generating;
               const isUser = chat.role === "user";
+              const isLast = index === messages.length - 1;
+              const lockedActionStyle = !isLast
+                ? { pointerEvents: "none" as const, opacity: 0.8 }
+                : undefined;
 
               return (
                 <div
@@ -297,7 +356,7 @@ export function ChatMessages({
                       {!(isGenerating && !chat.content) && (
                         chat.isAction && chat.actionType === "booking"
                           ? (
-                            <div className="cbw-booking cbw-animate-message-in">
+                            <div className="cbw-booking cbw-animate-message-in" style={lockedActionStyle}>
                               <p className={`cbw-booking-label${isDark ? " cbw-booking-label--dark" : ""}`}>
                                 Here are the available dates for booking, please select one
                               </p>
@@ -306,7 +365,7 @@ export function ChatMessages({
                                   <div
                                     key={date.value}
                                     className={`cbw-booking-date${isDark ? " cbw-booking-date--dark" : ""}`}
-                                    onClick={() => onActionSelect?.(chat.actionType!, date.value)}
+                                    onClick={() => onActionSelect?.(chat.actionType!, JSON.stringify({ booking_confirm_date: date.value }))}
                                   >
                                     {date.label}
                                   </div>
@@ -322,20 +381,23 @@ export function ChatMessages({
                           )
                           : chat.isAction && chat.actionType === "booking_step2"
                           ? (
-                            <div className="cbw-booking cbw-animate-message-in">
+                            <div className="cbw-booking cbw-animate-message-in" style={lockedActionStyle}>
                               <p className={`cbw-booking-label${isDark ? " cbw-booking-label--dark" : ""}`}>
                                 Here are the available time slots, please select one
                               </p>
                               <div className="cbw-booking-dates">
-                                {(chat.actionMeta as { date: string; timeslots: { value: string; label: string }[] })?.timeslots?.map((slot) => (
-                                  <div
-                                    key={slot.value}
-                                    className={`cbw-booking-date${isDark ? " cbw-booking-date--dark" : ""}`}
-                                    onClick={() => onActionSelect?.(chat.actionType!, slot.value)}
-                                  >
-                                    {slot.label}
-                                  </div>
-                                ))}
+                                {(() => {
+                                  const meta = chat.actionMeta as { date: string; timeslots: { value: string; label: string }[] } | null;
+                                  return meta?.timeslots?.map((slot) => (
+                                    <div
+                                      key={slot.value}
+                                      className={`cbw-booking-date${isDark ? " cbw-booking-date--dark" : ""}`}
+                                      onClick={() => onActionSelect?.(chat.actionType!, JSON.stringify({ booking_confirm_date: meta.date, booking_confirm_time: slot.value }))}
+                                    >
+                                      {slot.label}
+                                    </div>
+                                  ));
+                                })()}
                                 <div
                                   className="cbw-booking-date cbw-booking-date--cancel"
                                   onClick={() => onActionCancel?.(chat.actionType!)}
@@ -345,14 +407,33 @@ export function ChatMessages({
                               </div>
                             </div>
                           )
-                          : (
-                            <div
-                              className="cbw-msg-text cbw-animate-message-in"
-                              dangerouslySetInnerHTML={{
-                                __html: snarkdown(chat.content || "dummy content"),
-                              }}
-                            />
-                          )
+                          : (() => {
+                            if (chat.role === "user") {
+                              const payload = parseBookingPayload(chat.content);
+                              if (payload?.time) {
+                                return (
+                                  <div className="cbw-msg-text cbw-animate-message-in">
+                                    {formatBookingTime(payload.time)}
+                                  </div>
+                                );
+                              }
+                              if (payload?.date) {
+                                return (
+                                  <div className="cbw-msg-text cbw-animate-message-in">
+                                    {formatBookingDate(payload.date)}
+                                  </div>
+                                );
+                              }
+                            }
+                            return (
+                              <div
+                                className="cbw-msg-text cbw-animate-message-in"
+                                dangerouslySetInnerHTML={{
+                                  __html: snarkdown(chat.content || "dummy content"),
+                                }}
+                              />
+                            );
+                          })()
                       )}
                     </div>
                   </div>

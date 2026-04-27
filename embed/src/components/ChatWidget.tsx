@@ -228,7 +228,11 @@ export function ChatWidget({ embedKey, apiBase, mode }: Props) {
           value={input}
           onChange={setInput}
           onSubmit={() => handleSend()}
-          disabled={streaming}
+          disabled={
+            streaming ||
+            messages[messages.length - 1]?.actionType === "booking" ||
+            messages[messages.length - 1]?.actionType === "booking_step2"
+          }
         />
       </div>
       {error && <div className="cbw-error">{error}</div>}

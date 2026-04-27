@@ -1,5 +1,6 @@
 import dayjs from 'dayjs'
 import advancedFormat from 'dayjs/plugin/advancedFormat.js'
+import { prisma } from '../prisma/client.js'
 import { getAvailabilitiesAsString, getAvailableTimeslots } from '../services/booking.service.js'
 
 dayjs.extend(advancedFormat)
@@ -57,5 +58,49 @@ export const actionHandlers: Record<string, ActionHandler> = {
 
   BOOKING_CANCEL: async () => {
     return { message: '[Booking cancelled by user] No problem! Is there anything else I can help you with?' }
+  },
+
+  BOOKING_CONFIRM: async (chatbotId, { message, sessionId }) => {
+    const dateMatch = message.match(/"booking_confirm_date"\s*:\s*"(\d{4}-\d{2}-\d{2})"/)
+    const timeMatch = message.match(/"booking_confirm_time"\s*:\s*"(\d{2}:\d{2})"/)
+
+    if (!dateMatch || !timeMatch) {
+      return { message: 'I could not read the selected date and time. Please try again.' }
+    }
+
+    const date = dateMatch[1]!
+    const timeslot = timeMatch[1]!
+
+    const availableTimeslots = await getAvailableTimeslots(chatbotId, date)
+    if (!availableTimeslots.includes(timeslot)) {
+      return {
+        message: `Sorry, the slot ${timeslot} on ${date} is no longer available. Please choose a different time.`,
+      }
+    }
+
+    const appointment = await prisma.appointment.create({
+      data: {
+        chatbotId,
+        sessionId,
+        email: '',
+        date,
+        timeslot,
+        status: 'CONFIRMED',
+      },
+    })
+
+    const prettyDate = dayjs(date).format('Do MMM YYYY, dddd')
+    const prettyTime = dayjs(timeslot, 'HH:mm').format('hh:mm A')
+
+    return {
+      message: `Your appointment is confirmed for ${prettyDate} at ${prettyTime}.`,
+      meta: {
+        appointmentId: appointment.id,
+        date,
+        timeslot,
+        prettyDate,
+        prettyTime,
+      },
+    }
   },
 }

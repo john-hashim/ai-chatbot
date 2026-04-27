@@ -57,11 +57,14 @@ When the user's message indicates an intent to create, schedule, reschedule, or 
 2. If the user does not mention a specific date, or mentions a date on or before ${maxDate}, respond with ONLY this token and nothing else:
 __ACTION:BOOKING__
 
-3. If the previous assistant message listed available booking dates AND the user's message is a date (e.g. "2026-03-29") or indicates they are selecting a date from that list, respond with ONLY this token and nothing else:
+3. If the user's message contains a "booking_confirm_date" field with a date value and NO "booking_confirm_time" field (e.g. \`{"booking_confirm_date":"2026-03-29"}\`, or any YYYY-MM-DD date), respond with ONLY this token and nothing else:
 __ACTION:BOOKING_STEP2__
 
 4. If the user wants to cancel or skip the current booking flow (e.g. "cancel", "never mind", "no thanks"), respond with ONLY this token and nothing else:
 __ACTION:BOOKING_CANCEL__
+
+5. If the user's message contains a "booking_confirm_time" field with any time value (e.g. \`{"booking_confirm_date":"2026-03-29","booking_confirm_time":"16:00"}\`, or any HH:MM time), respond with ONLY this token and nothing else:
+__ACTION:BOOKING_CONFIRM__
 
 Do not add any other text, explanation, greeting, or punctuation alongside any token.
 Examples of booking triggers: "I want to book", "schedule an appointment", "make a reservation", "can I book a slot", "I'd like to set up a meeting", "reschedule my booking".`

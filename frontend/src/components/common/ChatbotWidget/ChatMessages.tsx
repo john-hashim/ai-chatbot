@@ -1,4 +1,7 @@
 import { Tooltip } from '@mantine/core'
+import dayjs from 'dayjs'
+import advancedFormat from 'dayjs/plugin/advancedFormat'
+import customParseFormat from 'dayjs/plugin/customParseFormat'
 import { ArrowDown, Copy, ThumbsDown, ThumbsUp } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
@@ -7,8 +10,26 @@ import remarkGfm from 'remark-gfm'
 // import { formatRelativeDate } from '@/hooks/useRelativeDate'
 import type { ChatMessagesProps } from './types'
 
+dayjs.extend(advancedFormat)
+dayjs.extend(customParseFormat)
+
 const REMARK_PLUGINS = [remarkGfm]
 const REHYPE_PLUGINS = [rehypeRaw]
+
+const parseBookingPayload = (content: string): { date?: string; time?: string } | null => {
+  if (!content || content[0] !== '{') return null
+  try {
+    const parsed = JSON.parse(content)
+    const date =
+      typeof parsed?.booking_confirm_date === 'string' ? parsed.booking_confirm_date : undefined
+    const time =
+      typeof parsed?.booking_confirm_time === 'string' ? parsed.booking_confirm_time : undefined
+    if (date || time) return { date, time }
+  } catch {
+    /* not JSON */
+  }
+  return null
+}
 
 const ActionButton: React.FC<{
   label: string
@@ -149,8 +170,8 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
         {messages.length > 0 && (
           <div className="mt-5 flex flex-col gap-5">
             {messages.map((chat, index) => {
-              const isGenerating =
-                chat.role === 'assistant' && index === messages.length - 1 && generating
+              const isLast = index === messages.length - 1
+              const isGenerating = chat.role === 'assistant' && isLast && generating
               return (
                 <div
                   key={index}
@@ -226,7 +247,9 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                       {/* Message content - starts */}
                       {!(isGenerating && !chat.content) &&
                         (chat.isAction && chat.actionType === 'booking' ? (
-                          <div className="animate-message-in">
+                          <div
+                            className={`animate-message-in ${!isLast ? 'pointer-events-none opacity-80' : ''}`}
+                          >
                             <p className="text-xs mb-2">
                               Here are the available dates for booking, please select one
                             </p>
@@ -237,7 +260,12 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                                 <div
                                   key={date.value}
                                   className="py-1 px-3 rounded-lg text-[11px] border border-border-week bg-white cursor-pointer text-center wrap-break-word hover:border-border-strong"
-                                  onClick={() => onActionSelect?.(chat.actionType!, date.value)}
+                                  onClick={() =>
+                                    onActionSelect?.(
+                                      chat.actionType!,
+                                      JSON.stringify({ booking_confirm_date: date.value })
+                                    )
+                                  }
                                 >
                                   {date.label}
                                 </div>
@@ -251,25 +279,36 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                             </div>
                           </div>
                         ) : chat.isAction && chat.actionType === 'booking_step2' ? (
-                          <div className="animate-message-in">
+                          <div
+                            className={`animate-message-in ${!isLast ? 'pointer-events-none opacity-80' : ''}`}
+                          >
                             <p className="text-xs mb-2">
                               Here are the available time slots, please select one
                             </p>
                             <div className="grid grid-cols-2 gap-2">
-                              {(
-                                chat.actionMeta as {
+                              {(() => {
+                                const meta = chat.actionMeta as {
                                   date: string
                                   timeslots: { value: string; label: string }[]
-                                }
-                              )?.timeslots?.map(slot => (
-                                <div
-                                  key={slot.value}
-                                  className="py-1 px-3 rounded-lg text-[11px] border border-border-week bg-white cursor-pointer text-center hover:border-border-strong"
-                                  onClick={() => onActionSelect?.(chat.actionType!, slot.value)}
-                                >
-                                  {slot.label}
-                                </div>
-                              ))}
+                                } | null
+                                return meta?.timeslots?.map(slot => (
+                                  <div
+                                    key={slot.value}
+                                    className="py-1 px-3 rounded-lg text-[11px] border border-border-week bg-white cursor-pointer text-center hover:border-border-strong"
+                                    onClick={() =>
+                                      onActionSelect?.(
+                                        chat.actionType!,
+                                        JSON.stringify({
+                                          booking_confirm_date: meta.date,
+                                          booking_confirm_time: slot.value,
+                                        })
+                                      )
+                                    }
+                                  >
+                                    {slot.label}
+                                  </div>
+                                ))
+                              })()}
                               <div
                                 className="py-1 px-3 rounded-lg text-xs border border-red-200 bg-white cursor-pointer text-center text-red-400 hover:border-red-500 hover:text-red-500"
                                 onClick={() => onActionCancel?.(chat.actionType!)}
@@ -278,16 +317,35 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                               </div>
                             </div>
                           </div>
-                        ) : (
-                          <div className="animate-message-in">
-                            <ReactMarkdown
-                              remarkPlugins={REMARK_PLUGINS}
-                              rehypePlugins={REHYPE_PLUGINS}
-                            >
-                              {chat.content || 'dummy content'}
-                            </ReactMarkdown>
-                          </div>
-                        ))}
+                        ) : (() => {
+                          if (chat.role === 'user') {
+                            const payload = parseBookingPayload(chat.content)
+                            if (payload?.time) {
+                              return (
+                                <div className="animate-message-in">
+                                  {dayjs(payload.time, 'HH:mm').format('hh:mm A')}
+                                </div>
+                              )
+                            }
+                            if (payload?.date) {
+                              return (
+                                <div className="animate-message-in">
+                                  {dayjs(payload.date).format('Do MMM YYYY, dddd')}
+                                </div>
+                              )
+                            }
+                          }
+                          return (
+                            <div className="animate-message-in">
+                              <ReactMarkdown
+                                remarkPlugins={REMARK_PLUGINS}
+                                rehypePlugins={REHYPE_PLUGINS}
+                              >
+                                {chat.content || 'dummy content'}
+                              </ReactMarkdown>
+                            </div>
+                          )
+                        })())}
                       {/* Message content - ends */}
                     </div>
                   </div>
