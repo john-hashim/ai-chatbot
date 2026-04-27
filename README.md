@@ -7,11 +7,16 @@ A full-stack SaaS platform for creating, training, and deploying custom AI chatb
 - **Chatbot Creation** — Multi-step wizard with branding (name, color, logo)
 - **Document Training** — Upload PDFs, DOCX, plain text, Q&A pairs, or crawl websites
 - **RAG-based Chat** — Vector similarity search (pgvector) for context-aware responses
+- **LLM-driven Actions** — Action registry where the LLM detects intent (e.g. booking) and triggers structured flows mid-stream
+- **Appointment Booking** — Weekly + date-specific availability, time slot generation, in-chat booking with confirm/cancel flow and email notifications
 - **Customization** — Light/dark mode, brand colors, chat bubble styling, initial messages
 - **Playground** — Test chatbot with custom instructions before deployment
-- **Embedding** — Deploy as a widget or iframe with domain whitelisting
+- **Embedding** — Deploy as a widget or iframe with domain whitelisting; in-widget booking UI for date/time selection
 - **Analytics** — Message counts, session metrics, geolocation, like/dislike stats
-- **Chat History** — View sessions, export as JSON/CSV/PDF
+- **Chat History** — View sessions with sort/filter, export as JSON/CSV/PDF
+- **Account & Profile** — Profile popover in header, profile editing, editable notification email, chatbot switcher
+- **Streaming UX** — Single-stream chat controller with typewriter effect and action-token detection
+- **Groq + HuggingFace** — Pluggable LLM backend (Groq `llama-3.3-70b-versatile` or HF Inference) via `USE_GROQ` flag
 - **Google OAuth** — Authentication for users
 
 ## Tech Stack
@@ -35,10 +40,12 @@ A full-stack SaaS platform for creating, training, and deploying custom AI chatb
 | Framework | Express 5, TypeScript |
 | ORM | Prisma 6 |
 | Database | PostgreSQL + pgvector |
+| LLM | Groq SDK (llama-3.3-70b-versatile) or HuggingFace Inference |
 | Embeddings | HuggingFace (BGE-small-en, 384-dim) |
 | Storage | Cloudflare R2 (S3-compatible) |
 | Auth | Google OAuth |
 | Scraping | Playwright |
+| Email | Nodemailer (booking notifications) |
 | Docs | pdf-parse, Mammoth, PDFKit |
 
 ## Project Structure
@@ -56,23 +63,28 @@ ai-chatbot/
 │       │   ├── customize/      # Style & content customization
 │       │   ├── knowledgebase/  # Document management
 │       │   ├── sources/        # Data source upload (Files, Text, Links, Q&A)
-│       │   ├── chats/          # Chat history & sessions
+│       │   ├── chats/          # Chat history with sort/filter
 │       │   ├── analytics/      # Analytics dashboard
 │       │   ├── deploy/         # Embed configuration
+│       │   ├── bookings/       # Appointments + availability (weekly & date-specific)
+│       │   ├── automations/    # Automation rules
+│       │   ├── account/        # Account settings & profile
+│       │   ├── billing/        # Billing
 │       │   └── contacts/       # Contact management
 │       ├── components/         # Reusable components (ChatbotWidget, TextEditor, etc.)
 │       ├── api/                # Axios client, endpoints, service modules
-│       ├── store/              # Zustand slices (chatbot, user)
+│       ├── store/              # Zustand slices (chatbot, user, booking)
 │       ├── hooks/              # Custom hooks
 │       ├── types/              # TypeScript types
 │       ├── utils/              # Utility functions
-│       └── App.tsx             # Root component with routing
+│       └── App.tsx             # Root component with lazy-loaded routing
 │
 ├── backend/
 │   ├── src/
-│   │   ├── controllers/        # Route handlers
+│   │   ├── controllers/        # Route handlers (chat, chatbot, document, bookings, ...)
 │   │   ├── routes/             # Express route definitions
-│   │   ├── services/           # Business logic (chat, training, embedding, crawling)
+│   │   ├── services/           # Business logic (chat, training, embedding, crawling, booking, email)
+│   │   ├── actions/            # Action registry — LLM-driven flows (booking, etc.)
 │   │   ├── middleware/         # Auth, embed auth, file upload, error handling
 │   │   ├── prisma/             # Prisma client
 │   │   ├── constants/          # System instructions
@@ -144,8 +156,19 @@ R2_SECRET_ACCESS_KEY=your-secret-key
 R2_BUCKET_NAME=chatbot
 R2_PUBLIC_URL=https://your-r2-public-url
 
-# HuggingFace
+# HuggingFace (used for embeddings; also chat completions when USE_GROQ is not set)
 HUGGINGFACE_API_KEY=hf_your_key
+
+# Groq (optional — preferred LLM provider when USE_GROQ=true)
+USE_GROQ=true
+GROQ_API_KEY=gsk_your_key
+
+# Email notifications (booking confirmations)
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_USER=your-smtp-user
+SMTP_PASS=your-smtp-pass
+SMTP_FROM="Chatbot <noreply@example.com>"
 ```
 
 Run migrations and start:
@@ -181,7 +204,9 @@ npm run dev                     # runs on port 5173
 |---|---|---|
 | Google OAuth | User authentication | [Google Cloud Console](https://console.cloud.google.com/) → APIs & Services → Credentials |
 | Cloudflare R2 | File/document storage | Cloudflare dashboard → R2 |
-| HuggingFace | Text embeddings (BGE-small-en) | [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens) |
+| HuggingFace | Text embeddings (BGE-small-en); fallback chat LLM | [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens) |
+| Groq | Chat LLM (llama-3.3-70b-versatile) | [console.groq.com/keys](https://console.groq.com/keys) |
+| SMTP | Booking confirmation emails | Any SMTP provider (SendGrid, Mailgun, Gmail SMTP, etc.) |
 
 ## API Endpoints
 
@@ -244,12 +269,26 @@ npm run dev                     # runs on port 5173
 |---|---|---|
 | GET | `/:chatbotId/analytics` | Get chatbot analytics |
 
+### Bookings (`/api/bookings`)
+
+| Method | Endpoint | Description |
+|---|---|---|
+| POST | `/:chatbotId/availability` | Create availability slot |
+| GET | `/:chatbotId/availability` | Get availability config |
+| PATCH | `/:chatbotId/availability/:slotId` | Update time slot |
+| DELETE | `/:chatbotId/availability/:slotId` | Delete time slot |
+| GET | `/:chatbotId/booking-config` | Get booking config |
+| PATCH | `/:chatbotId/booking-config` | Update booking config (timezone, notification email, etc.) |
+| POST | `/:chatbotId/booking/timeslots` | Get available time slots for a given date |
+| POST | `/:chatbotId/booking/confirm` | Confirm an appointment |
+| POST | `/:chatbotId/booking/cancel` | Cancel an in-progress booking flow |
+
 ### Embed (Public) (`/api/embed`)
 
 | Method | Endpoint | Description |
 |---|---|---|
 | GET | `/:embedKey/config` | Get embed config |
-| POST | `/:embedKey/chat` | Send message via embed |
+| POST | `/:embedKey/chat` | Send message via embed (LLM-driven actions emitted in stream) |
 | PATCH | `/:embedKey/:sessionId/:messageId` | Update message feedback |
 
 ## Important Notes
@@ -258,3 +297,6 @@ npm run dev                     # runs on port 5173
 - The same **Google OAuth Client ID** is used in both frontend and backend `.env` files.
 - `npx playwright install` downloads Chromium, required for the website crawling feature.
 - The backend uses **ESM** (`"type": "module"` in package.json).
+- **LLM provider** — set `USE_GROQ=true` (with `GROQ_API_KEY`) to use Groq for chat completions; otherwise the HuggingFace Inference API is used. Embeddings always use HuggingFace.
+- **Action tokens** — the LLM emits sentinel tokens (e.g. `__ACTION:BOOKING__`) that the chat controller intercepts to drive structured flows like appointment booking. Tokens are buffered server-side so they never leak to the client.
+- **SMTP** is required only if you want booking confirmation emails sent on appointment creation.
