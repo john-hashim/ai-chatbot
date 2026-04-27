@@ -84,7 +84,7 @@ export interface Appointment {
   email: string
   date: string
   timeslot: string
-  status: 'PENDING' | 'CONFIRMED' | 'CANCELLED'
+  status: 'PENDING' | 'CONFIRMED' | 'UPCOMING' | 'PAST' | 'CANCELLED'
   createdAt: string
   updatedAt: string
 }

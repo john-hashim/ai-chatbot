@@ -436,7 +436,7 @@ export const getTimeSlotsForDate = async (req: Request, res: Response, next: Nex
 
     // Filter out already booked slots
     const bookedAppointments = await prisma.appointment.findMany({
-      where: { chatbotId, date, status: 'CONFIRMED' },
+      where: { chatbotId, date, status: 'UPCOMING' },
       select: { timeslot: true },
     })
     const bookedTimes = new Set(bookedAppointments.map(a => a.timeslot))
@@ -504,7 +504,7 @@ export const confirmBooking = async (req: Request, res: Response, next: NextFunc
     // Fix: add @@unique([chatbotId, date, timeslot, status]) to Appointment schema
     // and catch Prisma P2002 error on create instead of relying on this check alone.
     const existing = await prisma.appointment.findFirst({
-      where: { chatbotId, date, timeslot, status: 'CONFIRMED' },
+      where: { chatbotId, date, timeslot, status: 'UPCOMING' },
     })
 
     if (existing) {
@@ -517,7 +517,7 @@ export const confirmBooking = async (req: Request, res: Response, next: NextFunc
     const bookingConfig = await prisma.bookingConfig.findUnique({ where: { chatbotId } })
 
     const appointment = await prisma.appointment.create({
-      data: { chatbotId, sessionId, date, timeslot, email, status: 'CONFIRMED' },
+      data: { chatbotId, sessionId, date, timeslot, email, status: 'UPCOMING' },
     })
 
     const confirmationText =
@@ -544,6 +544,51 @@ export const confirmBooking = async (req: Request, res: Response, next: NextFunc
       status: ApiStatus.SUCCESS,
       message: 'Appointment confirmed successfully',
       data: { appointment, message },
+    } satisfies ApiResponse)
+  } catch (error) {
+    next(error)
+  }
+}
+
+export const getAppointments = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { chatbotId } = req.params
+
+    if (!chatbotId) {
+      return res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'Chatbot ID is required',
+      } satisfies ApiResponse)
+    }
+
+    const config = await prisma.bookingConfig.findUnique({ where: { chatbotId } })
+    const tz = config?.timezone || 'UTC'
+    const nowLocal = dayjs().tz(tz)
+    const today = nowLocal.format('YYYY-MM-DD')
+    const nowTime = nowLocal.format('HH:mm')
+
+    // Lazily flip expired UPCOMING rows to PAST so the list converges without a cron.
+    await prisma.appointment.updateMany({
+      where: {
+        chatbotId,
+        status: 'UPCOMING',
+        OR: [
+          { date: { lt: today } },
+          { date: today, timeslot: { lt: nowTime } },
+        ],
+      },
+      data: { status: 'PAST' },
+    })
+
+    const appointments = await prisma.appointment.findMany({
+      where: { chatbotId, status: 'UPCOMING' },
+      orderBy: [{ date: 'asc' }, { timeslot: 'asc' }],
+    })
+
+    return res.status(200).json({
+      status: ApiStatus.SUCCESS,
+      message: 'Appointments fetched successfully',
+      data: appointments,
     } satisfies ApiResponse)
   } catch (error) {
     next(error)

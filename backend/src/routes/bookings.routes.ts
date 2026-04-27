@@ -36,4 +36,10 @@ router.post('/:chatbotId/booking/timeslots', bookingsController.getTimeSlotsForD
 router.post('/:chatbotId/booking/confirm', bookingsController.confirmBooking)
 router.post('/:chatbotId/booking/cancel', bookingsController.cancelBookingFlow)
 
+router.get(
+  '/:chatbotId/appointments',
+  authMiddleware.authenticateToken,
+  bookingsController.getAppointments
+)
+
 export default router

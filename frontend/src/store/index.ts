@@ -46,7 +46,9 @@ export const useBookingStore = () =>
       timezone: state.timezone,
       notificationEmail: state.notificationEmail,
       availabilities: state.availabilities,
+      appointments: state.appointments,
       fetchingAvailabilities: state.fetchingAvailabilities,
+      fetchingAppointments: state.fetchingAppointments,
       fetchBookingData: state.fetchBookingData,
       clearAvailabilities: state.clearAvailabilities,
       updateDuration: state.updateDuration,
@@ -55,6 +57,8 @@ export const useBookingStore = () =>
       createAvailability: state.createAvailability,
       updateAvailability: state.updateAvailability,
       deleteAvailability: state.deleteAvailability,
+      fetchAppointments: state.fetchAppointments,
+      clearAppointments: state.clearAppointments,
     }))
   )
 

@@ -13,6 +13,7 @@ import type {
   ConfirmBookingRequest,
   ConfirmBookingResponse,
   CancelBookingResponse,
+  Appointment,
 } from '@/types/bookings'
 
 export const bookingsService = {
@@ -99,6 +100,14 @@ export const bookingsService = {
     return apiClient.post(
       ENDPOINTS.BOOKINGS.CANCEL.replace(':chatbotId', chatbotId),
       { sessionId }
+    )
+  },
+
+  getAppointments: (
+    chatbotId: string
+  ): Promise<AxiosResponse<ApiResponse<Appointment[]>>> => {
+    return apiClient.get(
+      ENDPOINTS.BOOKINGS.GET_APPOINTMENTS.replace(':chatbotId', chatbotId)
     )
   },
 }

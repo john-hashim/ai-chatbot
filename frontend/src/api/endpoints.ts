@@ -57,6 +57,7 @@ export const ENDPOINTS = {
     GET_TIMESLOTS: 'chatbot/:chatbotId/booking/timeslots',
     CONFIRM: 'chatbot/:chatbotId/booking/confirm',
     CANCEL: 'chatbot/:chatbotId/booking/cancel',
+    GET_APPOINTMENTS: 'chatbot/:chatbotId/appointments',
   },
 } as const
 

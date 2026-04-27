@@ -1,5 +1,6 @@
 import { bookingsService } from '@/api/services/bookings'
 import type {
+  Appointment,
   AvailabilitySchedule,
   CreateAvailabilityRequest,
   UpdateTimeSlotsRequest,
@@ -12,9 +13,11 @@ export interface BookingSlice {
   timezone: string
   notificationEmail: string | null
   availabilities: AvailabilitySchedule[]
+  appointments: Appointment[]
 
   // Loading states
   fetchingAvailabilities: boolean
+  fetchingAppointments: boolean
   creatingDayId: number | null
   updatingSlotId: string | null
   deletingSlotId: string | null
@@ -33,6 +36,8 @@ export interface BookingSlice {
     data: UpdateTimeSlotsRequest
   ) => Promise<void>
   deleteAvailability: (chatbotId: string, slotId: string) => Promise<void>
+  fetchAppointments: (chatbotId: string) => Promise<void>
+  clearAppointments: () => void
 }
 
 export const createBookingSlice: StateCreator<
@@ -44,7 +49,9 @@ export const createBookingSlice: StateCreator<
   timezone: 'UTC',
   notificationEmail: null,
   availabilities: [],
+  appointments: [],
   fetchingAvailabilities: false,
+  fetchingAppointments: false,
   creatingDayId: null,
   updatingSlotId: null,
   deletingSlotId: null,
@@ -55,6 +62,24 @@ export const createBookingSlice: StateCreator<
       undefined,
       '[Booking] Clear Availabilities'
     )
+  },
+
+  clearAppointments: () => {
+    set({ appointments: [] }, undefined, '[Booking] Clear Appointments')
+  },
+
+  fetchAppointments: async (chatbotId: string) => {
+    set({ fetchingAppointments: true }, undefined, '[Booking] Fetching Appointments')
+    try {
+      const res = await bookingsService.getAppointments(chatbotId)
+      set(
+        { appointments: res.data.data ?? [] },
+        undefined,
+        '[Booking] Fetch Appointments'
+      )
+    } finally {
+      set({ fetchingAppointments: false }, undefined, '[Booking] Fetching Appointments Done')
+    }
   },
 
   refreshAvailabilities: async (chatbotId: string) => {
