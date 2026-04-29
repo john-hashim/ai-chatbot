@@ -16,7 +16,9 @@ dayjs.extend(customParseFormat)
 const REMARK_PLUGINS = [remarkGfm]
 const REHYPE_PLUGINS = [rehypeRaw]
 
-const parseBookingPayload = (content: string): { date?: string; time?: string } | null => {
+const parseBookingPayload = (
+  content: string
+): { date?: string; time?: string; name?: string; email?: string } | null => {
   if (!content || content[0] !== '{') return null
   try {
     const parsed = JSON.parse(content)
@@ -24,11 +26,95 @@ const parseBookingPayload = (content: string): { date?: string; time?: string } 
       typeof parsed?.booking_confirm_date === 'string' ? parsed.booking_confirm_date : undefined
     const time =
       typeof parsed?.booking_confirm_time === 'string' ? parsed.booking_confirm_time : undefined
-    if (date || time) return { date, time }
+    const name = typeof parsed?.name === 'string' ? parsed.name : undefined
+    const email = typeof parsed?.email === 'string' ? parsed.email : undefined
+    if (date || time || name || email) return { date, time, name, email }
   } catch {
     /* not JSON */
   }
   return null
+}
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+const ConfirmTimeForm: React.FC<{
+  meta: { date: string; timeslot: string } | null
+  isLast: boolean
+  isDark: boolean
+  onSubmit: (payload: string) => void
+  onCancel: () => void
+  content: string
+}> = ({ meta, isLast, isDark, onSubmit, onCancel, content }) => {
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [emailTouched, setEmailTouched] = useState(false)
+  const trimmedEmail = email.trim()
+  const isEmailValid = EMAIL_REGEX.test(trimmedEmail)
+  const canSubmit = !!name.trim() && isEmailValid && !!meta
+  const showEmailError = emailTouched && !!trimmedEmail && !isEmailValid
+
+  const handleSubmit = () => {
+    if (!canSubmit || !meta) return
+    onSubmit(
+      JSON.stringify({
+        booking_confirm_date: meta.date,
+        booking_confirm_time: meta.timeslot,
+        name: name.trim(),
+        email: trimmedEmail,
+      })
+    )
+  }
+
+  const inputCls = `w-full rounded-lg border px-2.5 py-1 text-[11px] outline-none ${
+    isDark
+      ? 'bg-zinc-700 border-zinc-600 text-zinc-100 placeholder:text-zinc-400'
+      : 'bg-white border-border-week text-zinc-900 placeholder:text-zinc-400'
+  }`
+
+  return (
+    <div className={`animate-message-in ${!isLast ? 'pointer-events-none opacity-80' : ''}`}>
+      <p className="text-xs mb-2">{content}</p>
+      <div className="flex flex-col gap-2">
+        <input
+          className={inputCls}
+          type="text"
+          placeholder="Name"
+          value={name}
+          onChange={e => setName(e.target.value)}
+        />
+        <input
+          className={`${inputCls} ${showEmailError ? 'border-red-400' : ''}`}
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          onBlur={() => setEmailTouched(true)}
+        />
+        {showEmailError && (
+          <p className="text-[10px] text-red-500 -mt-1">Please enter a valid email</p>
+        )}
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            className={`py-1 px-3 rounded-lg text-[11px] border bg-white text-center ${
+              canSubmit
+                ? 'border-border-week cursor-pointer hover:border-border-strong'
+                : 'border-border-week opacity-50 cursor-not-allowed'
+            }`}
+            onClick={handleSubmit}
+            disabled={!canSubmit}
+          >
+            Confirm Appointment
+          </button>
+          <button
+            className="py-1 px-3 rounded-lg text-[11px] border border-red-200 bg-white cursor-pointer text-center text-red-400 hover:border-red-500 hover:text-red-500"
+            onClick={onCancel}
+          >
+            Cancel Appointment
+          </button>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 const ActionButton: React.FC<{
@@ -278,6 +364,20 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                               </div>
                             </div>
                           </div>
+                        ) : chat.isAction && chat.actionType === 'confirm_time' ? (
+                          <ConfirmTimeForm
+                            meta={
+                              chat.actionMeta as {
+                                date: string
+                                timeslot: string
+                              } | null
+                            }
+                            content={chat.content}
+                            isLast={isLast}
+                            isDark={isDark}
+                            onSubmit={payload => onActionSelect?.(chat.actionType!, payload)}
+                            onCancel={() => onActionCancel?.(chat.actionType!)}
+                          />
                         ) : chat.isAction && chat.actionType === 'booking_step2' ? (
                           <div
                             className={`animate-message-in ${!isLast ? 'pointer-events-none opacity-80' : ''}`}
@@ -317,35 +417,45 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                               </div>
                             </div>
                           </div>
-                        ) : (() => {
-                          if (chat.role === 'user') {
-                            const payload = parseBookingPayload(chat.content)
-                            if (payload?.time) {
-                              return (
-                                <div className="animate-message-in">
-                                  {dayjs(payload.time, 'HH:mm').format('hh:mm A')}
-                                </div>
-                              )
+                        ) : (
+                          (() => {
+                            if (chat.role === 'user') {
+                              const payload = parseBookingPayload(chat.content)
+                              if (payload?.name && payload?.email) {
+                                return (
+                                  <div className="animate-message-in flex flex-col gap-0.5">
+                                    <span>Name: {payload.name}</span>
+                                    <span>Email: {payload.email}</span>
+                                  </div>
+                                )
+                              }
+                              if (payload?.time) {
+                                return (
+                                  <div className="animate-message-in">
+                                    {dayjs(payload.time, 'HH:mm').format('hh:mm A')}
+                                  </div>
+                                )
+                              }
+                              if (payload?.date) {
+                                return (
+                                  <div className="animate-message-in">
+                                    {dayjs(payload.date).format('Do MMM YYYY, dddd')}
+                                  </div>
+                                )
+                              }
                             }
-                            if (payload?.date) {
-                              return (
-                                <div className="animate-message-in">
-                                  {dayjs(payload.date).format('Do MMM YYYY, dddd')}
-                                </div>
-                              )
-                            }
-                          }
-                          return (
-                            <div className="animate-message-in">
-                              <ReactMarkdown
-                                remarkPlugins={REMARK_PLUGINS}
-                                rehypePlugins={REHYPE_PLUGINS}
-                              >
-                                {chat.content || 'dummy content'}
-                              </ReactMarkdown>
-                            </div>
-                          )
-                        })())}
+                            return (
+                              <div className="animate-message-in">
+                                <ReactMarkdown
+                                  remarkPlugins={REMARK_PLUGINS}
+                                  rehypePlugins={REHYPE_PLUGINS}
+                                >
+                                  {chat.content || 'dummy content'}
+                                </ReactMarkdown>
+                              </div>
+                            )
+                          })()
+                        ))}
                       {/* Message content - ends */}
                     </div>
                   </div>

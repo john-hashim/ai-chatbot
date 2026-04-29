@@ -97,7 +97,8 @@ export const ChatbotWidget: React.FC<ChatbotWidgetProps> = ({
           readOnly={readOnly}
           disabled={
             messages[messages.length - 1]?.actionType === 'booking' ||
-            messages[messages.length - 1]?.actionType === 'booking_step2'
+            messages[messages.length - 1]?.actionType === 'booking_step2' ||
+            messages[messages.length - 1]?.actionType === 'confirm_time'
           }
         />
       </div>

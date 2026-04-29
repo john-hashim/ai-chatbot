@@ -210,8 +210,11 @@ enum ScheduleType {
 model Appointment {
     id         String            @id @default(cuid())                                                            
     chatbotId  String
-    sessionId  String                                                                                            
+    sessionId  String
     email      String
+    name       String?
+    phone      String?
+    interestedTopics String?
     date       String            // "YYYY-MM-DD"
     timeslot   String            // "HH:mm"                                                                      
     status     AppointmentStatus @default(UPCOMING)

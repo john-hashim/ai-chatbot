@@ -126,13 +126,21 @@ export const PlaygroundPreview: React.FC = () => {
   }
 
   const handleActionSelect = (actionType: string, value: string) => {
-    if (actionType === 'booking' || actionType === 'booking_step2') {
+    if (
+      actionType === 'booking' ||
+      actionType === 'booking_step2' ||
+      actionType === 'confirm_time'
+    ) {
       handleSendMessage(value)
     }
   }
 
   const handleActionCancel = (actionType: string) => {
-    if (actionType === 'booking' || actionType === 'booking_step2') {
+    if (
+      actionType === 'booking' ||
+      actionType === 'booking_step2' ||
+      actionType === 'confirm_time'
+    ) {
       handleSendMessage('cancel booking')
     }
   }

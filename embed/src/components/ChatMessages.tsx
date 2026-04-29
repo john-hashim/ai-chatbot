@@ -21,7 +21,9 @@ const ordinalSuffix = (n: number): string => {
   }
 };
 
-const parseBookingPayload = (content: string): { date?: string; time?: string } | null => {
+const parseBookingPayload = (
+  content: string,
+): { date?: string; time?: string; name?: string; email?: string } | null => {
   if (!content || content[0] !== "{") return null;
   try {
     const parsed = JSON.parse(content);
@@ -29,7 +31,9 @@ const parseBookingPayload = (content: string): { date?: string; time?: string } 
       typeof parsed?.booking_confirm_date === "string" ? parsed.booking_confirm_date : undefined;
     const time =
       typeof parsed?.booking_confirm_time === "string" ? parsed.booking_confirm_time : undefined;
-    if (date || time) return { date, time };
+    const name = typeof parsed?.name === "string" ? parsed.name : undefined;
+    const email = typeof parsed?.email === "string" ? parsed.email : undefined;
+    if (date || time || name || email) return { date, time, name, email };
   } catch {
     /* not JSON */
   }
@@ -136,6 +140,90 @@ const ArrowDownIcon = () => (
     <polyline points="19 12 12 19 5 12" />
   </svg>
 );
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const ConfirmTimeForm = ({
+  meta,
+  isLast,
+  isDark,
+  content,
+  onSubmit,
+  onCancel,
+}: {
+  meta: { date: string; timeslot: string } | null;
+  isLast: boolean;
+  isDark: boolean;
+  content: string;
+  onSubmit: (payload: string) => void;
+  onCancel: () => void;
+}) => {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [emailTouched, setEmailTouched] = useState(false);
+  const trimmedEmail = email.trim();
+  const isEmailValid = EMAIL_REGEX.test(trimmedEmail);
+  const canSubmit = !!name.trim() && isEmailValid && !!meta;
+  const showEmailError = emailTouched && !!trimmedEmail && !isEmailValid;
+
+  const handleSubmit = () => {
+    if (!canSubmit || !meta) return;
+    onSubmit(
+      JSON.stringify({
+        booking_confirm_date: meta.date,
+        booking_confirm_time: meta.timeslot,
+        name: name.trim(),
+        email: trimmedEmail,
+      }),
+    );
+  };
+
+  const lockedActionStyle = !isLast
+    ? { pointerEvents: "none" as const, opacity: 0.8 }
+    : undefined;
+
+  return (
+    <div className="cbw-booking cbw-animate-message-in" style={lockedActionStyle}>
+      <p className={`cbw-booking-label${isDark ? " cbw-booking-label--dark" : ""}`}>
+        {content}
+      </p>
+      <div className="cbw-booking-fields">
+        <input
+          className={`cbw-booking-input${isDark ? " cbw-booking-input--dark" : ""}`}
+          type="text"
+          placeholder="Name"
+          value={name}
+          onInput={(e) => setName((e.target as HTMLInputElement).value)}
+        />
+        <input
+          className={`cbw-booking-input${isDark ? " cbw-booking-input--dark" : ""}${showEmailError ? " cbw-booking-input--error" : ""}`}
+          type="email"
+          placeholder="Email"
+          value={email}
+          onInput={(e) => setEmail((e.target as HTMLInputElement).value)}
+          onBlur={() => setEmailTouched(true)}
+        />
+        {showEmailError && (
+          <p className="cbw-booking-error">Please enter a valid email</p>
+        )}
+      </div>
+      <div className="cbw-booking-dates">
+        <div
+          className={`cbw-booking-date${isDark ? " cbw-booking-date--dark" : ""}${!canSubmit ? " cbw-booking-date--disabled" : ""}`}
+          onClick={canSubmit ? handleSubmit : undefined}
+        >
+          Confirm Appointment
+        </div>
+        <div
+          className="cbw-booking-date cbw-booking-date--cancel"
+          onClick={onCancel}
+        >
+          Cancel Appointment
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const ActionButton = ({
   label,
@@ -379,6 +467,24 @@ export function ChatMessages({
                               </div>
                             </div>
                           )
+                          : chat.isAction && chat.actionType === "confirm_time"
+                          ? (
+                            <ConfirmTimeForm
+                              meta={
+                                chat.actionMeta as {
+                                  date: string;
+                                  timeslot: string;
+                                } | null
+                              }
+                              isLast={isLast}
+                              isDark={isDark}
+                              content={chat.content}
+                              onSubmit={(payload) =>
+                                onActionSelect?.(chat.actionType!, payload)
+                              }
+                              onCancel={() => onActionCancel?.(chat.actionType!)}
+                            />
+                          )
                           : chat.isAction && chat.actionType === "booking_step2"
                           ? (
                             <div className="cbw-booking cbw-animate-message-in" style={lockedActionStyle}>
@@ -410,6 +516,14 @@ export function ChatMessages({
                           : (() => {
                             if (chat.role === "user") {
                               const payload = parseBookingPayload(chat.content);
+                              if (payload?.name && payload?.email) {
+                                return (
+                                  <div className="cbw-msg-text cbw-animate-message-in cbw-booking-summary">
+                                    <span>Name: {payload.name}</span>
+                                    <span>Email: {payload.email}</span>
+                                  </div>
+                                );
+                              }
                               if (payload?.time) {
                                 return (
                                   <div className="cbw-msg-text cbw-animate-message-in">

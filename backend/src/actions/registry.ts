@@ -44,7 +44,9 @@ export const actionHandlers: Record<string, ActionHandler> = {
     const date = dateMatch[0]
     const rawTimeslots = await getAvailableTimeslots(chatbotId, date)
     if (rawTimeslots.length === 0) {
-      return { message: `Sorry, there are no available time slots for ${date}. Please choose a different date.` }
+      return {
+        message: `Sorry, there are no available time slots for ${date}. Please choose a different date.`,
+      }
     }
     const timeslots: AvailableTimeslot[] = rawTimeslots.map(value => ({
       value,
@@ -57,10 +59,13 @@ export const actionHandlers: Record<string, ActionHandler> = {
   },
 
   BOOKING_CANCEL: async () => {
-    return { message: '[Booking cancelled by user] No problem! Is there anything else I can help you with?' }
+    return {
+      message:
+        '[Booking cancelled by user] No problem! Is there anything else I can help you with?',
+    }
   },
 
-  BOOKING_CONFIRM: async (chatbotId, { message, sessionId }) => {
+  CONFIRM_TIME: async (chatbotId, { message }) => {
     const dateMatch = message.match(/"booking_confirm_date"\s*:\s*"(\d{4}-\d{2}-\d{2})"/)
     const timeMatch = message.match(/"booking_confirm_time"\s*:\s*"(\d{2}:\d{2})"/)
 
@@ -78,11 +83,40 @@ export const actionHandlers: Record<string, ActionHandler> = {
       }
     }
 
+    return {
+      message: 'Almost done. Please share your name and email to confirm the appointment.',
+      meta: { date, timeslot },
+    }
+  },
+
+  BOOKING_CONFIRM: async (chatbotId, { message, sessionId }) => {
+    const dateMatch = message.match(/"booking_confirm_date"\s*:\s*"(\d{4}-\d{2}-\d{2})"/)
+    const timeMatch = message.match(/"booking_confirm_time"\s*:\s*"(\d{2}:\d{2})"/)
+    const nameMatch = message.match(/"name"\s*:\s*"([^"]+)"/)
+    const emailMatch = message.match(/"email"\s*:\s*"([^"]+)"/)
+
+    if (!dateMatch || !timeMatch || !nameMatch || !emailMatch) {
+      return { message: 'I could not read all the booking details. Please try again.' }
+    }
+
+    const date = dateMatch[1]!
+    const timeslot = timeMatch[1]!
+    const name = nameMatch[1]!
+    const email = emailMatch[1]!
+
+    const availableTimeslots = await getAvailableTimeslots(chatbotId, date)
+    if (!availableTimeslots.includes(timeslot)) {
+      return {
+        message: `Sorry, the slot ${timeslot} on ${date} is no longer available. Please choose a different time.`,
+      }
+    }
+
     const appointment = await prisma.appointment.create({
       data: {
         chatbotId,
         sessionId,
-        email: '',
+        name,
+        email,
         date,
         timeslot,
         status: 'CONFIRMED',
@@ -93,11 +127,13 @@ export const actionHandlers: Record<string, ActionHandler> = {
     const prettyTime = dayjs(timeslot, 'HH:mm').format('hh:mm A')
 
     return {
-      message: `Your appointment is confirmed for ${prettyDate} at ${prettyTime}.`,
+      message: `${name}, Your appointment is confirmed for ${prettyDate} at ${prettyTime}.`,
       meta: {
         appointmentId: appointment.id,
         date,
         timeslot,
+        name,
+        email,
         prettyDate,
         prettyTime,
       },
