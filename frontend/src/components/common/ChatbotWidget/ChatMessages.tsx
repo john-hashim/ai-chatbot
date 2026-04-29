@@ -1,4 +1,4 @@
-import { Tooltip } from '@mantine/core'
+import { Button, TextInput, Tooltip } from '@mantine/core'
 import dayjs from 'dayjs'
 import advancedFormat from 'dayjs/plugin/advancedFormat'
 import customParseFormat from 'dayjs/plugin/customParseFormat'
@@ -40,11 +40,10 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const ConfirmTimeForm: React.FC<{
   meta: { date: string; timeslot: string } | null
   isLast: boolean
-  isDark: boolean
   onSubmit: (payload: string) => void
   onCancel: () => void
   content: string
-}> = ({ meta, isLast, isDark, onSubmit, onCancel, content }) => {
+}> = ({ meta, isLast, onSubmit, onCancel, content }) => {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [emailTouched, setEmailTouched] = useState(false)
@@ -65,52 +64,41 @@ const ConfirmTimeForm: React.FC<{
     )
   }
 
-  const inputCls = `w-full rounded-lg border px-2.5 py-1 text-[11px] outline-none ${
-    isDark
-      ? 'bg-zinc-700 border-zinc-600 text-zinc-100 placeholder:text-zinc-400'
-      : 'bg-white border-border-week text-zinc-900 placeholder:text-zinc-400'
-  }`
-
   return (
     <div className={`animate-message-in ${!isLast ? 'pointer-events-none opacity-80' : ''}`}>
       <p className="text-xs mb-2">{content}</p>
       <div className="flex flex-col gap-2">
-        <input
-          className={inputCls}
+        <TextInput
+          size="xs"
+          radius="md"
           type="text"
           placeholder="Name"
           value={name}
-          onChange={e => setName(e.target.value)}
+          onChange={e => setName(e.currentTarget.value)}
         />
-        <input
-          className={`${inputCls} ${showEmailError ? 'border-red-400' : ''}`}
+        <TextInput
+          size="xs"
+          radius="md"
           type="email"
           placeholder="Email"
           value={email}
-          onChange={e => setEmail(e.target.value)}
+          error={showEmailError ? 'Please enter a valid email' : undefined}
+          onChange={e => setEmail(e.currentTarget.value)}
           onBlur={() => setEmailTouched(true)}
         />
-        {showEmailError && (
-          <p className="text-[10px] text-red-500 -mt-1">Please enter a valid email</p>
-        )}
         <div className="grid grid-cols-2 gap-2">
-          <button
-            className={`py-1 px-3 rounded-lg text-[11px] border bg-white text-center ${
-              canSubmit
-                ? 'border-border-week cursor-pointer hover:border-border-strong'
-                : 'border-border-week opacity-50 cursor-not-allowed'
-            }`}
+          <Button
+            size="xs"
+            radius="md"
+            variant="secondary"
             onClick={handleSubmit}
             disabled={!canSubmit}
           >
             Confirm Appointment
-          </button>
-          <button
-            className="py-1 px-3 rounded-lg text-[11px] border border-red-200 bg-white cursor-pointer text-center text-red-400 hover:border-red-500 hover:text-red-500"
-            onClick={onCancel}
-          >
+          </Button>
+          <Button size="xs" radius="md" variant="error" onClick={onCancel}>
             Cancel Appointment
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -374,7 +362,6 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                             }
                             content={chat.content}
                             isLast={isLast}
-                            isDark={isDark}
                             onSubmit={payload => onActionSelect?.(chat.actionType!, payload)}
                             onCancel={() => onActionCancel?.(chat.actionType!)}
                           />

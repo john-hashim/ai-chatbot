@@ -2,7 +2,7 @@
 /* Default variant - Black background with white text */
 .buttonRoot:not([data-variant='filled']):not([data-variant='light']):not(
     [data-variant='outline']
-  ):not([data-variant='secondary']):not([data-variant='compact']) {
+  ):not([data-variant='secondary']):not([data-variant='compact']):not([data-variant='error']) {
   border: 1px solid black !important;
   background-color: black !important;
   color: white !important;
@@ -10,7 +10,7 @@
 
 .buttonRoot:not([data-variant='filled']):not([data-variant='light']):not(
     [data-variant='outline']
-  ):not([data-variant='secondary']):not([data-variant='compact']):hover {
+  ):not([data-variant='secondary']):not([data-variant='compact']):not([data-variant='error']):hover {
   border: 1px solid #333 !important;
   background-color: #333 !important;
 }
@@ -54,7 +54,7 @@
 
 .buttonRoot:not([data-variant='filled']):not([data-variant='light']):not(
     [data-variant='outline']
-  ):not([data-variant='secondary']):not([data-variant='compact'])
+  ):not([data-variant='secondary']):not([data-variant='compact']):not([data-variant='error'])
   .buttonLabel {
   color: white !important;
 }
@@ -70,9 +70,30 @@
 
 .buttonRoot:not([data-variant='filled']):not([data-variant='light']):not(
     [data-variant='outline']
-  ):not([data-variant='secondary']):not([data-variant='compact'])
+  ):not([data-variant='secondary']):not([data-variant='compact']):not([data-variant='error'])
   .buttonSection {
   color: white !important;
+}
+
+/* Error variant - red border/text on white */
+.buttonRoot[data-variant='error'] {
+  border: 1px solid #fecaca !important;
+  background-color: #fff !important;
+  color: #f87171 !important;
+}
+
+.buttonRoot[data-variant='error']:hover {
+  border: 1px solid #ef4444 !important;
+  background-color: #fff !important;
+  color: #ef4444 !important;
+}
+
+.buttonRoot[data-variant='error'] .buttonLabel {
+  color: inherit !important;
+}
+
+.buttonRoot[data-variant='error'] .buttonSection {
+  color: inherit !important;
 }
 
 /* Compact variant - reduced padding, primary color border */
