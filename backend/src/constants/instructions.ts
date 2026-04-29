@@ -50,27 +50,37 @@ function buildBookingInstruction(today: string, maxDate: string): string {
 IMPORTANT: This rule overrides all other instructions.
 Today's date is ${today}. Bookings are only allowed within one month from today (up to and including ${maxDate}).
 
-When the user's message indicates an intent to create, schedule, reschedule, or cancel a booking, appointment, reservation, or meeting, apply the following rules in order:
+Evaluate the user's message against the steps below IN ORDER. Stop at the first step that matches and respond with ONLY the indicated token (no other text, explanation, greeting, or punctuation).
 
-1. If the user mentions a specific date that is AFTER ${maxDate}, respond with a natural message explaining that bookings can only be made within one month from today (up to ${maxDate}), and ask them to choose an earlier date.
+STEP A — Structured payload detection (HIGHEST PRIORITY)
+If the user's message contains JSON-like field names (keys such as "booking_confirm_date", "booking_confirm_time", "name", "email"), classify it by counting which of these keys are present. Check these sub-rules in this exact order and return the FIRST match:
 
-2. If the user does not mention a specific date, or mentions a date on or before ${maxDate}, respond with ONLY this token and nothing else:
-__ACTION:BOOKING__
+  A1. If the message contains ALL FOUR keys "booking_confirm_date", "booking_confirm_time", "name", AND "email" (regardless of order, formatting, or surrounding text), respond with ONLY:
+  __ACTION:BOOKING_CONFIRM__
+  Example match: \`{"booking_confirm_date":"2026-03-29","booking_confirm_time":"16:00","name":"John","email":"john@example.com"}\`
 
-3. If the user's message contains a "booking_confirm_date" field with a date value and NO "booking_confirm_time" field (e.g. \`{"booking_confirm_date":"2026-03-29"}\`, or any YYYY-MM-DD date), respond with ONLY this token and nothing else:
-__ACTION:BOOKING_STEP2__
+  A2. Else if the message contains BOTH "booking_confirm_date" AND "booking_confirm_time" but is missing "name" and/or "email", respond with ONLY:
+  __ACTION:CONFIRM_TIME__
+  Example match: \`{"booking_confirm_date":"2026-03-29","booking_confirm_time":"16:00"}\`
 
-4. If the user wants to cancel or skip the current booking flow (e.g. "cancel", "never mind", "no thanks"), respond with ONLY this token and nothing else:
+  A3. Else if the message contains "booking_confirm_date" but NOT "booking_confirm_time", respond with ONLY:
+  __ACTION:BOOKING_STEP2__
+  Example match: \`{"booking_confirm_date":"2026-03-29"}\`
+
+CRITICAL: Before choosing A2 or A3, you MUST verify whether the higher-priority sub-rules apply. If "name" and "email" are both present alongside the date and time, A1 wins — never return CONFIRM_TIME in that case. Count the keys carefully.
+
+STEP B — Cancellation
+If Step A did not match and the user wants to cancel or skip the current booking flow (e.g. "cancel", "never mind", "no thanks", "stop"), respond with ONLY:
 __ACTION:BOOKING_CANCEL__
 
-5. If the user's message contains all four fields "booking_confirm_date", "booking_confirm_time", "name", and "email" (e.g. \`{"booking_confirm_date":"2026-03-29","booking_confirm_time":"16:00","name":"John","email":"john@example.com"}\`), respond with ONLY this token and nothing else:
-__ACTION:BOOKING_CONFIRM__
+STEP C — Out-of-range date
+If Step A did not match and the user mentions a specific calendar date that is AFTER ${maxDate}, respond with a natural message explaining that bookings can only be made within one month from today (up to ${maxDate}), and ask them to choose an earlier date.
 
-6. If the user's message contains a "booking_confirm_time" field with any time value but rule 5 does not apply (i.e. "name" and/or "email" are missing), respond with ONLY this token and nothing else:
-__ACTION:CONFIRM_TIME__
+STEP D — Natural-language booking intent
+If Step A did not match and the user expresses intent to create, schedule, reschedule, or cancel a booking, appointment, reservation, or meeting (e.g. "I want to book", "schedule an appointment", "make a reservation", "can I book a slot", "I'd like to set up a meeting", "reschedule my booking"), and either no date is mentioned or the date is on or before ${maxDate}, respond with ONLY:
+__ACTION:BOOKING__
 
-Do not add any other text, explanation, greeting, or punctuation alongside any token.
-Examples of booking triggers: "I want to book", "schedule an appointment", "make a reservation", "can I book a slot", "I'd like to set up a meeting", "reschedule my booking".`
+If none of the steps above match, ignore this section and answer using the other instructions.`
 }
 
 /**
