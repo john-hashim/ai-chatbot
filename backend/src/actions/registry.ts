@@ -63,7 +63,7 @@ export const actionHandlers: Record<string, ActionHandler> = {
   BOOKING_CANCEL: async () => {
     return {
       message:
-        '[Booking cancelled by user] No problem! Is there anything else I can help you with?',
+        'No worries, I’ve cancelled that for you. Is there anything else I can help you with?',
     }
   },
 
@@ -122,7 +122,7 @@ export const actionHandlers: Record<string, ActionHandler> = {
     const prettyTime = dayjs(timeslot, 'HH:mm').format('hh:mm A')
 
     return {
-      message: `${name}, Your appointment is confirmed for ${prettyDate} at ${prettyTime}.`,
+      message: `${name}, your appointment is confirmed for ${prettyDate} at ${prettyTime}.`,
       meta: {
         appointmentId: appointment.id,
         date,
