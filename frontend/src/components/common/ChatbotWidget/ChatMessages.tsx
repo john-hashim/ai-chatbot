@@ -365,7 +365,7 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                             onSubmit={payload => onActionSelect?.(chat.actionType!, payload)}
                             onCancel={() => onActionCancel?.(chat.actionType!)}
                           />
-                        ) : chat.isAction && chat.actionType === 'booking_step2' ? (
+                        ) : chat.isAction && chat.actionType === 'confirm_date' ? (
                           <div
                             className={`animate-message-in ${!isLast ? 'pointer-events-none opacity-80' : ''}`}
                           >

@@ -8,6 +8,16 @@ import { getSystemInstruction } from '../constants/instructions.js'
 import { resolveCountry } from '../services/geolocation.service.js'
 import type { NestedSort } from '../types/common.js'
 import { actionHandlers } from '../actions/registry.js'
+import {
+  BookingState,
+  type BookingDraft,
+  type BookingAction,
+  parseStructuredPayload,
+  classifyMessage,
+  advance,
+  mergeDraft,
+  isTerminal,
+} from '../services/booking-flow.service.js'
 
 export const chatController = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -114,9 +124,130 @@ export const chatController = async (req: Request, res: Response, next: NextFunc
     // Send sessionId immediately
     sendSSE({ type: 'session', sessionId })
 
-    // --- RAG: embed + search, parallel with chat history fetch ---
+    // --- Load booking state for this session ---
+    const sessionState = await prisma.chatSession.findUnique({
+      where: { id: sessionId },
+      select: { bookingState: true, bookingDraft: true },
+    })
+
+    let bookingState: BookingState = (sessionState?.bookingState as BookingState) ?? BookingState.IDLE
+    let bookingDraft: BookingDraft = (sessionState?.bookingDraft as BookingDraft | null) ?? {}
+
+    // Defensive: terminal states should never be persisted (we reset before
+    // saving), but if one slips through, treat the next turn as fresh.
+    if (isTerminal(bookingState)) {
+      bookingState = BookingState.IDLE
+      bookingDraft = {}
+    }
+
     const startTime = Date.now()
 
+    // --- Booking flow decision ---
+    //
+    //  1. Structured payload (rich UI clients) → fast path, no LLM.
+    //  2. Otherwise: one LLM classifier call returns intent + extracted slots.
+    //     Routing depends on (current state × intent):
+    //       - cancel inside a flow → run cancel handler
+    //       - start while IDLE     → enter flow at AWAITING_DATE
+    //       - in-flow with slots   → advance the state machine
+    //       - anything else        → fall through to RAG, preserving state so
+    //                                a mid-flow user can ask off-topic
+    //                                questions and still resume booking.
+    const structured = parseStructuredPayload(message)
+
+    let action: BookingAction
+    let nextState: BookingState
+    let mergedDraft: BookingDraft = bookingDraft
+
+    if (structured) {
+      mergedDraft = mergeDraft(bookingDraft, structured)
+      const fromState =
+        bookingState === BookingState.IDLE ? BookingState.AWAITING_DATE : bookingState
+      ;({ nextState, action } = advance(fromState, mergedDraft))
+    } else {
+      const { intent, slots } = await classifyMessage(message, bookingState, bookingDraft)
+
+      if (intent === 'cancel_booking' && bookingState !== BookingState.IDLE) {
+        action = 'BOOKING_CANCEL'
+        nextState = BookingState.CANCELLED
+      } else if (intent === 'start_booking' && bookingState === BookingState.IDLE) {
+        mergedDraft = mergeDraft(bookingDraft, slots)
+        ;({ nextState, action } = advance(BookingState.AWAITING_DATE, mergedDraft))
+      } else if (
+        bookingState !== BookingState.IDLE &&
+        (intent === 'provide_slot' || intent === 'start_booking')
+      ) {
+        mergedDraft = mergeDraft(bookingDraft, slots)
+        ;({ nextState, action } = advance(bookingState, mergedDraft))
+      } else {
+        action = 'NONE'
+        nextState = bookingState
+      }
+    }
+
+    // ===========================================================================
+    // PATH A: ACTION — run a booking handler, persist state, emit done. No LLM.
+    // ===========================================================================
+    if (action !== 'NONE') {
+      try {
+        const handler = actionHandlers[action]
+        if (!handler) throw new Error(`No handler registered for action ${action}`)
+
+        const result = await handler({ chatbotId, sessionId, draft: mergedDraft })
+
+        // Reset terminal states to IDLE+empty so the next turn starts fresh.
+        const persistState = isTerminal(nextState) ? BookingState.IDLE : nextState
+        const persistDraft: Prisma.InputJsonValue | typeof Prisma.JsonNull = isTerminal(nextState)
+          ? Prisma.JsonNull
+          : (mergedDraft as Prisma.InputJsonValue)
+
+        await prisma.chatSession.update({
+          where: { id: sessionId },
+          data: { bookingState: persistState, bookingDraft: persistDraft },
+        })
+
+        const assistantMessage = await prisma.chatMessage.create({
+          data: {
+            sessionId,
+            role: 'assistant',
+            content: result.message,
+            model: chatService.ACTIVE_MODEL,
+            responseTime: Date.now() - startTime,
+            sources: [],
+            confidenceScore: 0,
+            isAction: true,
+            actionType: action.toLowerCase(),
+            actionMeta:
+              result.meta != null ? (result.meta as Prisma.InputJsonValue) : Prisma.JsonNull,
+          },
+        })
+
+        sendSSE({ type: 'done', message: assistantMessage })
+        res.end()
+        return
+      } catch (err) {
+        console.error('Action handler error:', err)
+        const errorMessage = 'Something went wrong with that action. Please try again.'
+        const assistantMessage = await prisma.chatMessage.create({
+          data: {
+            sessionId,
+            role: 'assistant',
+            content: errorMessage,
+            model: chatService.ACTIVE_MODEL,
+            responseTime: Date.now() - startTime,
+            sources: [],
+            confidenceScore: 0,
+          },
+        })
+        sendSSE({ type: 'done', message: assistantMessage })
+        res.end()
+        return
+      }
+    }
+
+    // ===========================================================================
+    // PATH B: NORMAL CHAT — RAG + streamed LLM response.
+    // ===========================================================================
     let queryEmbedding: number[]
     let recentMessages: Awaited<ReturnType<typeof prisma.chatMessage.findMany>>
 
@@ -141,27 +272,24 @@ export const chatController = async (req: Request, res: Response, next: NextFunc
     const context = chatService.buildContext(relevantChunks)
     const sourceDocIds = [...new Set(relevantChunks.map(c => c.documentId))]
 
-    // Calculate confidence score from average similarity of retrieved chunks
     const confidenceScore =
       relevantChunks.length > 0
         ? relevantChunks.reduce((sum, c) => sum + c.similarity, 0) / relevantChunks.length
         : 0
 
+    // Filter out booking action prompts and structured payload replies so the
+    // LLM sees a clean conversation, free of internal flow artifacts.
     const chatHistory = recentMessages
       .reverse()
-      .slice(0, -1) // exclude the user message we just saved
-      .map(m => ({
-        role: m.role,
-        content: m.content,
-      }))
+      .slice(0, -1)
+      .filter(m => {
+        if (m.isAction) return false
+        if (m.role === 'user' && parseStructuredPayload(m.content)) return false
+        return true
+      })
+      .map(m => ({ role: m.role, content: m.content }))
 
-    // --- Stream LLM response ---
     let fullResponse = ''
-    const ACTION_TOKEN_REGEX = /__ACTION:(\w+)__/
-    const ACTION_PREFIX = '__ACTION:'
-    let detectedAction: string | null = null
-    let confirmedNormal = false
-    let bufferedTokens: string[] = []
 
     await chatService.streamLLMResponse({
       message,
@@ -170,71 +298,23 @@ export const chatController = async (req: Request, res: Response, next: NextFunc
       systemInstruction,
       onToken: async (token: string) => {
         fullResponse += token
-
-        if (detectedAction) return
-
-        if (confirmedNormal) {
-          sendSSE({ type: 'token', token })
-          return
-        }
-
-        const match = fullResponse.match(ACTION_TOKEN_REGEX)
-        if (match) {
-          detectedAction = match[1] ?? null
-          bufferedTokens = []
-          return
-        }
-
-        // Check if accumulated response could still become an action token
-        const trimmed = fullResponse.trimStart()
-        const couldBeAction = ACTION_PREFIX.startsWith(trimmed) || trimmed.startsWith(ACTION_PREFIX)
-        if (couldBeAction) {
-          bufferedTokens.push(token)
-        } else {
-          confirmedNormal = true
-          for (const t of bufferedTokens) {
-            sendSSE({ type: 'token', token: t })
-          }
-          bufferedTokens = []
-          sendSSE({ type: 'token', token })
-        }
+        sendSSE({ type: 'token', token })
       },
       onComplete: async () => {
-        const responseTime = Date.now() - startTime
-
-        let resolvedActionType: string | null = null
-        let resolvedActionMeta: Prisma.InputJsonValue | typeof Prisma.JsonNull = Prisma.JsonNull
-
-        if (detectedAction) {
-          const handler = actionHandlers[detectedAction]
-          if (handler) {
-            const result = await handler(chatbotId, { message, sessionId })
-            fullResponse = result.message
-            resolvedActionType = detectedAction.toLowerCase()
-            resolvedActionMeta = result.meta != null ? (result.meta as Prisma.InputJsonValue) : Prisma.JsonNull
-          }
-        } else if (!confirmedNormal && bufferedTokens.length > 0) {
-          for (const t of bufferedTokens) {
-            sendSSE({ type: 'token', token: t })
-          }
-        }
-
-        // Save assistant message to DB
         const assistantMessage = await prisma.chatMessage.create({
           data: {
             sessionId,
             role: 'assistant',
             content: fullResponse,
             model: chatService.ACTIVE_MODEL,
-            responseTime,
+            responseTime: Date.now() - startTime,
             sources: sourceDocIds,
             confidenceScore,
-            isAction: resolvedActionType !== null,
-            actionType: resolvedActionType,
-            actionMeta: resolvedActionMeta,
+            isAction: false,
+            actionType: null,
+            actionMeta: Prisma.JsonNull,
           },
         })
-
         sendSSE({ type: 'done', message: assistantMessage })
         res.end()
       },

@@ -96,18 +96,29 @@ model EmbedConfig {
  }
 
 model ChatSession {
-  id          String        @id @default(cuid())
-  chatbotId   String
-  source      String        @default("playground") // 'playground', 'iframe', 'widget', 'whatsapp', 'api', 'messenger', 'zendesk', 'slack', 'email', 'salesforce'
-  country     String?       // Country name from IP geolocation
-  countryCode String?       // ISO 3166-1 alpha-2 code (e.g., "US", "GB")
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  chatbot     Chatbot       @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
-  messages    ChatMessage[]
+  id           String        @id @default(cuid())
+  chatbotId    String
+  source       String        @default("playground") // 'playground', 'iframe', 'widget', 'whatsapp', 'api', 'messenger', 'zendesk', 'slack', 'email', 'salesforce'
+  country      String?       // Country name from IP geolocation
+  countryCode  String?       // ISO 3166-1 alpha-2 code (e.g., "US", "GB")
+  bookingState BookingState  @default(IDLE)
+  bookingDraft Json?         // { date?, time?, name?, email? } accumulated across turns
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  chatbot      Chatbot       @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
+  messages     ChatMessage[]
 
   @@index([chatbotId])
   @@map("chat_sessions")
+}
+
+enum BookingState {
+  IDLE
+  AWAITING_DATE
+  AWAITING_TIME
+  AWAITING_CONTACT
+  CONFIRMED
+  CANCELLED
 }
 
 model ChatMessage {
@@ -221,11 +232,12 @@ model Appointment {
     createdAt  DateTime          @default(now())                                                                 
     updatedAt  DateTime          @updatedAt
                                                                                                  
-    chatbot    Chatbot           @relation(fields: [chatbotId], references: [id], onDelete: Cascade)             
+    chatbot    Chatbot           @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
 
-    @@index([chatbotId])                                                                                         
+    @@unique([sessionId, date, timeslot])
+    @@index([chatbotId])
     @@index([sessionId])
-    @@map("appointments")     
+    @@map("appointments")
 }
 
 enum AppointmentStatus {

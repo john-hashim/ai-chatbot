@@ -3,21 +3,41 @@ import snarkdown from "snarkdown";
 import type { ChatMessage } from "../services/chat";
 
 const MONTH_NAMES = [
-  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
 ];
 const WEEKDAY_NAMES = [
-  "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday",
+  "Sunday",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
 ];
 
 const ordinalSuffix = (n: number): string => {
   const v = n % 100;
   if (v >= 11 && v <= 13) return "th";
   switch (n % 10) {
-    case 1: return "st";
-    case 2: return "nd";
-    case 3: return "rd";
-    default: return "th";
+    case 1:
+      return "st";
+    case 2:
+      return "nd";
+    case 3:
+      return "rd";
+    default:
+      return "th";
   }
 };
 
@@ -28,9 +48,13 @@ const parseBookingPayload = (
   try {
     const parsed = JSON.parse(content);
     const date =
-      typeof parsed?.booking_confirm_date === "string" ? parsed.booking_confirm_date : undefined;
+      typeof parsed?.booking_confirm_date === "string"
+        ? parsed.booking_confirm_date
+        : undefined;
     const time =
-      typeof parsed?.booking_confirm_time === "string" ? parsed.booking_confirm_time : undefined;
+      typeof parsed?.booking_confirm_time === "string"
+        ? parsed.booking_confirm_time
+        : undefined;
     const name = typeof parsed?.name === "string" ? parsed.name : undefined;
     const email = typeof parsed?.email === "string" ? parsed.email : undefined;
     if (date || time || name || email) return { date, time, name, email };
@@ -183,8 +207,13 @@ const ConfirmTimeForm = ({
     : undefined;
 
   return (
-    <div className="cbw-booking cbw-animate-message-in" style={lockedActionStyle}>
-      <p className={`cbw-booking-label${isDark ? " cbw-booking-label--dark" : ""}`}>
+    <div
+      className="cbw-booking cbw-animate-message-in"
+      style={lockedActionStyle}
+    >
+      <p
+        className={`cbw-booking-label${isDark ? " cbw-booking-label--dark" : ""}`}
+      >
         {content}
       </p>
       <div className="cbw-booking-fields">
@@ -441,79 +470,114 @@ export function ChatMessages({
                       )}
 
                       {/* Message content */}
-                      {!(isGenerating && !chat.content) && (
-                        chat.isAction && chat.actionType === "booking"
-                          ? (
-                            <div className="cbw-booking cbw-animate-message-in" style={lockedActionStyle}>
-                              <p className={`cbw-booking-label${isDark ? " cbw-booking-label--dark" : ""}`}>
-                                Here are the available dates for booking, please select one
-                              </p>
-                              <div className="cbw-booking-dates">
-                                {(chat.actionMeta as { dates: { value: string; label: string }[] })?.dates?.map((date) => (
-                                  <div
-                                    key={date.value}
-                                    className={`cbw-booking-date${isDark ? " cbw-booking-date--dark" : ""}`}
-                                    onClick={() => onActionSelect?.(chat.actionType!, JSON.stringify({ booking_confirm_date: date.value }))}
-                                  >
-                                    {date.label}
-                                  </div>
-                                ))}
-                                <div
-                                  className="cbw-booking-date cbw-booking-date--cancel"
-                                  onClick={() => onActionCancel?.(chat.actionType!)}
-                                >
-                                  Cancel Appointment
-                                </div>
-                              </div>
-                            </div>
-                          )
-                          : chat.isAction && chat.actionType === "confirm_time"
-                          ? (
-                            <ConfirmTimeForm
-                              meta={
+                      {!(isGenerating && !chat.content) &&
+                        (chat.isAction && chat.actionType === "booking" ? (
+                          <div
+                            className="cbw-booking cbw-animate-message-in"
+                            style={lockedActionStyle}
+                          >
+                            <p
+                              className={`cbw-booking-label${isDark ? " cbw-booking-label--dark" : ""}`}
+                            >
+                              Here are the available dates for booking, please
+                              select one
+                            </p>
+                            <div className="cbw-booking-dates">
+                              {(
                                 chat.actionMeta as {
-                                  date: string;
-                                  timeslot: string;
-                                } | null
-                              }
-                              isLast={isLast}
-                              isDark={isDark}
-                              content={chat.content}
-                              onSubmit={(payload) =>
-                                onActionSelect?.(chat.actionType!, payload)
-                              }
-                              onCancel={() => onActionCancel?.(chat.actionType!)}
-                            />
-                          )
-                          : chat.isAction && chat.actionType === "booking_step2"
-                          ? (
-                            <div className="cbw-booking cbw-animate-message-in" style={lockedActionStyle}>
-                              <p className={`cbw-booking-label${isDark ? " cbw-booking-label--dark" : ""}`}>
-                                Here are the available time slots, please select one
-                              </p>
-                              <div className="cbw-booking-dates">
-                                {(() => {
-                                  const meta = chat.actionMeta as { date: string; timeslots: { value: string; label: string }[] } | null;
-                                  return meta?.timeslots?.map((slot) => (
-                                    <div
-                                      key={slot.value}
-                                      className={`cbw-booking-date${isDark ? " cbw-booking-date--dark" : ""}`}
-                                      onClick={() => onActionSelect?.(chat.actionType!, JSON.stringify({ booking_confirm_date: meta.date, booking_confirm_time: slot.value }))}
-                                    >
-                                      {slot.label}
-                                    </div>
-                                  ));
-                                })()}
+                                  dates: { value: string; label: string }[];
+                                }
+                              )?.dates?.map((date) => (
                                 <div
-                                  className="cbw-booking-date cbw-booking-date--cancel"
-                                  onClick={() => onActionCancel?.(chat.actionType!)}
+                                  key={date.value}
+                                  className={`cbw-booking-date${isDark ? " cbw-booking-date--dark" : ""}`}
+                                  onClick={() =>
+                                    onActionSelect?.(
+                                      chat.actionType!,
+                                      JSON.stringify({
+                                        booking_confirm_date: date.value,
+                                      }),
+                                    )
+                                  }
                                 >
-                                  Cancel Appointment
+                                  {date.label}
                                 </div>
+                              ))}
+                              <div
+                                className="cbw-booking-date cbw-booking-date--cancel"
+                                onClick={() =>
+                                  onActionCancel?.(chat.actionType!)
+                                }
+                              >
+                                Cancel Appointment
                               </div>
                             </div>
-                          )
-                          : (() => {
+                          </div>
+                        ) : chat.isAction &&
+                          chat.actionType === "confirm_time" ? (
+                          <ConfirmTimeForm
+                            meta={
+                              chat.actionMeta as {
+                                date: string;
+                                timeslot: string;
+                              } | null
+                            }
+                            isLast={isLast}
+                            isDark={isDark}
+                            content={chat.content}
+                            onSubmit={(payload) =>
+                              onActionSelect?.(chat.actionType!, payload)
+                            }
+                            onCancel={() => onActionCancel?.(chat.actionType!)}
+                          />
+                        ) : chat.isAction &&
+                          chat.actionType === "confirm_date" ? (
+                          <div
+                            className="cbw-booking cbw-animate-message-in"
+                            style={lockedActionStyle}
+                          >
+                            <p
+                              className={`cbw-booking-label${isDark ? " cbw-booking-label--dark" : ""}`}
+                            >
+                              Here are the available time slots, please select
+                              one
+                            </p>
+                            <div className="cbw-booking-dates">
+                              {(() => {
+                                const meta = chat.actionMeta as {
+                                  date: string;
+                                  timeslots: { value: string; label: string }[];
+                                } | null;
+                                return meta?.timeslots?.map((slot) => (
+                                  <div
+                                    key={slot.value}
+                                    className={`cbw-booking-date${isDark ? " cbw-booking-date--dark" : ""}`}
+                                    onClick={() =>
+                                      onActionSelect?.(
+                                        chat.actionType!,
+                                        JSON.stringify({
+                                          booking_confirm_date: meta.date,
+                                          booking_confirm_time: slot.value,
+                                        }),
+                                      )
+                                    }
+                                  >
+                                    {slot.label}
+                                  </div>
+                                ));
+                              })()}
+                              <div
+                                className="cbw-booking-date cbw-booking-date--cancel"
+                                onClick={() =>
+                                  onActionCancel?.(chat.actionType!)
+                                }
+                              >
+                                Cancel Appointment
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          (() => {
                             if (chat.role === "user") {
                               const payload = parseBookingPayload(chat.content);
                               if (payload?.name && payload?.email) {
@@ -543,12 +607,14 @@ export function ChatMessages({
                               <div
                                 className="cbw-msg-text cbw-animate-message-in"
                                 dangerouslySetInnerHTML={{
-                                  __html: snarkdown(chat.content || "dummy content"),
+                                  __html: snarkdown(
+                                    chat.content || "dummy content",
+                                  ),
                                 }}
                               />
                             );
                           })()
-                      )}
+                        ))}
                     </div>
                   </div>
 

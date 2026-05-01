@@ -154,7 +154,7 @@ export function ChatWidget({ embedKey, apiBase, mode }: Props) {
     (actionType: string, value: string) => {
       if (
         actionType === "booking" ||
-        actionType === "booking_step2" ||
+        actionType === "confirm_date" ||
         actionType === "confirm_time"
       ) {
         handleSend(value);
@@ -167,7 +167,7 @@ export function ChatWidget({ embedKey, apiBase, mode }: Props) {
     (actionType: string) => {
       if (
         actionType === "booking" ||
-        actionType === "booking_step2" ||
+        actionType === "confirm_date" ||
         actionType === "confirm_time"
       ) {
         handleSend("cancel booking");
@@ -239,7 +239,7 @@ export function ChatWidget({ embedKey, apiBase, mode }: Props) {
           disabled={
             streaming ||
             messages[messages.length - 1]?.actionType === "booking" ||
-            messages[messages.length - 1]?.actionType === "booking_step2" ||
+            messages[messages.length - 1]?.actionType === "confirm_date" ||
             messages[messages.length - 1]?.actionType === "confirm_time"
           }
         />

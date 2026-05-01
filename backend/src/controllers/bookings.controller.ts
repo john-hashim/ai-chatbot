@@ -456,7 +456,7 @@ export const getTimeSlotsForDate = async (req: Request, res: Response, next: Nex
         content: messageContent,
         sources: [],
         isAction: hasSlots,
-        actionType: hasSlots ? 'booking_step2' : null,
+        actionType: hasSlots ? 'confirm_date' : null,
         actionMeta: hasSlots
           ? ({ date, timeslots: availableTimeslots } as Prisma.InputJsonValue)
           : Prisma.JsonNull,
@@ -572,10 +572,7 @@ export const getAppointments = async (req: Request, res: Response, next: NextFun
       where: {
         chatbotId,
         status: 'UPCOMING',
-        OR: [
-          { date: { lt: today } },
-          { date: today, timeslot: { lt: nowTime } },
-        ],
+        OR: [{ date: { lt: today } }, { date: today, timeslot: { lt: nowTime } }],
       },
       data: { status: 'PAST' },
     })
@@ -618,7 +615,8 @@ export const cancelBookingFlow = async (req: Request, res: Response, next: NextF
       data: {
         sessionId,
         role: 'assistant',
-        content: '[Booking cancelled by user] No problem! Is there anything else I can help you with?',
+        content:
+          '[Booking cancelled by user] No problem! Is there anything else I can help you with?',
         sources: [],
       },
     })

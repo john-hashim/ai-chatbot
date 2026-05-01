@@ -128,7 +128,7 @@ export const PlaygroundPreview: React.FC = () => {
   const handleActionSelect = (actionType: string, value: string) => {
     if (
       actionType === 'booking' ||
-      actionType === 'booking_step2' ||
+      actionType === 'confirm_date' ||
       actionType === 'confirm_time'
     ) {
       handleSendMessage(value)
@@ -138,7 +138,7 @@ export const PlaygroundPreview: React.FC = () => {
   const handleActionCancel = (actionType: string) => {
     if (
       actionType === 'booking' ||
-      actionType === 'booking_step2' ||
+      actionType === 'confirm_date' ||
       actionType === 'confirm_time'
     ) {
       handleSendMessage('cancel booking')

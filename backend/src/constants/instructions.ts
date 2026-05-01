@@ -45,67 +45,58 @@ export const INSTRUCTION_TEMPLATES: Record<Exclude<InstructionType, 'manual'>, s
 4. Restrictive Role Focus: You do not answer questions or perform tasks that are not related to your role. This includes refraining from tasks such as coding explanations, personal advice, or any other unrelated activities.`,
 }
 
-function buildBookingInstruction(today: string, maxDate: string): string {
-  return `### TOP PRIORITY — Booking & Appointment Detection
-IMPORTANT: This rule overrides all other instructions.
-Today's date is ${today}. Bookings are only allowed within one month from today (up to and including ${maxDate}).
-
-Evaluate the user's message against the steps below IN ORDER. Stop at the first step that matches and respond with ONLY the indicated token (no other text, explanation, greeting, or punctuation).
-
-STEP A — Structured payload detection (HIGHEST PRIORITY)
-If the user's message contains JSON-like field names (keys such as "booking_confirm_date", "booking_confirm_time", "name", "email"), classify it by counting which of these keys are present. Check these sub-rules in this exact order and return the FIRST match:
-
-  A1. If the message contains ALL FOUR keys "booking_confirm_date", "booking_confirm_time", "name", AND "email" (regardless of order, formatting, or surrounding text), respond with ONLY:
-  __ACTION:BOOKING_CONFIRM__
-  Example match: \`{"booking_confirm_date":"2026-03-29","booking_confirm_time":"16:00","name":"John","email":"john@example.com"}\`
-
-  A2. Else if the message contains BOTH "booking_confirm_date" AND "booking_confirm_time" but is missing "name" and/or "email", respond with ONLY:
-  __ACTION:CONFIRM_TIME__
-  Example match: \`{"booking_confirm_date":"2026-03-29","booking_confirm_time":"16:00"}\`
-
-  A3. Else if the message contains "booking_confirm_date" but NOT "booking_confirm_time", respond with ONLY:
-  __ACTION:BOOKING_STEP2__
-  Example match: \`{"booking_confirm_date":"2026-03-29"}\`
-
-CRITICAL: Before choosing A2 or A3, you MUST verify whether the higher-priority sub-rules apply. If "name" and "email" are both present alongside the date and time, A1 wins — never return CONFIRM_TIME in that case. Count the keys carefully.
-
-STEP B — Cancellation
-If Step A did not match and the user wants to cancel or skip the current booking flow (e.g. "cancel", "never mind", "no thanks", "stop"), respond with ONLY:
-__ACTION:BOOKING_CANCEL__
-
-STEP C — Out-of-range date
-If Step A did not match and the user mentions a specific calendar date that is AFTER ${maxDate}, respond with a natural message explaining that bookings can only be made within one month from today (up to ${maxDate}), and ask them to choose an earlier date.
-
-STEP D — Natural-language booking intent
-If Step A did not match and the user expresses intent to create, schedule, reschedule, or cancel a booking, appointment, reservation, or meeting (e.g. "I want to book", "schedule an appointment", "make a reservation", "can I book a slot", "I'd like to set up a meeting", "reschedule my booking"), and either no date is mentioned or the date is on or before ${maxDate}, respond with ONLY:
-__ACTION:BOOKING__
-
-If none of the steps above match, ignore this section and answer using the other instructions.`
-}
-
 /**
  * Resolve the system instruction for a chatbot based on its type and custom text.
+ *
+ * Booking-flow detection is intentionally NOT part of this prompt — the
+ * controller routes booking turns deterministically using the classifier
+ * below, so the conversational LLM only ever runs on non-booking turns.
  */
 export function getSystemInstruction(
   instructionType: string,
   customInstruction?: string | null
 ): string {
-  const today = new Date()
-  const maxDate = new Date(today)
-  maxDate.setMonth(maxDate.getMonth() + 1)
-
-  const todayStr = today.toISOString().split('T')[0] ?? ''
-  const maxDateStr = maxDate.toISOString().split('T')[0] ?? ''
-
-  const bookingInstruction = buildBookingInstruction(todayStr, maxDateStr)
-
-  let baseInstruction: string
   if (instructionType === 'manual' && customInstruction) {
-    baseInstruction = customInstruction
-  } else {
-    const key = instructionType as Exclude<InstructionType, 'manual'>
-    baseInstruction = INSTRUCTION_TEMPLATES[key] ?? INSTRUCTION_TEMPLATES.base
+    return customInstruction
   }
+  const key = instructionType as Exclude<InstructionType, 'manual'>
+  return INSTRUCTION_TEMPLATES[key] ?? INSTRUCTION_TEMPLATES.base
+}
 
-  return `${bookingInstruction}\n\n${baseInstruction}`
+/**
+ * Prompt for the booking-flow classifier. Run on every non-structured message
+ * to extract intent + booking slots in a single LLM call. The controller
+ * routes on (state, intent) and feeds slots into the booking state machine.
+ *
+ * Tolerant to typos, paraphrases, and negation — that's the whole point.
+ * Returns strict JSON only.
+ */
+export function buildBookingClassifierPrompt(args: {
+  state: string
+  draft: Record<string, unknown>
+  today: string
+}): string {
+  return `You are a booking-flow classifier. Read the user's message and return strict JSON describing their intent and any booking details you can extract.
+
+Today's date: ${args.today}
+Current booking state: ${args.state}
+Existing draft (slots already collected): ${JSON.stringify(args.draft)}
+
+Return a JSON object with these keys:
+- "intent" (required) — one of:
+  - "start_booking": user wants to start a booking, schedule, reserve, set up, fix, arrange a meeting/appointment/consultation/slot/call. Tolerate typos ("bok appointment", "scheduel a meeting", "resreve slot"). Tolerate paraphrases ("can you fix a time?", "are you free tomorrow?", "let's catch up", "I want to set something up").
+  - "cancel_booking": user wants to abort/skip/stop an active booking, or expresses change of mind ("never mind", "not now", "I don't want this anymore", "stop", "forget it", "I changed my mind", "cancel").
+  - "provide_slot": user is responding inside an active booking flow with date/time/name/email information (e.g. "tomorrow at 4pm", "John Doe, john@x.com", "the 15th works for me").
+  - "none": message is unrelated to booking, or hypothetical/uncommitted ("I might book later", "I was thinking about a consultation but not now"). Default for ambiguous or off-topic input.
+- "date" (optional) — YYYY-MM-DD. Resolve relative dates ("tomorrow", "next Monday", "the 15th") using today's date. Omit if not mentioned, ambiguous, or in the past.
+- "time" (optional) — HH:mm in 24-hour format. Convert "4pm" → "16:00", "half past nine" → "09:30". Omit if ambiguous.
+- "name" (optional) — the user's name if explicitly stated. Omit otherwise.
+- "email" (optional) — a valid email address if provided. Omit otherwise.
+
+Hard rules:
+1. If state is "IDLE", intent MUST be "start_booking", "cancel_booking", or "none" — never "provide_slot".
+2. Negation matters. "I don't want to book", "don't book yet", "not now": "none" if state is IDLE; "cancel_booking" if state is in-flow.
+3. Hypothetical or future-tense booking with no commitment ("I might book later", "thinking about a consultation") → "none", not "start_booking".
+4. If a slot is ambiguous, omit it. Do not guess.
+5. Output JSON only — no prose, no explanation, no surrounding text.`
 }
