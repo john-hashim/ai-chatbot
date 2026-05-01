@@ -31,7 +31,7 @@ export async function getAvailabilitiesAsString(chatbotId: string) {
       let dates = availabilities
         .map(
           availability =>
-            availability.specificDate && dayjs(availability.specificDate).format('YYYY-MM-DD')
+            availability.specificDate && dayjs.utc(availability.specificDate).format('YYYY-MM-DD')
         )
         .filter((date): date is string => date !== null && date >= today)
 
@@ -49,7 +49,7 @@ export async function getAvailabilitiesAsString(chatbotId: string) {
 
 export async function getAvailableTimeslots(chatbotId: string, date: string): Promise<string[]> {
   try {
-    const parsedDate = dayjs(date)
+    const parsedDate = dayjs.utc(date)
     if (!parsedDate.isValid()) return []
 
     const dayOfWeek = parsedDate.day()

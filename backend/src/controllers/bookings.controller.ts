@@ -386,7 +386,7 @@ export const getTimeSlotsForDate = async (req: Request, res: Response, next: Nex
       } satisfies ApiResponse)
     }
 
-    const parsedDate = dayjs(date)
+    const parsedDate = dayjs.utc(date)
     if (!parsedDate.isValid()) {
       return res.status(400).json({
         status: ApiStatus.FAILURE,
