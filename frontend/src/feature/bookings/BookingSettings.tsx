@@ -16,17 +16,11 @@ for (const tz of rawTimeZones) {
   for (const alias of tz.group) aliasToCanonical.set(alias, tz.name)
 }
 
-const seenLabels = new Set<string>()
-const TIMEZONE_OPTIONS = rawTimeZones
-  .filter(tz => {
-    if (seenLabels.has(tz.alternativeName)) return false
-    seenLabels.add(tz.alternativeName)
-    return true
-  })
-  .map(tz => {
-    const abbr = /^GMT[+-]/.test(tz.abbreviation) ? '' : ` — ${tz.abbreviation}`
-    return { value: tz.name, label: `${tz.alternativeName}${abbr}` }
-  })
+const TIMEZONE_OPTIONS = rawTimeZones.map(tz => {
+  const abbr = /^GMT[+-]/.test(tz.abbreviation) ? '' : ` — ${tz.abbreviation}`
+  const city = tz.mainCities[0] ?? tz.name
+  return { value: tz.name, label: `${tz.alternativeName}${abbr} (${city})` }
+})
 
 const formatterCache = new Map<string, Intl.DateTimeFormat>()
 function getCurrentTime(tz: string): string {
