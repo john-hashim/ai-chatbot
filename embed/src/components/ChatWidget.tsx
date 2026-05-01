@@ -236,12 +236,25 @@ export function ChatWidget({ embedKey, apiBase, mode }: Props) {
           value={input}
           onChange={setInput}
           onSubmit={() => handleSend()}
-          disabled={
-            streaming ||
-            messages[messages.length - 1]?.actionType === "booking" ||
-            messages[messages.length - 1]?.actionType === "confirm_date" ||
-            messages[messages.length - 1]?.actionType === "confirm_time"
-          }
+          disabled={(() => {
+            if (streaming) return true;
+            const last = messages[messages.length - 1];
+            if (!last?.isAction) return false;
+            if (last.actionType === "booking") {
+              return (
+                ((last.actionMeta as { dates?: unknown[] } | null)?.dates
+                  ?.length ?? 0) > 0
+              );
+            }
+            if (last.actionType === "confirm_date") {
+              return (
+                ((last.actionMeta as { timeslots?: unknown[] } | null)
+                  ?.timeslots?.length ?? 0) > 0
+              );
+            }
+            if (last.actionType === "confirm_time") return true;
+            return false;
+          })()}
         />
       </div>
       {error && <div className="cbw-error">{error}</div>}

@@ -479,8 +479,9 @@ export function ChatMessages({
                             <p
                               className={`cbw-booking-label${isDark ? " cbw-booking-label--dark" : ""}`}
                             >
-                              Here are the available dates for booking, please
-                              select one
+                              {chat.actionMeta == null
+                                ? "Sorry, there are no available dates right now. Please check back later."
+                                : "Here are the available dates for booking, please select one"}
                             </p>
                             <div className="cbw-booking-dates">
                               {(
@@ -503,14 +504,20 @@ export function ChatMessages({
                                   {date.label}
                                 </div>
                               ))}
-                              <div
-                                className="cbw-booking-date cbw-booking-date--cancel"
-                                onClick={() =>
-                                  onActionCancel?.(chat.actionType!)
-                                }
-                              >
-                                Cancel Appointment
-                              </div>
+                              {((
+                                chat.actionMeta as {
+                                  dates?: { value: string; label: string }[];
+                                } | null
+                              )?.dates?.length ?? 0) > 0 && (
+                                <div
+                                  className="cbw-booking-date cbw-booking-date--cancel"
+                                  onClick={() =>
+                                    onActionCancel?.(chat.actionType!)
+                                  }
+                                >
+                                  Cancel Appointment
+                                </div>
+                              )}
                             </div>
                           </div>
                         ) : chat.isAction &&

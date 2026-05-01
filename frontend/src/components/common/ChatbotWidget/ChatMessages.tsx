@@ -66,7 +66,7 @@ const ConfirmTimeForm: React.FC<{
 
   return (
     <div className={`animate-message-in ${!isLast ? 'pointer-events-none opacity-80' : ''}`}>
-      <p className="text-xs mb-2">{content}</p>
+      <p className="mb-2">{content}</p>
       <div className="flex flex-col gap-2">
         <TextInput
           size="xs"
@@ -324,8 +324,10 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                           <div
                             className={`animate-message-in ${!isLast ? 'pointer-events-none opacity-80' : ''}`}
                           >
-                            <p className="text-xs mb-2">
-                              Here are the available dates for booking, please select one
+                            <p className="mb-2">
+                              {chat.actionMeta == null
+                                ? 'Sorry, there are no available dates right now. Please check back later.'
+                                : 'Here are the available dates for booking, please select one'}
                             </p>
                             <div className="grid grid-cols-2 gap-2">
                               {(
@@ -344,12 +346,18 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                                   {date.label}
                                 </div>
                               ))}
-                              <div
-                                className="py-1 px-3 rounded-lg text-xs border border-red-200 bg-white cursor-pointer text-center text-red-400 hover:border-red-500 hover:text-red-500"
-                                onClick={() => onActionCancel?.(chat.actionType!)}
-                              >
-                                Cancel Appointment
-                              </div>
+                              {((
+                                chat.actionMeta as {
+                                  dates?: { value: string; label: string }[]
+                                } | null
+                              )?.dates?.length ?? 0) > 0 && (
+                                <div
+                                  className="py-1 px-3 rounded-lg text-xs border border-red-200 bg-white cursor-pointer text-center text-red-400 hover:border-red-500 hover:text-red-500"
+                                  onClick={() => onActionCancel?.(chat.actionType!)}
+                                >
+                                  Cancel Appointment
+                                </div>
+                              )}
                             </div>
                           </div>
                         ) : chat.isAction && chat.actionType === 'confirm_time' ? (
@@ -369,7 +377,7 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                           <div
                             className={`animate-message-in ${!isLast ? 'pointer-events-none opacity-80' : ''}`}
                           >
-                            <p className="text-xs mb-2">
+                            <p className="mb-2">
                               Here are the available time slots, please select one
                             </p>
                             <div className="grid grid-cols-2 gap-2">

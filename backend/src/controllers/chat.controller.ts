@@ -130,7 +130,8 @@ export const chatController = async (req: Request, res: Response, next: NextFunc
       select: { bookingState: true, bookingDraft: true },
     })
 
-    let bookingState: BookingState = (sessionState?.bookingState as BookingState) ?? BookingState.IDLE
+    let bookingState: BookingState =
+      (sessionState?.bookingState as BookingState) ?? BookingState.IDLE
     let bookingDraft: BookingDraft = (sessionState?.bookingDraft as BookingDraft | null) ?? {}
 
     // Defensive: terminal states should never be persisted (we reset before
