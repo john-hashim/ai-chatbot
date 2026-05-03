@@ -219,7 +219,7 @@ export const BookingSettings: React.FC = () => {
                   allowDeselect={false}
                   searchable
                   checkIconPosition="right"
-                  disabled={updatingTimezone}
+                  // disabled={updatingTimezone}
                   w={320}
                   comboboxProps={{ width: 380 }}
                   renderOption={renderTimezoneOption}
@@ -240,7 +240,7 @@ export const BookingSettings: React.FC = () => {
                   onChange={handleDurationChange}
                   allowDeselect={false}
                   checkIconPosition="right"
-                  disabled={updatingDuration}
+                  // disabled={updatingDuration}
                   w={150}
                 />
                 {selectedDuration && (
@@ -340,7 +340,7 @@ export const BookingSettings: React.FC = () => {
                       <button
                         onClick={handleEmailDone}
                         disabled={savingEmail}
-                        className="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white transition-colors shrink-0"
+                        className="flex items-center justify-center w-8 h-8 rounded-lg bg-color-primary hover:bg-color-primary/90 disabled:opacity-50 text-white transition-colors shrink-0"
                         title="Save"
                       >
                         <Check size={14} strokeWidth={2.5} />
