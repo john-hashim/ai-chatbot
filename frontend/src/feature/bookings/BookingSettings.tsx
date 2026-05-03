@@ -1,11 +1,12 @@
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
-import { Button, Select, Skeleton } from '@mantine/core'
+import { Button, Loader, Select, Skeleton, Tooltip } from '@mantine/core'
 import { useParams } from 'react-router-dom'
 import { rawTimeZones } from '@vvo/tzdb'
-import { Calendar, Check, Pencil, Unplug, X } from 'lucide-react'
+import { Check, Pencil, X } from 'lucide-react'
 import { notifications } from '@mantine/notifications'
 import { useBookingStore } from '@/store'
+import googleCalendarIcon from '@/assets/icons/google-calendar.svg'
 
 const DURATION_OPTIONS = [
   { value: '30', label: '30 minutes' },
@@ -76,8 +77,12 @@ export const BookingSettings: React.FC = () => {
   const [savingEmail, setSavingEmail] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  useEffect(() => { setLocalDuration(String(duration)) }, [duration])
-  useEffect(() => { setLocalTimezone(timezone) }, [timezone])
+  useEffect(() => {
+    setLocalDuration(String(duration))
+  }, [duration])
+  useEffect(() => {
+    setLocalTimezone(timezone)
+  }, [timezone])
 
   const handleDurationChange = async (val: string | null) => {
     if (!val || !chatbotId || updatingDuration) return
@@ -190,7 +195,6 @@ export const BookingSettings: React.FC = () => {
       <p className="py-2 font-bold text-lg text-text-primary">Settings</p>
       <div className="mt-4 flex flex-col gap-3">
         <div className="flex flex-col gap-5 p-6 border border-border-week bg-white rounded-xl text-sm text-text-primary min-h-[calc(100vh-220px)]">
-
           {fetchingAvailabilities ? (
             <>
               {[150, 320, 320].map((w, i) => (
@@ -203,166 +207,191 @@ export const BookingSettings: React.FC = () => {
             </>
           ) : (
             <>
-          {/* Schedule Duration */}
-          <div className="border-b border-border-week">
-            <label className="mb-1.5 block text-sm font-medium text-text-secondary">
-              Schedule Duration
-            </label>
-            <Select
-              data={DURATION_OPTIONS}
-              value={localDuration}
-              onChange={handleDurationChange}
-              allowDeselect={false}
-              checkIconPosition="right"
-              disabled={updatingDuration}
-              w={150}
-            />
-            {selectedDuration && (
-              <p className="mt-1 mb-6 text-xs text-text-weak">
-                Meetings will be scheduled in{' '}
-                <span className="font-bold">{selectedDuration.label}</span> slots.
-              </p>
-            )}
-          </div>
-
-          {/* Timezone */}
-          <div className="border-b border-border-week">
-            <label className="mb-1.5 block text-sm font-medium text-text-secondary">Timezone</label>
-            <Select
-              data={TIMEZONE_OPTIONS}
-              value={aliasToCanonical.get(localTimezone) ?? localTimezone}
-              onChange={handleTimezoneChange}
-              allowDeselect={false}
-              searchable
-              checkIconPosition="right"
-              disabled={updatingTimezone}
-              w={320}
-              comboboxProps={{ width: 380 }}
-              renderOption={renderTimezoneOption}
-            />
-            <p className="mt-1 mb-6 text-xs text-text-weak">
-              All availability times will use this timezone.
-            </p>
-          </div>
-
-          {/* Notification Email */}
-          <div className="border-b border-border-week pb-6">
-            <label className="mb-1.5 block text-sm font-medium text-text-secondary">
-              Notification Email
-            </label>
-
-            {isEditingEmail ? (
-              <div className="flex flex-col gap-1.5">
-                <div className="flex items-center gap-2">
-                  <div
-                    className={`flex items-center gap-2 px-3 h-9 rounded-lg border bg-white transition-colors w-72 ${
-                      emailError
-                        ? 'border-red-400 ring-1 ring-red-300'
-                        : 'border-border-strong'
-                    }`}
-                  >
-                    <input
-                      ref={inputRef}
-                      type="email"
-                      value={draftEmail}
-                      onChange={e => handleEmailChange(e.currentTarget.value)}
-                      onKeyDown={handleEmailKeyDown}
-                      placeholder="you@example.com"
-                      className="flex-1 text-sm bg-transparent outline-none text-text-primary placeholder:text-text-weak"
-                    />
-                  </div>
-
-                  <button
-                    onClick={handleEmailDone}
-                    disabled={savingEmail}
-                    className="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white transition-colors shrink-0"
-                    title="Save"
-                  >
-                    <Check size={14} strokeWidth={2.5} />
-                  </button>
-                  <button
-                    onClick={cancelEmailEdit}
-                    disabled={savingEmail}
-                    className="flex items-center justify-center w-8 h-8 rounded-lg border border-border-week hover:bg-gray-50 disabled:opacity-50 text-text-weak transition-colors shrink-0"
-                    title="Cancel"
-                  >
-                    <X size={14} strokeWidth={2.5} />
-                  </button>
-                </div>
-
-                <p
-                  aria-live="polite"
-                  className={`text-xs ${emailError ? 'text-red-500' : 'text-text-weak'}`}
-                >
-                  {emailError || 'Press Enter to save, Esc to cancel.'}
+              {/* Timezone */}
+              <div className="border-b border-border-week">
+                <label className="mb-1.5 block text-sm font-medium text-text-secondary">
+                  Timezone
+                </label>
+                <Select
+                  data={TIMEZONE_OPTIONS}
+                  value={aliasToCanonical.get(localTimezone) ?? localTimezone}
+                  onChange={handleTimezoneChange}
+                  allowDeselect={false}
+                  searchable
+                  checkIconPosition="right"
+                  disabled={updatingTimezone}
+                  w={320}
+                  comboboxProps={{ width: 380 }}
+                  renderOption={renderTimezoneOption}
+                />
+                <p className="mt-1 mb-6 text-xs text-text-weak">
+                  All availability times will use this timezone.
                 </p>
               </div>
-            ) : (
-              <div className="flex flex-col gap-1">
-                <div className="flex items-center gap-2 group w-fit">
-                  <div className="flex items-center gap-2 px-3 h-9 rounded-lg border border-border-week bg-white w-72">
-                    <span
-                      className={`flex-1 text-sm truncate ${
-                        notificationEmail ? 'text-text-primary' : 'text-text-weak'
-                      }`}
+
+              {/* Schedule Duration */}
+              <div className="border-b border-border-week">
+                <label className="mb-1.5 block text-sm font-medium text-text-secondary">
+                  Schedule Duration
+                </label>
+                <Select
+                  data={DURATION_OPTIONS}
+                  value={localDuration}
+                  onChange={handleDurationChange}
+                  allowDeselect={false}
+                  checkIconPosition="right"
+                  disabled={updatingDuration}
+                  w={150}
+                />
+                {selectedDuration && (
+                  <p className="mt-1 mb-6 text-xs text-text-weak">
+                    Meetings will be scheduled in{' '}
+                    <span className="font-bold">{selectedDuration.label}</span> slots.
+                  </p>
+                )}
+              </div>
+
+              {/* Calendar to add events to */}
+              <div className="border-b border-border-week pb-6">
+                <label className="mb-1.5 block text-sm font-medium text-text-secondary">
+                  Calendar to add events to
+                </label>
+                {calendarIntegration ? (
+                  <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-lg border border-border-week bg-white w-96">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <img
+                        src={googleCalendarIcon}
+                        alt="Google Calendar"
+                        className="w-9 h-9 shrink-0"
+                      />
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-sm font-medium text-text-primary truncate">
+                          Google Calendar
+                        </span>
+                        <span className="text-xs text-text-weak truncate">
+                          {calendarIntegration.accountEmail}
+                        </span>
+                      </div>
+                    </div>
+                    <Tooltip label="Disconnect account" transitionProps={{ duration: 150 }}>
+                      <button
+                        onClick={handleDisconnectCalendar}
+                        disabled={disconnectingCalendar}
+                        className="flex cursor-pointer items-center justify-center w-8 h-8 rounded-lg hover:bg-gray-100 text-text-weak hover:text-text-primary transition-colors shrink-0 disabled:opacity-50"
+                      >
+                        {disconnectingCalendar ? (
+                          <Loader size={14} />
+                        ) : (
+                          <X size={16} strokeWidth={2.5} />
+                        )}
+                      </button>
+                    </Tooltip>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-lg border border-border-week bg-white w-96">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <img
+                        src={googleCalendarIcon}
+                        alt="Google Calendar"
+                        className="w-9 h-9 shrink-0"
+                      />
+                      <span className="text-sm font-medium text-text-primary">
+                        Google Calendar
+                      </span>
+                    </div>
+                    <Button
+                      variant="compact"
+                      onClick={handleConnectCalendar}
+                      loading={connectingCalendar}
                     >
-                      {notificationEmail || 'Not set'}
-                    </span>
+                      Connect
+                    </Button>
                   </div>
-                  <button
-                    onClick={openEmailEdit}
-                    className="flex items-center justify-center w-8 h-8 rounded-lg border border-border-week hover:bg-gray-100 text-text-weak hover:text-text-secondary transition-colors shrink-0 opacity-0 group-hover:opacity-100"
-                    title="Edit email"
-                  >
-                    <Pencil size={13} strokeWidth={2} />
-                  </button>
-                </div>
-                <p className="text-xs text-text-weak">
-                  A notification will be sent to this email on every new appointment.
+                )}
+                <p className="mt-1 text-xs text-text-weak">
+                  Once connected, every new appointment will be added to this calendar
+                  automatically.
                 </p>
               </div>
-            )}
-          </div>
 
-          {/* Calendar to add events to */}
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-text-secondary">
-              Calendar to add events to
-            </label>
-            {calendarIntegration ? (
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-2 px-3 h-9 rounded-lg border border-border-week bg-white w-72">
-                  <Calendar size={14} className="text-text-weak shrink-0" />
-                  <span className="flex-1 text-sm truncate text-text-primary">
-                    {calendarIntegration.accountEmail}
-                  </span>
-                </div>
-                <Button
-                  variant="default"
-                  leftSection={<Unplug size={14} />}
-                  onClick={handleDisconnectCalendar}
-                  loading={disconnectingCalendar}
-                >
-                  Disconnect
-                </Button>
+              {/* Notification Email */}
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-text-secondary">
+                  Notification Email
+                </label>
+
+                {isEditingEmail ? (
+                  <div className="flex flex-col gap-1.5">
+                    <div className="flex items-center gap-2">
+                      <div
+                        className={`flex items-center gap-2 px-3 h-9 rounded-lg border bg-white transition-colors w-72 ${
+                          emailError ? 'border-red-400 ring-1 ring-red-300' : 'border-border-strong'
+                        }`}
+                      >
+                        <input
+                          ref={inputRef}
+                          type="email"
+                          value={draftEmail}
+                          onChange={e => handleEmailChange(e.currentTarget.value)}
+                          onKeyDown={handleEmailKeyDown}
+                          placeholder="you@example.com"
+                          className="flex-1 text-sm bg-transparent outline-none text-text-primary placeholder:text-text-weak"
+                        />
+                      </div>
+
+                      <button
+                        onClick={handleEmailDone}
+                        disabled={savingEmail}
+                        className="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white transition-colors shrink-0"
+                        title="Save"
+                      >
+                        <Check size={14} strokeWidth={2.5} />
+                      </button>
+                      <button
+                        onClick={cancelEmailEdit}
+                        disabled={savingEmail}
+                        className="flex items-center justify-center w-8 h-8 rounded-lg border border-border-week hover:bg-gray-50 disabled:opacity-50 text-text-weak transition-colors shrink-0"
+                        title="Cancel"
+                      >
+                        <X size={14} strokeWidth={2.5} />
+                      </button>
+                    </div>
+
+                    <p
+                      aria-live="polite"
+                      className={`text-xs ${emailError ? 'text-red-500' : 'text-text-weak'}`}
+                    >
+                      {emailError || 'Press Enter to save, Esc to cancel.'}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2 group w-fit">
+                      <div className="flex items-center gap-2 px-3 h-9 rounded-lg border border-border-week bg-white w-72">
+                        <span
+                          className={`flex-1 text-sm truncate ${
+                            notificationEmail ? 'text-text-primary' : 'text-text-weak'
+                          }`}
+                        >
+                          {notificationEmail || 'Not set'}
+                        </span>
+                      </div>
+                      <button
+                        onClick={openEmailEdit}
+                        className="flex items-center justify-center w-8 h-8 rounded-lg border border-border-week hover:bg-gray-100 text-text-weak hover:text-text-secondary transition-colors shrink-0 opacity-0 group-hover:opacity-100"
+                        title="Edit email"
+                      >
+                        <Pencil size={13} strokeWidth={2} />
+                      </button>
+                    </div>
+                    <p className="text-xs text-text-weak">
+                      A notification will be sent to this email on every new appointment.
+                    </p>
+                  </div>
+                )}
               </div>
-            ) : (
-              <Button
-                variant="default"
-                leftSection={<Calendar size={14} />}
-                onClick={handleConnectCalendar}
-                loading={connectingCalendar}
-              >
-                Connect calendar account
-              </Button>
-            )}
-            <p className="mt-1 text-xs text-text-weak">
-              Once connected, every new appointment will be added to this calendar automatically.
-            </p>
-          </div>
             </>
           )}
-
         </div>
       </div>
     </div>
