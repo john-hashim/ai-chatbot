@@ -4,6 +4,11 @@ import { Prisma } from '@prisma/client'
 import { prisma } from '../prisma/client.js'
 import { getAvailabilitiesAsString, getAvailableTimeslots } from '../services/booking.service.js'
 import type { BookingDraft } from '../services/booking-flow.service.js'
+import {
+  sendBookingConfirmationToUser,
+  sendBookingNotificationToOwner,
+} from '../services/email.service.js'
+import { createCalendarEvent } from '../services/calendar.service.js'
 
 dayjs.extend(advancedFormat)
 
@@ -100,6 +105,7 @@ export const actionHandlers: Record<string, ActionHandler> = {
     }
 
     let appointment
+    let isNewBooking = true
     try {
       appointment = await prisma.appointment.create({
         data: { chatbotId, sessionId, name, email, date, timeslot, status: 'CONFIRMED' },
@@ -113,6 +119,7 @@ export const actionHandlers: Record<string, ActionHandler> = {
           where: { sessionId, date, timeslot },
         })
         if (!appointment) throw err
+        isNewBooking = false
       } else {
         throw err
       }
@@ -120,6 +127,51 @@ export const actionHandlers: Record<string, ActionHandler> = {
 
     const prettyDate = dayjs(date).format('Do MMM YYYY, dddd')
     const prettyTime = dayjs(timeslot, 'HH:mm').format('hh:mm A')
+
+    if (isNewBooking) {
+      const [bookingConfig, chatbot] = await Promise.all([
+        prisma.bookingConfig.findUnique({ where: { chatbotId } }),
+        prisma.chatbot.findUnique({
+          where: { id: chatbotId },
+          include: { user: true },
+        }),
+      ])
+
+      const tz = bookingConfig?.timezone ?? 'UTC'
+      const eventType = chatbot?.name ?? 'Appointment'
+
+      const fields = {
+        eventType,
+        inviteeName: name,
+        inviteeEmail: email,
+        date,
+        timeslot,
+        timezone: tz,
+      }
+
+      sendBookingConfirmationToUser(fields).catch(console.error)
+      if (bookingConfig?.notificationEmail) {
+        sendBookingNotificationToOwner(
+          bookingConfig.notificationEmail,
+          chatbot?.user?.name ?? null,
+          fields
+        ).catch(console.error)
+      }
+
+      const durationMinutes = bookingConfig?.appointmentDuration ?? 30
+      const start = dayjs(`${date}T${timeslot}`)
+      if (start.isValid()) {
+        const end = start.add(durationMinutes, 'minute')
+        createCalendarEvent(chatbotId, {
+          summary: `${eventType} with ${name}`,
+          description: `Booking via Pulsechat.\nInvitee: ${name} (${email})`,
+          startDateTime: start.format('YYYY-MM-DDTHH:mm:ss'),
+          endDateTime: end.format('YYYY-MM-DDTHH:mm:ss'),
+          timeZone: tz,
+          attendees: [{ email, displayName: name }],
+        }).catch(err => console.error('Failed to create calendar event:', err))
+      }
+    }
 
     return {
       message: `${name}, your appointment is confirmed for ${prettyDate} at ${prettyTime}.`,

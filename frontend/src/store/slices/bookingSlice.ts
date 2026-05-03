@@ -1,7 +1,9 @@
 import { bookingsService } from '@/api/services/bookings'
+import { calendarService } from '@/api/services/calendar'
 import type {
   Appointment,
   AvailabilitySchedule,
+  CalendarIntegration,
   CreateAvailabilityRequest,
   UpdateTimeSlotsRequest,
 } from '@/types/bookings'
@@ -14,6 +16,7 @@ export interface BookingSlice {
   notificationEmail: string | null
   availabilities: AvailabilitySchedule[]
   appointments: Appointment[]
+  calendarIntegration: CalendarIntegration | null
 
   // Loading states
   fetchingAvailabilities: boolean
@@ -21,6 +24,8 @@ export interface BookingSlice {
   creatingDayId: number | null
   updatingSlotId: string | null
   deletingSlotId: string | null
+  connectingCalendar: boolean
+  disconnectingCalendar: boolean
 
   // Actions
   fetchBookingData: (chatbotId: string) => Promise<void>
@@ -38,6 +43,8 @@ export interface BookingSlice {
   deleteAvailability: (chatbotId: string, slotId: string) => Promise<void>
   fetchAppointments: (chatbotId: string) => Promise<void>
   clearAppointments: () => void
+  connectGoogleCalendar: (chatbotId: string) => Promise<void>
+  disconnectCalendar: (chatbotId: string) => Promise<void>
 }
 
 export const createBookingSlice: StateCreator<
@@ -50,15 +57,24 @@ export const createBookingSlice: StateCreator<
   notificationEmail: null,
   availabilities: [],
   appointments: [],
+  calendarIntegration: null,
   fetchingAvailabilities: false,
   fetchingAppointments: false,
   creatingDayId: null,
   updatingSlotId: null,
   deletingSlotId: null,
+  connectingCalendar: false,
+  disconnectingCalendar: false,
 
   clearAvailabilities: () => {
     set(
-      { availabilities: [], duration: 30, timezone: 'UTC', notificationEmail: null },
+      {
+        availabilities: [],
+        duration: 30,
+        timezone: 'UTC',
+        notificationEmail: null,
+        calendarIntegration: null,
+      },
       undefined,
       '[Booking] Clear Availabilities'
     )
@@ -90,18 +106,26 @@ export const createBookingSlice: StateCreator<
   fetchBookingData: async (chatbotId: string) => {
     set({ fetchingAvailabilities: true }, undefined, '[Booking] Fetching Booking Data')
     try {
-      const [configRes, availabilityRes] = await Promise.all([
+      // Calendar status is non-critical — failure here must not block booking config/availability.
+      const calendarPromise = calendarService.getStatus(chatbotId).catch(err => {
+        console.error('[Booking] calendar status fetch failed:', err)
+        return null
+      })
+      const [configRes, availabilityRes, calendarRes] = await Promise.all([
         bookingsService.getBookingConfig(chatbotId),
         bookingsService.getAvailability(chatbotId),
+        calendarPromise,
       ])
       const config = configRes.data.data
       const availabilities = availabilityRes.data.data ?? []
+      const calendarIntegration = calendarRes ? calendarRes.data.data?.integration ?? null : null
       set(
         {
           duration: config?.appointmentDuration ?? 30,
           timezone: config?.timezone ?? 'UTC',
           notificationEmail: config?.notificationEmail ?? null,
           availabilities,
+          calendarIntegration,
         },
         undefined,
         '[Booking] Fetch Booking Data'
@@ -184,6 +208,128 @@ export const createBookingSlice: StateCreator<
       await get().refreshAvailabilities(chatbotId)
     } finally {
       set({ deletingSlotId: null }, undefined, '[Booking] Deleting Availability Done')
+    }
+  },
+
+  connectGoogleCalendar: async (chatbotId: string) => {
+    // Open the popup synchronously so the browser counts it as user-initiated.
+    // It loads about:blank first, then we navigate it once we have the URL.
+    const w = 500
+    const h = 650
+    const left = window.screenX + (window.outerWidth - w) / 2
+    const top = window.screenY + (window.outerHeight - h) / 2
+    const popup = window.open(
+      'about:blank',
+      'pulsechat-calendar-connect',
+      `width=${w},height=${h},left=${left},top=${top},popup=yes`
+    )
+    if (!popup) throw new Error('popup_blocked')
+
+    set({ connectingCalendar: true }, undefined, '[Booking] Connecting Calendar')
+    let onMessage: ((e: MessageEvent) => void) | null = null
+    let pollTimer: ReturnType<typeof setInterval> | null = null
+    let settled = false
+
+    try {
+      const res = await calendarService.getGoogleAuthorizeUrl(chatbotId)
+      const url = res.data.data?.url
+      if (!url) throw new Error('no_authorize_url')
+
+      try {
+        popup.location.href = url
+      } catch {
+        // Some browsers block cross-origin location writes; fall back to opener replace.
+        popup.location.replace(url)
+      }
+
+      let apiOrigin: string | null = null
+      try {
+        apiOrigin = new URL(import.meta.env.VITE_API_URL ?? '', window.location.origin).origin
+      } catch {
+        apiOrigin = null
+      }
+
+      await new Promise<void>((resolve, reject) => {
+        const safeResolve = () => {
+          if (settled) return
+          settled = true
+          resolve()
+        }
+        const safeReject = (err: Error) => {
+          if (settled) return
+          settled = true
+          reject(err)
+        }
+
+        onMessage = (event: MessageEvent) => {
+          if (apiOrigin && event.origin !== apiOrigin) return
+          const data = event.data as { type?: string; success?: boolean; error?: string } | null
+          if (!data || data.type !== 'calendar-connect') return
+          if (data.success) safeResolve()
+          else safeReject(new Error(String(data.error || 'connect_failed')))
+        }
+        window.addEventListener('message', onMessage)
+
+        // Fallback: when the popup closes without us having heard a message
+        // (firewall, blocked postMessage, mismatched origins), poll the status
+        // endpoint — if the integration exists, treat it as success.
+        pollTimer = setInterval(async () => {
+          if (settled || !popup.closed) return
+          if (pollTimer) {
+            clearInterval(pollTimer)
+            pollTimer = null
+          }
+          try {
+            const status = await calendarService.getStatus(chatbotId)
+            if (status.data.data?.integration) {
+              safeResolve()
+              return
+            }
+          } catch {
+            // ignore — fall through to popup_closed
+          }
+          safeReject(new Error('popup_closed'))
+        }, 500)
+      })
+
+      // Refresh the integration in state. If this status call itself fails,
+      // we still treat the connect as a success — the next page load will hydrate it.
+      try {
+        const status = await calendarService.getStatus(chatbotId)
+        set(
+          { calendarIntegration: status.data.data?.integration ?? null },
+          undefined,
+          '[Booking] Calendar Connected'
+        )
+      } catch (err) {
+        console.error('[Booking] post-connect status fetch failed:', err)
+      }
+    } finally {
+      if (onMessage) window.removeEventListener('message', onMessage)
+      if (pollTimer) clearInterval(pollTimer)
+      try {
+        if (!popup.closed) popup.close()
+      } catch {
+        /* ignore */
+      }
+      set({ connectingCalendar: false }, undefined, '[Booking] Connecting Calendar Done')
+    }
+  },
+
+  disconnectCalendar: async (chatbotId: string) => {
+    set({ disconnectingCalendar: true }, undefined, '[Booking] Disconnecting Calendar')
+    try {
+      await calendarService.disconnect(chatbotId)
+      set(
+        { calendarIntegration: null },
+        undefined,
+        '[Booking] Calendar Disconnected'
+      )
+    } catch (err) {
+      console.error('[Booking] disconnect failed:', err)
+      throw err
+    } finally {
+      set({ disconnectingCalendar: false }, undefined, '[Booking] Disconnecting Calendar Done')
     }
   },
 })

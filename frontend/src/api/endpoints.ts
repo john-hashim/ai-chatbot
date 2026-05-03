@@ -59,6 +59,11 @@ export const ENDPOINTS = {
     CANCEL: 'chatbot/:chatbotId/booking/cancel',
     GET_APPOINTMENTS: 'chatbot/:chatbotId/appointments',
   },
+  CALENDAR: {
+    GET_STATUS: 'chatbot/:chatbotId/calendar',
+    AUTHORIZE_GOOGLE: 'chatbot/:chatbotId/calendar/google/authorize',
+    DISCONNECT: 'chatbot/:chatbotId/calendar',
+  },
 } as const
 
 export type EndpointValues = typeof ENDPOINTS

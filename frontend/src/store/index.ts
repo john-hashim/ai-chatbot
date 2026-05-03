@@ -47,8 +47,11 @@ export const useBookingStore = () =>
       notificationEmail: state.notificationEmail,
       availabilities: state.availabilities,
       appointments: state.appointments,
+      calendarIntegration: state.calendarIntegration,
       fetchingAvailabilities: state.fetchingAvailabilities,
       fetchingAppointments: state.fetchingAppointments,
+      connectingCalendar: state.connectingCalendar,
+      disconnectingCalendar: state.disconnectingCalendar,
       fetchBookingData: state.fetchBookingData,
       clearAvailabilities: state.clearAvailabilities,
       updateDuration: state.updateDuration,
@@ -59,6 +62,8 @@ export const useBookingStore = () =>
       deleteAvailability: state.deleteAvailability,
       fetchAppointments: state.fetchAppointments,
       clearAppointments: state.clearAppointments,
+      connectGoogleCalendar: state.connectGoogleCalendar,
+      disconnectCalendar: state.disconnectCalendar,
     }))
   )
 

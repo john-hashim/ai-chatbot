@@ -106,3 +106,16 @@ export interface ChatMessage {
   sources: string[]
   createdAt: string
 }
+
+export interface CalendarIntegration {
+  provider: 'google'
+  accountEmail: string
+}
+
+export interface CalendarStatusResponse {
+  integration: CalendarIntegration | null
+}
+
+export interface CalendarAuthorizeResponse {
+  url: string
+}

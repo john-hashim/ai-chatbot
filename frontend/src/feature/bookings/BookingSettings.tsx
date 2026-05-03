@@ -1,9 +1,10 @@
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
-import { Select, Skeleton } from '@mantine/core'
+import { Button, Select, Skeleton } from '@mantine/core'
 import { useParams } from 'react-router-dom'
 import { rawTimeZones } from '@vvo/tzdb'
-import { Check, Pencil, X } from 'lucide-react'
+import { Calendar, Check, Pencil, Unplug, X } from 'lucide-react'
+import { notifications } from '@mantine/notifications'
 import { useBookingStore } from '@/store'
 
 const DURATION_OPTIONS = [
@@ -53,10 +54,15 @@ export const BookingSettings: React.FC = () => {
     duration,
     timezone,
     notificationEmail,
+    calendarIntegration,
+    connectingCalendar,
+    disconnectingCalendar,
     fetchingAvailabilities,
     updateDuration,
     updateTimezone,
     updateNotificationEmail,
+    connectGoogleCalendar,
+    disconnectCalendar,
   } = useBookingStore()
 
   const [localDuration, setLocalDuration] = useState<string>(String(duration))
@@ -147,6 +153,36 @@ export const BookingSettings: React.FC = () => {
     if (e.key === 'Escape') cancelEmailEdit()
   }
 
+  const handleConnectCalendar = async () => {
+    if (!chatbotId || connectingCalendar) return
+    try {
+      await connectGoogleCalendar(chatbotId)
+      notifications.show({ message: 'Calendar connected.', className: 'success' })
+    } catch (err) {
+      console.error('[Calendar connect] failed:', err)
+      const reason = err instanceof Error ? err.message : 'connect_failed'
+      if (reason === 'popup_closed') return
+      const message =
+        reason === 'popup_blocked'
+          ? 'Pop-up blocked. Please allow pop-ups for this site and try again.'
+          : `Could not connect calendar (${reason}).`
+      notifications.show({ message, className: 'error' })
+    }
+  }
+
+  const handleDisconnectCalendar = async () => {
+    if (!chatbotId || disconnectingCalendar) return
+    try {
+      await disconnectCalendar(chatbotId)
+      notifications.show({ message: 'Calendar disconnected.', className: 'success' })
+    } catch {
+      notifications.show({
+        message: 'Could not disconnect calendar.',
+        className: 'error',
+      })
+    }
+  }
+
   const selectedDuration = DURATION_OPTIONS.find(opt => opt.value === localDuration)
 
   return (
@@ -210,7 +246,7 @@ export const BookingSettings: React.FC = () => {
           </div>
 
           {/* Notification Email */}
-          <div>
+          <div className="border-b border-border-week pb-6">
             <label className="mb-1.5 block text-sm font-medium text-text-secondary">
               Notification Email
             </label>
@@ -286,6 +322,43 @@ export const BookingSettings: React.FC = () => {
                 </p>
               </div>
             )}
+          </div>
+
+          {/* Calendar to add events to */}
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-text-secondary">
+              Calendar to add events to
+            </label>
+            {calendarIntegration ? (
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 px-3 h-9 rounded-lg border border-border-week bg-white w-72">
+                  <Calendar size={14} className="text-text-weak shrink-0" />
+                  <span className="flex-1 text-sm truncate text-text-primary">
+                    {calendarIntegration.accountEmail}
+                  </span>
+                </div>
+                <Button
+                  variant="default"
+                  leftSection={<Unplug size={14} />}
+                  onClick={handleDisconnectCalendar}
+                  loading={disconnectingCalendar}
+                >
+                  Disconnect
+                </Button>
+              </div>
+            ) : (
+              <Button
+                variant="default"
+                leftSection={<Calendar size={14} />}
+                onClick={handleConnectCalendar}
+                loading={connectingCalendar}
+              >
+                Connect calendar account
+              </Button>
+            )}
+            <p className="mt-1 text-xs text-text-weak">
+              Once connected, every new appointment will be added to this calendar automatically.
+            </p>
           </div>
             </>
           )}

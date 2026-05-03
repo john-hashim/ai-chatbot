@@ -53,8 +53,6 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 // ---------------------------------------------------------------------------
 export function parseStructuredPayload(message: string): BookingDraft | null {
   const trimmed = message.trimStart()
-  console.log(trimmed)
-  console.log(!trimmed.startsWith('{'))
   if (!trimmed.startsWith('{')) return null
   try {
     const parsed = JSON.parse(trimmed) as Record<string, unknown>

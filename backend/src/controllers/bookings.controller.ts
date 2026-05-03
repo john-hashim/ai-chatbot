@@ -514,7 +514,10 @@ export const confirmBooking = async (req: Request, res: Response, next: NextFunc
       } satisfies ApiResponse)
     }
 
-    const bookingConfig = await prisma.bookingConfig.findUnique({ where: { chatbotId } })
+    const [bookingConfig, chatbot] = await Promise.all([
+      prisma.bookingConfig.findUnique({ where: { chatbotId } }),
+      prisma.chatbot.findUnique({ where: { id: chatbotId }, include: { user: true } }),
+    ])
 
     const appointment = await prisma.appointment.create({
       data: { chatbotId, sessionId, date, timeslot, email, status: 'UPCOMING' },
@@ -533,11 +536,22 @@ export const confirmBooking = async (req: Request, res: Response, next: NextFunc
       },
     })
 
-    sendBookingConfirmationToUser(email, date, timeslot).catch(console.error)
+    const emailFields = {
+      eventType: chatbot?.name ?? 'Appointment',
+      inviteeName: email,
+      inviteeEmail: email,
+      date,
+      timeslot,
+      timezone: bookingConfig?.timezone ?? 'UTC',
+    }
+
+    sendBookingConfirmationToUser(emailFields).catch(console.error)
     if (bookingConfig?.notificationEmail) {
-      sendBookingNotificationToOwner(bookingConfig.notificationEmail, email, date, timeslot).catch(
-        console.error
-      )
+      sendBookingNotificationToOwner(
+        bookingConfig.notificationEmail,
+        chatbot?.user?.name ?? null,
+        emailFields
+      ).catch(console.error)
     }
 
     return res.status(201).json({
