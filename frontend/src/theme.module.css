@@ -102,6 +102,7 @@
   border: 1px solid var(--color-color-primary) !important;
   background-color: transparent !important;
   color: var(--color-color-primary) !important;
+  --button-color: var(--color-color-primary) !important;
 }
 
 .buttonRoot[data-variant='compact']:hover {
@@ -115,6 +116,10 @@
 
 .buttonRoot[data-variant='compact'] .buttonSection {
   color: var(--color-color-primary) !important;
+}
+
+.buttonRoot[data-variant='compact'] .mantine-Loader-root {
+  --loader-color: var(--color-color-primary) !important;
 }
 
 /* Input styles */

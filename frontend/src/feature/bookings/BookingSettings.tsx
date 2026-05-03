@@ -295,9 +295,7 @@ export const BookingSettings: React.FC = () => {
                         alt="Google Calendar"
                         className="w-9 h-9 shrink-0"
                       />
-                      <span className="text-sm font-medium text-text-primary">
-                        Google Calendar
-                      </span>
+                      <span className="text-sm font-medium text-text-primary">Google Calendar</span>
                     </div>
                     <Button
                       variant="compact"
