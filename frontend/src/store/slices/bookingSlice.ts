@@ -13,6 +13,7 @@ import type { StateCreator } from 'zustand'
 
 export interface BookingSlice {
   // State
+  appointmentIsEnabled: boolean
   duration: number
   timezone: string
   notificationEmail: string | null
@@ -39,6 +40,7 @@ export interface BookingSlice {
   fetchBookingData: (chatbotId: string) => Promise<void>
   refreshAvailabilities: (chatbotId: string) => Promise<void>
   clearAvailabilities: () => void
+  updateAppointmentIsEnabled: (chatbotId: string, isEnabled: boolean) => Promise<void>
   updateDuration: (chatbotId: string, duration: number) => Promise<void>
   updateTimezone: (chatbotId: string, timezone: string) => Promise<void>
   updateNotificationEmail: (chatbotId: string, email: string) => Promise<void>
@@ -57,11 +59,11 @@ export interface BookingSlice {
   disconnectCalendar: (chatbotId: string) => Promise<void>
 }
 
-export const createBookingSlice: StateCreator<
-  BookingSlice,
-  [['zustand/devtools', never]],
-  []
-> = (set, get) => ({
+export const createBookingSlice: StateCreator<BookingSlice, [['zustand/devtools', never]], []> = (
+  set,
+  get
+) => ({
+  appointmentIsEnabled: true,
   duration: 30,
   timezone: 'UTC',
   notificationEmail: null,
@@ -86,6 +88,7 @@ export const createBookingSlice: StateCreator<
     set(
       {
         availabilities: [],
+        appointmentIsEnabled: true,
         duration: 30,
         timezone: 'UTC',
         notificationEmail: null,
@@ -108,11 +111,7 @@ export const createBookingSlice: StateCreator<
   },
 
   cancelAppointment: async (chatbotId: string, appointmentId: string) => {
-    set(
-      { cancellingAppointmentId: appointmentId },
-      undefined,
-      '[Booking] Cancelling Appointment'
-    )
+    set({ cancellingAppointmentId: appointmentId }, undefined, '[Booking] Cancelling Appointment')
     try {
       await bookingsService.cancelAppointment(chatbotId, appointmentId)
       set(
@@ -123,11 +122,7 @@ export const createBookingSlice: StateCreator<
         '[Booking] Appointment Cancelled'
       )
     } finally {
-      set(
-        { cancellingAppointmentId: null },
-        undefined,
-        '[Booking] Cancelling Appointment Done'
-      )
+      set({ cancellingAppointmentId: null }, undefined, '[Booking] Cancelling Appointment Done')
     }
   },
 
@@ -173,7 +168,7 @@ export const createBookingSlice: StateCreator<
       ])
       const config = configRes.data.data
       const availabilities = availabilityRes.data.data ?? []
-      const calendarIntegration = calendarRes ? calendarRes.data.data?.integration ?? null : null
+      const calendarIntegration = calendarRes ? (calendarRes.data.data?.integration ?? null) : null
       set(
         {
           duration: config?.appointmentDuration ?? 30,
@@ -190,6 +185,25 @@ export const createBookingSlice: StateCreator<
       )
     } finally {
       set({ fetchingAvailabilities: false }, undefined, '[Booking] Fetching Booking Data Done')
+    }
+  },
+  updateAppointmentIsEnabled: async (chatbotId: string, isEnabled: boolean) => {
+    const prev = get().appointmentIsEnabled
+    set({ appointmentIsEnabled: isEnabled }, undefined, '[Booking] Update is (optimistic)')
+    try {
+      const response = await bookingsService.updateBookingConfig(chatbotId, {
+        isEnabled,
+      })
+      const config = response.data.data
+      if (!config) throw new Error('Failed to update duration')
+      set(
+        { appointmentIsEnabled: config.isEnabled },
+        undefined,
+        '[Booking] Update is (server sync)'
+      )
+    } catch (err) {
+      set({ appointmentIsEnabled: prev }, undefined, '[Booking] Update is (revert)')
+      console.error(err)
     }
   },
 
@@ -393,11 +407,7 @@ export const createBookingSlice: StateCreator<
     set({ disconnectingCalendar: true }, undefined, '[Booking] Disconnecting Calendar')
     try {
       await calendarService.disconnect(chatbotId)
-      set(
-        { calendarIntegration: null },
-        undefined,
-        '[Booking] Calendar Disconnected'
-      )
+      set({ calendarIntegration: null }, undefined, '[Booking] Calendar Disconnected')
     } catch (err) {
       console.error('[Booking] disconnect failed:', err)
       throw err

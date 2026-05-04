@@ -6,6 +6,7 @@ import {
   getAvailableTimeslots,
 } from '../services/booking.service.js'
 import type { BookingDraft } from '../services/booking-flow.service.js'
+import { prisma } from '../prisma/client.js'
 
 dayjs.extend(advancedFormat)
 
@@ -27,6 +28,13 @@ export type ActionHandler = (ctx: ActionContext) => Promise<ActionResult>
 
 export const actionHandlers: Record<string, ActionHandler> = {
   BOOKING: async ({ chatbotId }) => {
+    const config = await prisma.bookingConfig.findUnique({
+      where: { chatbotId },
+      select: { isEnabled: true },
+    })
+    if (config && !config.isEnabled) {
+      return { message: 'Sorry, there are no available dates right now. Please check back later.' }
+    }
     const rawDates = await getAvailabilitiesAsString(chatbotId)
     if (rawDates.length === 0) {
       return { message: 'Sorry, there are no available dates right now. Please check back later.' }

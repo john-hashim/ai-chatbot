@@ -43,6 +43,7 @@ export const useBookingStore = () =>
   useStore(
     useShallow(state => ({
       duration: state.duration,
+      appointmentIsEnabled: state.appointmentIsEnabled,
       timezone: state.timezone,
       notificationEmail: state.notificationEmail,
       locationType: state.locationType,
@@ -72,6 +73,7 @@ export const useBookingStore = () =>
       clearAppointments: state.clearAppointments,
       connectGoogleCalendar: state.connectGoogleCalendar,
       disconnectCalendar: state.disconnectCalendar,
+      updateAppointmentIsEnabled: state.updateAppointmentIsEnabled,
     }))
   )
 
