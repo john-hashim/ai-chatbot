@@ -3,11 +3,12 @@ import { useEffect, useRef, useState } from 'react'
 import { Button, Loader, Select, Skeleton, Tooltip } from '@mantine/core'
 import { useParams } from 'react-router-dom'
 import { rawTimeZones } from '@vvo/tzdb'
-import { Check, MapPin, Pencil, Phone, Video, X } from 'lucide-react'
+import { Check, MapPin, Pencil, Phone, X } from 'lucide-react'
 import { notifications } from '@mantine/notifications'
 import { useBookingStore } from '@/store'
-import { TextEditor } from '@/components/common/TextEditor'
 import googleCalendarIcon from '@/assets/icons/google-calendar.svg'
+import googleMeetIcon from '@/assets/icons/google-meet.svg'
+import zoomIcon from '@/assets/icons/zoom-icon.svg'
 import type { LocationType } from '@/types/bookings'
 
 const DURATION_OPTIONS = [
@@ -56,9 +57,17 @@ const LOCATION_OPTIONS: {
   label: string
   icon: React.ReactNode
 }[] = [
-  { value: 'GOOGLE_MEET', label: 'Google Meet', icon: <Video size={18} /> },
+  {
+    value: 'GOOGLE_MEET',
+    label: 'Google Meet',
+    icon: <img src={googleMeetIcon} alt="" className="w-[18px] h-[18px]" />,
+  },
+  {
+    value: 'ZOOM',
+    label: 'Zoom',
+    icon: <img src={zoomIcon} alt="" className="w-[18px] h-[18px]" />,
+  },
   { value: 'IN_PERSON', label: 'In person', icon: <MapPin size={18} /> },
-  { value: 'ZOOM', label: 'Zoom', icon: <Video size={18} /> },
   { value: 'PHONE', label: 'Phone call', icon: <Phone size={18} /> },
 ]
 
@@ -98,10 +107,9 @@ export const BookingSettings: React.FC = () => {
 
   const [draftAddress, setDraftAddress] = useState<string>(locationAddress ?? '')
   const [draftPhone, setDraftPhone] = useState<string>(locationPhone ?? '')
-  const [optimisticType, setOptimisticType] = useState<LocationType | null>(null)
-  const [savingType, setSavingType] = useState(false)
+  const [optimisticType, setOptimisticType] = useState<LocationType | null | undefined>(undefined)
   const [autosaving, setAutosaving] = useState(false)
-  const effectiveType = optimisticType ?? locationType
+  const effectiveType = optimisticType !== undefined ? optimisticType : locationType
 
   useEffect(() => setLocalDuration(String(duration)), [duration])
   useEffect(() => setLocalTimezone(timezone), [timezone])
@@ -182,18 +190,14 @@ export const BookingSettings: React.FC = () => {
     if (e.key === 'Escape') cancelEmailEdit()
   }
 
-  const handleSelectLocationType = async (type: LocationType) => {
-    if (!chatbotId || savingType || type === effectiveType) return
+  const handleSelectLocationType = (type: LocationType | null) => {
+    if (!chatbotId || type === effectiveType) return
     setOptimisticType(type)
-    setSavingType(true)
-    try {
-      await updateLocation(chatbotId, { locationType: type })
-    } catch {
-      notifications.show({ message: 'Could not update location.', className: 'error' })
-    } finally {
-      setOptimisticType(null)
-      setSavingType(false)
-    }
+    updateLocation(chatbotId, { locationType: type })
+      .catch(() =>
+        notifications.show({ message: 'Could not update location.', className: 'error' })
+      )
+      .finally(() => setOptimisticType(undefined))
   }
 
   // Debounced auto-save. The equality check skips the no-op write that
@@ -260,10 +264,9 @@ export const BookingSettings: React.FC = () => {
   const selectedDuration = DURATION_OPTIONS.find(opt => opt.value === localDuration)
 
   return (
-    <div>
-      <p className="py-2 font-bold text-lg text-text-primary">Settings</p>
-      <div className="mt-4 flex flex-col gap-3">
-        <div className="flex flex-col gap-5 p-6 border border-border-week bg-white rounded-xl text-sm text-text-primary min-h-[calc(100vh-220px)]">
+    <div className="h-screen bg-white border border-border-week rounded-xl overflow-y-auto">
+      <div className="flex flex-col gap-5 p-6 text-sm text-text-primary">
+        <p className="font-bold text-lg text-text-primary">Settings</p>
           {fetchingAvailabilities ? (
             <>
               {[150, 320, 320].map((w, i) => (
@@ -394,46 +397,65 @@ export const BookingSettings: React.FC = () => {
                 <p className="mb-3 text-xs text-text-weak">
                   Where the meeting will take place. Shared with invitees on confirmation.
                 </p>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 max-w-2xl">
-                  {LOCATION_OPTIONS.map(opt => {
-                    const selected = effectiveType === opt.value
-                    const disabled =
-                      savingType || (opt.value === 'GOOGLE_MEET' && !calendarIntegration)
+                {effectiveType ? (
+                  (() => {
+                    const selectedOpt = LOCATION_OPTIONS.find(o => o.value === effectiveType)
+                    if (!selectedOpt) return null
                     return (
-                      <button
-                        key={opt.value}
-                        type="button"
-                        onClick={() => handleSelectLocationType(opt.value)}
-                        disabled={disabled}
-                        title={
-                          opt.value === 'GOOGLE_MEET' && !calendarIntegration
-                            ? 'Connect Google Calendar to enable Meet links.'
-                            : undefined
-                        }
-                        className={`flex flex-col items-center justify-center gap-1.5 px-3 py-4 rounded-lg border text-center transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
-                          selected
-                            ? 'border-color-primary bg-color-primary/5 text-color-primary'
-                            : 'border-border-week bg-white hover:border-border-strong text-text-secondary'
-                        }`}
-                      >
-                        {opt.icon}
-                        <span className="text-xs font-medium">{opt.label}</span>
-                      </button>
+                      <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-lg border border-border-week bg-white w-96">
+                        <div className="flex items-center gap-3 min-w-0">
+                          {selectedOpt.icon}
+                          <span className="text-sm font-medium text-text-primary truncate">
+                            {selectedOpt.label}
+                          </span>
+                        </div>
+                        <Tooltip label="Remove location" transitionProps={{ duration: 150 }}>
+                          <button
+                            onClick={() => handleSelectLocationType(null)}
+                            className="flex cursor-pointer items-center justify-center w-8 h-8 rounded-lg hover:bg-gray-100 text-text-weak hover:text-text-primary transition-colors shrink-0"
+                          >
+                            <X size={16} strokeWidth={2.5} />
+                          </button>
+                        </Tooltip>
+                      </div>
                     )
-                  })}
-                </div>
+                  })()
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 max-w-2xl">
+                    {LOCATION_OPTIONS.map(opt => {
+                      const disabled = opt.value === 'GOOGLE_MEET' && !calendarIntegration
+                      return (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => handleSelectLocationType(opt.value)}
+                          disabled={disabled}
+                          title={
+                            opt.value === 'GOOGLE_MEET' && !calendarIntegration
+                              ? 'Connect Google Calendar to enable Meet links.'
+                              : undefined
+                          }
+                          className="flex flex-col items-center justify-center gap-1.5 px-3 py-4 rounded-lg border border-border-week bg-white hover:border-border-strong text-text-secondary text-center transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {opt.icon}
+                          <span className="text-xs font-medium">{opt.label}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
 
                 {effectiveType === 'IN_PERSON' && (
                   <div className="mt-4 max-w-2xl">
                     <label className="mb-1.5 block text-xs font-medium text-text-secondary">
                       Address
                     </label>
-                    <TextEditor
+                    <textarea
                       value={draftAddress}
-                      onChange={setDraftAddress}
+                      onChange={e => setDraftAddress(e.currentTarget.value)}
                       placeholder="Add the address or any details about the location..."
-                      minHeight="120px"
-                      variant="simple"
+                      rows={4}
+                      className="w-full px-3 py-2 rounded-lg border border-border-week focus:border-border-strong bg-white outline-none text-sm resize-y transition-colors"
                     />
                   </div>
                 )}
@@ -532,7 +554,6 @@ export const BookingSettings: React.FC = () => {
               </div>
             </>
           )}
-        </div>
       </div>
     </div>
   )
