@@ -231,7 +231,7 @@ enum ScheduleType {
 }
 
 model Appointment {
-    id         String            @id @default(cuid())                                                            
+    id         String            @id @default(cuid())
     chatbotId  String
     sessionId  String
     email      String
@@ -239,11 +239,17 @@ model Appointment {
     phone      String?
     interestedTopics String?
     date       String            // "YYYY-MM-DD"
-    timeslot   String            // "HH:mm"                                                                      
+    timeslot   String            // "HH:mm"
     status     AppointmentStatus @default(UPCOMING)
-    createdAt  DateTime          @default(now())                                                                 
+    // Snapshot of booking config at confirmation time so display/cancel logic
+    // stays stable if the chatbot owner edits config later.
+    timezone        String?
+    locationType    LocationType?
+    locationAddress String?
+    locationPhone   String?
+    createdAt  DateTime          @default(now())
     updatedAt  DateTime          @updatedAt
-                                                                                                 
+
     chatbot    Chatbot           @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
 
     @@unique([sessionId, date, timeslot])

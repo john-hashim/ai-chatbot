@@ -78,28 +78,22 @@ export interface GetTimeSlotsResponse {
   message: ChatMessage
 }
 
-export interface ConfirmBookingRequest {
-  sessionId: string
-  date: string
-  timeslot: string
-  email: string
-}
-
 export interface Appointment {
   id: string
   chatbotId: string
   sessionId: string
   email: string
+  name: string | null
+  phone: string | null
   date: string
   timeslot: string
   status: 'PENDING' | 'CONFIRMED' | 'UPCOMING' | 'PAST' | 'CANCELLED'
+  timezone: string | null
+  locationType: LocationType | null
+  locationAddress: string | null
+  locationPhone: string | null
   createdAt: string
   updatedAt: string
-}
-
-export interface ConfirmBookingResponse {
-  appointment: Appointment
-  message: ChatMessage
 }
 
 export interface CancelBookingResponse {

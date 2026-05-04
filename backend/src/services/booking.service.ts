@@ -94,7 +94,7 @@ export async function getAvailableTimeslots(chatbotId: string, date: string): Pr
     const uniqueTimeslots = [...new Set(timeslots)]
 
     const bookedAppointments = await prisma.appointment.findMany({
-      where: { chatbotId, date, status: 'CONFIRMED' },
+      where: { chatbotId, date, status: 'UPCOMING' },
       select: { timeslot: true },
     })
     const bookedTimes = new Set(bookedAppointments.map(a => a.timeslot))
@@ -129,11 +129,25 @@ export async function confirmBooking(input: ConfirmBookingInput): Promise<Confir
   const available = await getAvailableTimeslots(chatbotId, date)
   if (!available.includes(timeslot)) return { status: 'unavailable' }
 
+  const bookingConfig = await prisma.bookingConfig.findUnique({ where: { chatbotId } })
+
   let appointment: Appointment
   let isNew = true
   try {
     appointment = await prisma.appointment.create({
-      data: { chatbotId, sessionId, name, email, date, timeslot, status: 'CONFIRMED' },
+      data: {
+        chatbotId,
+        sessionId,
+        name,
+        email,
+        date,
+        timeslot,
+        status: 'UPCOMING',
+        timezone: bookingConfig?.timezone ?? null,
+        locationType: bookingConfig?.locationType ?? null,
+        locationAddress: bookingConfig?.locationAddress ?? null,
+        locationPhone: bookingConfig?.locationPhone ?? null,
+      },
     })
   } catch (err) {
     // P2002 = same (sessionId, date, timeslot) already inserted. Treat as success.

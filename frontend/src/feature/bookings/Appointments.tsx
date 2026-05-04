@@ -1,9 +1,15 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { Loader } from '@mantine/core'
-import { Calendar, Clock, Mail } from 'lucide-react'
+import { Button, Loader } from '@mantine/core'
+import { Calendar, Clock, MapPin, Phone, Video } from 'lucide-react'
 import { useBookingStore } from '@/store'
-import type { Appointment } from '@/types/bookings'
+import type { Appointment, LocationType } from '@/types/bookings'
+import dayjs from 'dayjs'
+import utc from 'dayjs/plugin/utc'
+import timezone from 'dayjs/plugin/timezone'
+
+dayjs.extend(utc)
+dayjs.extend(timezone)
 
 type AppointmentTab = 'upcoming' | 'past'
 
@@ -14,16 +20,22 @@ const TABS: { key: AppointmentTab; label: string }[] = [
 
 export const Appointments: React.FC = () => {
   const { chatbotId } = useParams<{ chatbotId: string }>()
-  const { appointments, fetchingAppointments, fetchAppointments } = useBookingStore()
+  const {
+    upcomingAppointments,
+    pastAppointments,
+    fetchingAppointments,
+    appointmentsError,
+    fetchAppointments,
+  } = useBookingStore()
   const [activeTab, setActiveTab] = useState<AppointmentTab>('upcoming')
 
   useEffect(() => {
     if (chatbotId) {
-      fetchAppointments(chatbotId)
+      fetchAppointments(chatbotId, activeTab === 'upcoming' ? 'UPCOMING' : 'PAST')
     }
-  }, [chatbotId, fetchAppointments])
+  }, [chatbotId, activeTab, fetchAppointments])
 
-  const items = activeTab === 'upcoming' ? appointments : []
+  const items = activeTab === 'upcoming' ? upcomingAppointments : pastAppointments
 
   return (
     <div className="lg:m-5 m-2 min-h-[calc(100%-40px)] border border-border-week bg-white rounded-xl">
@@ -48,9 +60,13 @@ export const Appointments: React.FC = () => {
       </div>
 
       <div className="p-4">
-        {fetchingAppointments && activeTab === 'upcoming' ? (
+        {fetchingAppointments ? (
           <div className="flex items-center justify-center py-16">
             <Loader size="sm" />
+          </div>
+        ) : appointmentsError ? (
+          <div className="flex flex-col items-center justify-center py-16 text-sm text-red-500">
+            {appointmentsError}
           </div>
         ) : items.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-sm text-gray-400">
@@ -58,7 +74,7 @@ export const Appointments: React.FC = () => {
             {activeTab === 'upcoming' ? 'No upcoming appointments' : 'No past appointments'}
           </div>
         ) : (
-          <ul className="flex flex-col gap-2">
+          <ul className="flex flex-col gap-3">
             {items.map(appt => (
               <AppointmentRow key={appt.id} appointment={appt} />
             ))}
@@ -69,22 +85,65 @@ export const Appointments: React.FC = () => {
   )
 }
 
-const AppointmentRow: React.FC<{ appointment: Appointment }> = ({ appointment }) => {
+const LOCATION_LABELS: Record<LocationType, string> = {
+  GOOGLE_MEET: 'Google Meet',
+  ZOOM: 'Zoom',
+  IN_PERSON: 'In person',
+  PHONE: 'Phone call',
+}
+
+const deriveName = (email: string): string => {
+  const local = email.split('@')[0] ?? email
   return (
-    <li className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border border-border-week rounded-lg p-4 hover:bg-background-dark-week transition-colors">
-      <div className="flex items-center gap-4">
+    local
+      .split(/[._-]+/)
+      .filter(Boolean)
+      .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(' ') || email
+  )
+}
+
+const AppointmentRow: React.FC<{ appointment: Appointment }> = ({ appointment }) => {
+  const name = appointment.name ?? deriveName(appointment.email)
+  const { locationType, locationAddress, locationPhone } = appointment
+  const locationLabel = locationType ? LOCATION_LABELS[locationType] : 'No location set'
+  const locationDetail =
+    locationType === 'IN_PERSON' ? locationAddress : locationType === 'PHONE' ? locationPhone : null
+  const LocationIcon =
+    locationType === 'IN_PERSON' ? MapPin : locationType === 'PHONE' ? Phone : Video
+
+  return (
+    <li className="flex flex-row items-center gap-6 border border-border-week rounded-lg p-4 hover:bg-background-dark-week transition-colors">
+      <div className="flex flex-col min-w-0 flex-1">
+        <span className="text-sm font-medium truncate">{name}</span>
+        <span className="text-xs text-gray-500 truncate">{appointment.email}</span>
+      </div>
+
+      <div className="flex flex-col gap-1 shrink-0">
         <div className="flex items-center gap-1.5 text-sm">
           <Calendar size={14} className="text-gray-500" />
-          <span>{appointment.date}</span>
+          <span>{dayjs(appointment.date).format('MMM D, YYYY')}</span>
         </div>
         <div className="flex items-center gap-1.5 text-sm">
           <Clock size={14} className="text-gray-500" />
-          <span>{appointment.timeslot}</span>
+          <span>{dayjs(`${appointment.date}T${appointment.timeslot}`).format('h:mm A')}</span>
         </div>
       </div>
-      <div className="flex items-center gap-1.5 text-sm text-gray-600">
-        <Mail size={14} className="text-gray-500" />
-        <span>{appointment.email}</span>
+
+      <div className="flex items-center gap-1.5 text-sm text-gray-600 min-w-0 shrink-0 max-w-[220px]">
+        <LocationIcon size={14} className="text-gray-500 shrink-0" />
+        <div className="flex flex-col min-w-0">
+          <span className="truncate">{locationLabel}</span>
+          {locationDetail && (
+            <span className="text-xs text-gray-400 truncate">{locationDetail}</span>
+          )}
+        </div>
+      </div>
+
+      <div className="ml-auto shrink-0">
+        <Button variant="outline" color="red" size="xs">
+          Cancel
+        </Button>
       </div>
     </li>
   )

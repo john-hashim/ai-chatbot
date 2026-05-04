@@ -51,18 +51,6 @@ export interface BookingMessage {
   createdAt: string
 }
 
-export interface Appointment {
-  id: string
-  chatbotId: string
-  sessionId: string
-  email: string
-  date: string
-  timeslot: string
-  status: 'PENDING' | 'CONFIRMED' | 'CANCELLED'
-  createdAt: string
-  updatedAt: string
-}
-
 export async function getTimeSlotsForDate(
   apiBase: string,
   embedKey: string,
@@ -75,27 +63,6 @@ export async function getTimeSlotsForDate(
     body: JSON.stringify({ sessionId, date }),
   })
   if (!res.ok) throw new Error('Failed to fetch time slots')
-  const json = await res.json()
-  return json.data
-}
-
-export async function confirmBooking(
-  apiBase: string,
-  embedKey: string,
-  sessionId: string,
-  date: string,
-  timeslot: string,
-  email: string
-): Promise<{ appointment: Appointment; message: BookingMessage }> {
-  const res = await fetch(`${apiBase}/api/embed/${embedKey}/booking/confirm`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ sessionId, date, timeslot, email }),
-  })
-  if (!res.ok) {
-    const json = await res.json()
-    throw new Error(json.message || 'Failed to confirm booking')
-  }
   const json = await res.json()
   return json.data
 }

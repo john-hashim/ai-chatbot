@@ -15,8 +15,10 @@ router.patch(
   chatController.updateMessage
 )
 
-router.post('/:embedKey/booking/timeslots', embedMiddleware.authenticateEmbed, bookingsController.getTimeSlotsForDate)
-router.post('/:embedKey/booking/confirm', embedMiddleware.authenticateEmbed, bookingsController.confirmBooking)
-router.post('/:embedKey/booking/cancel', embedMiddleware.authenticateEmbed, bookingsController.cancelBookingFlow)
+router.post(
+  '/:embedKey/booking/timeslots',
+  embedMiddleware.authenticateEmbed,
+  bookingsController.getTimeSlotsForDate
+)
 
 export default router

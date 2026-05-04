@@ -6,10 +6,6 @@ import customParseFormat from 'dayjs/plugin/customParseFormat.js'
 import { Prisma } from '@prisma/client'
 import { ApiStatus, type ApiResponse } from '../types/api.js'
 import { prisma } from '../prisma/client.js'
-import {
-  sendBookingConfirmationToUser,
-  sendBookingNotificationToOwner,
-} from '../services/email.service.js'
 
 dayjs.extend(utc)
 dayjs.extend(timezone)
@@ -501,100 +497,20 @@ export const getTimeSlotsForDate = async (req: Request, res: Response, next: Nex
   }
 }
 
-export const confirmBooking = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { chatbotId } = req.params
-    const { sessionId, date, timeslot, email } = req.body
-
-    if (!chatbotId) {
-      return res.status(400).json({
-        status: ApiStatus.FAILURE,
-        message: 'Chatbot ID is required',
-      } satisfies ApiResponse)
-    }
-
-    if (!sessionId || !date || !timeslot || !email) {
-      return res.status(400).json({
-        status: ApiStatus.FAILURE,
-        message: 'sessionId, date, timeslot and email are required',
-      } satisfies ApiResponse)
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(email)) {
-      return res.status(400).json({
-        status: ApiStatus.FAILURE,
-        message: 'Invalid email address',
-      } satisfies ApiResponse)
-    }
-
-    // TODO: Race condition — two users can pass this check simultaneously before either inserts.
-    // Fix: add @@unique([chatbotId, date, timeslot, status]) to Appointment schema
-    // and catch Prisma P2002 error on create instead of relying on this check alone.
-    const existing = await prisma.appointment.findFirst({
-      where: { chatbotId, date, timeslot, status: 'UPCOMING' },
-    })
-
-    if (existing) {
-      return res.status(409).json({
-        status: ApiStatus.FAILURE,
-        message: 'This time slot has just been booked. Please select another.',
-      } satisfies ApiResponse)
-    }
-
-    const [bookingConfig, chatbot] = await Promise.all([
-      prisma.bookingConfig.findUnique({ where: { chatbotId } }),
-      prisma.chatbot.findUnique({ where: { id: chatbotId }, include: { user: true } }),
-    ])
-
-    const appointment = await prisma.appointment.create({
-      data: { chatbotId, sessionId, date, timeslot, email, status: 'UPCOMING' },
-    })
-
-    const confirmationText =
-      bookingConfig?.confirmationMessage ||
-      `Your appointment on ${date} at ${timeslot} is confirmed. We'll see you then!`
-
-    const message = await prisma.chatMessage.create({
-      data: {
-        sessionId,
-        role: 'assistant',
-        content: confirmationText,
-        sources: [],
-      },
-    })
-
-    const emailFields = {
-      eventType: chatbot?.name ?? 'Appointment',
-      inviteeName: email,
-      inviteeEmail: email,
-      date,
-      timeslot,
-      timezone: bookingConfig?.timezone ?? 'UTC',
-    }
-
-    sendBookingConfirmationToUser(emailFields).catch(console.error)
-    if (bookingConfig?.notificationEmail) {
-      sendBookingNotificationToOwner(
-        bookingConfig.notificationEmail,
-        chatbot?.user?.name ?? null,
-        emailFields
-      ).catch(console.error)
-    }
-
-    return res.status(201).json({
-      status: ApiStatus.SUCCESS,
-      message: 'Appointment confirmed successfully',
-      data: { appointment, message },
-    } satisfies ApiResponse)
-  } catch (error) {
-    next(error)
-  }
-}
-
 export const getAppointments = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { chatbotId } = req.params
+    const statusParam =
+      typeof req.query.status === 'string' ? req.query.status.toUpperCase() : 'UPCOMING'
+    const allowedStatuses = ['UPCOMING', 'PAST', 'CANCELLED'] as const
+    type AllowedStatus = (typeof allowedStatuses)[number]
+    if (!allowedStatuses.includes(statusParam as AllowedStatus)) {
+      return res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: `status must be one of: ${allowedStatuses.join(', ')}`,
+      } satisfies ApiResponse)
+    }
+    const requestedStatus = statusParam as AllowedStatus
 
     if (!chatbotId) {
       return res.status(400).json({
@@ -604,69 +520,45 @@ export const getAppointments = async (req: Request, res: Response, next: NextFun
     }
 
     const config = await prisma.bookingConfig.findUnique({ where: { chatbotId } })
-    const tz = config?.timezone || 'UTC'
-    const nowLocal = dayjs().tz(tz)
-    const today = nowLocal.format('YYYY-MM-DD')
-    const nowTime = nowLocal.format('HH:mm')
+    const fallbackTz = config?.timezone || 'UTC'
 
-    // Lazily flip expired UPCOMING rows to PAST so the list converges without a cron.
-    await prisma.appointment.updateMany({
-      where: {
-        chatbotId,
-        status: 'UPCOMING',
-        OR: [{ date: { lt: today } }, { date: today, timeslot: { lt: nowTime } }],
-      },
-      data: { status: 'PAST' },
+    // Lazy-flip: each row uses its own snapshotted timezone (config tz at the
+    // time of booking). Falling back to current config tz only for legacy rows
+    // that pre-date the snapshot column. Per-row evaluation in JS — UPCOMING
+    // sets are small because this query is what prunes them.
+    const upcoming = await prisma.appointment.findMany({
+      where: { chatbotId, status: 'UPCOMING' },
+      select: { id: true, date: true, timeslot: true, timezone: true },
     })
+    const expiredIds: string[] = []
+    for (const row of upcoming) {
+      const tz = row.timezone || fallbackTz
+      const nowLocal = dayjs().tz(tz)
+      const today = nowLocal.format('YYYY-MM-DD')
+      const nowTime = nowLocal.format('HH:mm')
+      if (row.date < today || (row.date === today && row.timeslot < nowTime)) {
+        expiredIds.push(row.id)
+      }
+    }
+    if (expiredIds.length > 0) {
+      await prisma.appointment.updateMany({
+        where: { id: { in: expiredIds } },
+        data: { status: 'PAST' },
+      })
+    }
 
     const appointments = await prisma.appointment.findMany({
-      where: { chatbotId, status: 'UPCOMING' },
-      orderBy: [{ date: 'asc' }, { timeslot: 'asc' }],
+      where: { chatbotId, status: requestedStatus },
+      orderBy:
+        requestedStatus === 'PAST'
+          ? [{ date: 'desc' }, { timeslot: 'desc' }]
+          : [{ date: 'asc' }, { timeslot: 'asc' }],
     })
 
     return res.status(200).json({
       status: ApiStatus.SUCCESS,
       message: 'Appointments fetched successfully',
       data: appointments,
-    } satisfies ApiResponse)
-  } catch (error) {
-    next(error)
-  }
-}
-
-export const cancelBookingFlow = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { chatbotId } = req.params
-    const { sessionId } = req.body
-
-    if (!chatbotId) {
-      return res.status(400).json({
-        status: ApiStatus.FAILURE,
-        message: 'Chatbot ID is required',
-      } satisfies ApiResponse)
-    }
-
-    if (!sessionId) {
-      return res.status(400).json({
-        status: ApiStatus.FAILURE,
-        message: 'sessionId is required',
-      } satisfies ApiResponse)
-    }
-
-    const message = await prisma.chatMessage.create({
-      data: {
-        sessionId,
-        role: 'assistant',
-        content:
-          '[Booking cancelled by user] No problem! Is there anything else I can help you with?',
-        sources: [],
-      },
-    })
-
-    return res.status(200).json({
-      status: ApiStatus.SUCCESS,
-      message: 'Booking flow cancelled',
-      data: { message },
     } satisfies ApiResponse)
   } catch (error) {
     next(error)

@@ -20,7 +20,9 @@ export interface BookingSlice {
   locationAddress: string | null
   locationPhone: string | null
   availabilities: AvailabilitySchedule[]
-  appointments: Appointment[]
+  upcomingAppointments: Appointment[]
+  pastAppointments: Appointment[]
+  appointmentsError: string | null
   calendarIntegration: CalendarIntegration | null
 
   // Loading states
@@ -47,7 +49,7 @@ export interface BookingSlice {
     data: UpdateTimeSlotsRequest
   ) => Promise<void>
   deleteAvailability: (chatbotId: string, slotId: string) => Promise<void>
-  fetchAppointments: (chatbotId: string) => Promise<void>
+  fetchAppointments: (chatbotId: string, status?: 'UPCOMING' | 'PAST') => Promise<void>
   clearAppointments: () => void
   connectGoogleCalendar: (chatbotId: string) => Promise<void>
   disconnectCalendar: (chatbotId: string) => Promise<void>
@@ -65,7 +67,9 @@ export const createBookingSlice: StateCreator<
   locationAddress: null,
   locationPhone: null,
   availabilities: [],
-  appointments: [],
+  upcomingAppointments: [],
+  pastAppointments: [],
+  appointmentsError: null,
   calendarIntegration: null,
   fetchingAvailabilities: false,
   fetchingAppointments: false,
@@ -93,18 +97,30 @@ export const createBookingSlice: StateCreator<
   },
 
   clearAppointments: () => {
-    set({ appointments: [] }, undefined, '[Booking] Clear Appointments')
+    set(
+      { upcomingAppointments: [], pastAppointments: [], appointmentsError: null },
+      undefined,
+      '[Booking] Clear Appointments'
+    )
   },
 
-  fetchAppointments: async (chatbotId: string) => {
-    set({ fetchingAppointments: true }, undefined, '[Booking] Fetching Appointments')
+  fetchAppointments: async (chatbotId: string, status: 'UPCOMING' | 'PAST' = 'UPCOMING') => {
+    set(
+      { fetchingAppointments: true, appointmentsError: null },
+      undefined,
+      '[Booking] Fetching Appointments'
+    )
     try {
-      const res = await bookingsService.getAppointments(chatbotId)
+      const res = await bookingsService.getAppointments(chatbotId, status)
+      const list = res.data.data ?? []
       set(
-        { appointments: res.data.data ?? [] },
+        status === 'UPCOMING' ? { upcomingAppointments: list } : { pastAppointments: list },
         undefined,
         '[Booking] Fetch Appointments'
       )
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to load appointments'
+      set({ appointmentsError: message }, undefined, '[Booking] Fetch Appointments Error')
     } finally {
       set({ fetchingAppointments: false }, undefined, '[Booking] Fetching Appointments Done')
     }
