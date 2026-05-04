@@ -5,43 +5,38 @@ import * as calendarService from '../services/calendar.service.js'
 
 const FRONTEND_URL = process.env.FRONTEND_URL || '*'
 
-async function assertOwnership(chatbotId: string, userId: string) {
-  return prisma.chatbot.findFirst({ where: { id: chatbotId, userId } })
+// Validates :chatbotId param + ownership in one shot. Writes the error
+// response itself; handlers just early-return on null.
+async function requireOwnedChatbot(req: Request, res: Response): Promise<string | null> {
+  const { chatbotId } = req.params
+  if (!chatbotId) {
+    res.status(400).json({
+      status: ApiStatus.FAILURE,
+      message: 'chatbotId is required',
+    } satisfies ApiResponse)
+    return null
+  }
+  const chatbot = await prisma.chatbot.findFirst({
+    where: { id: chatbotId, userId: req.user.id },
+  })
+  if (!chatbot) {
+    res.status(404).json({
+      status: ApiStatus.FAILURE,
+      message: 'Chatbot not found',
+    } satisfies ApiResponse)
+    return null
+  }
+  return chatbotId
 }
 
 export const getAuthorizeUrl = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { chatbotId } = req.params
-    if (!chatbotId) {
-      return res.status(400).json({
-        status: ApiStatus.FAILURE,
-        message: 'chatbotId is required',
-      } satisfies ApiResponse)
-    }
-
-    const chatbot = await assertOwnership(chatbotId, req.user.id)
-    if (!chatbot) {
-      return res.status(404).json({
-        status: ApiStatus.FAILURE,
-        message: 'Chatbot not found',
-      } satisfies ApiResponse)
-    }
-
-    let url: string
-    try {
-      url = calendarService.buildAuthorizeUrl(chatbotId)
-    } catch (err) {
-      console.error('Calendar OAuth not configured:', err)
-      return res.status(503).json({
-        status: ApiStatus.FAILURE,
-        message: 'Calendar integration is not configured on the server.',
-      } satisfies ApiResponse)
-    }
-
+    const chatbotId = await requireOwnedChatbot(req, res)
+    if (!chatbotId) return
     return res.status(200).json({
       status: ApiStatus.SUCCESS,
       message: 'Authorize URL generated',
-      data: { url },
+      data: { url: calendarService.buildAuthorizeUrl(chatbotId) },
     } satisfies ApiResponse)
   } catch (err) {
     next(err)
@@ -123,27 +118,12 @@ export const handleCallback = async (req: Request, res: Response) => {
 
 export const getStatus = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { chatbotId } = req.params
-    if (!chatbotId) {
-      return res.status(400).json({
-        status: ApiStatus.FAILURE,
-        message: 'chatbotId is required',
-      } satisfies ApiResponse)
-    }
-
-    const chatbot = await assertOwnership(chatbotId, req.user.id)
-    if (!chatbot) {
-      return res.status(404).json({
-        status: ApiStatus.FAILURE,
-        message: 'Chatbot not found',
-      } satisfies ApiResponse)
-    }
-
+    const chatbotId = await requireOwnedChatbot(req, res)
+    if (!chatbotId) return
     const integration = await prisma.calendarIntegration.findUnique({
       where: { chatbotId },
       select: { provider: true, accountEmail: true },
     })
-
     return res.status(200).json({
       status: ApiStatus.SUCCESS,
       message: 'OK',
@@ -156,24 +136,9 @@ export const getStatus = async (req: Request, res: Response, next: NextFunction)
 
 export const disconnect = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { chatbotId } = req.params
-    if (!chatbotId) {
-      return res.status(400).json({
-        status: ApiStatus.FAILURE,
-        message: 'chatbotId is required',
-      } satisfies ApiResponse)
-    }
-
-    const chatbot = await assertOwnership(chatbotId, req.user.id)
-    if (!chatbot) {
-      return res.status(404).json({
-        status: ApiStatus.FAILURE,
-        message: 'Chatbot not found',
-      } satisfies ApiResponse)
-    }
-
+    const chatbotId = await requireOwnedChatbot(req, res)
+    if (!chatbotId) return
     await prisma.calendarIntegration.deleteMany({ where: { chatbotId } })
-
     return res.status(200).json({
       status: ApiStatus.SUCCESS,
       message: 'Disconnected',

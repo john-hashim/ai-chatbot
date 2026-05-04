@@ -36,6 +36,7 @@ type BookingEmailFields = {
   date: string
   timeslot: string
   timezone: string
+  location?: string
 }
 
 function getTimezoneLongName(tz: string): string {
@@ -112,7 +113,7 @@ function buildEmail(opts: {
                 ${fieldBlock('Invitee', fields.inviteeName)}
                 ${fieldBlock('Invitee Email', fields.inviteeEmail)}
                 ${fieldBlock('Event Date/Time', dateTime)}
-                ${fieldBlock('Location', '')}
+                ${fieldBlock('Location', fields.location ?? '')}
                 ${fieldBlock('Invitee Time Zone', tzLong)}
               </table>
             </td>

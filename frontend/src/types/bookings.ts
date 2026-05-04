@@ -40,6 +40,8 @@ export interface UpdateTimeSlotsRequest {
   specificDate?: string
 }
 
+export type LocationType = 'GOOGLE_MEET' | 'IN_PERSON' | 'ZOOM' | 'PHONE'
+
 export interface BookingConfig {
   id: string
   chatbotId: string
@@ -48,6 +50,9 @@ export interface BookingConfig {
   appointmentDuration: number
   confirmationMessage?: string | null
   notificationEmail?: string | null
+  locationType?: LocationType | null
+  locationAddress?: string | null
+  locationPhone?: string | null
   createdAt: string
   updatedAt: string
 }
@@ -57,6 +62,9 @@ export interface UpdateBookingConfigRequest {
   timezone?: string
   appointmentDuration?: number
   notificationEmail?: string
+  locationType?: LocationType | null
+  locationAddress?: string | null
+  locationPhone?: string | null
 }
 
 export interface GetTimeSlotsRequest {

@@ -3,10 +3,12 @@ import { useEffect, useRef, useState } from 'react'
 import { Button, Loader, Select, Skeleton, Tooltip } from '@mantine/core'
 import { useParams } from 'react-router-dom'
 import { rawTimeZones } from '@vvo/tzdb'
-import { Check, Pencil, X } from 'lucide-react'
+import { Check, MapPin, Pencil, Phone, Video, X } from 'lucide-react'
 import { notifications } from '@mantine/notifications'
 import { useBookingStore } from '@/store'
+import { TextEditor } from '@/components/common/TextEditor'
 import googleCalendarIcon from '@/assets/icons/google-calendar.svg'
+import type { LocationType } from '@/types/bookings'
 
 const DURATION_OPTIONS = [
   { value: '30', label: '30 minutes' },
@@ -49,12 +51,28 @@ function renderTimezoneOption({ option }: { option: { value: string; label: stri
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
+const LOCATION_OPTIONS: {
+  value: LocationType
+  label: string
+  icon: React.ReactNode
+}[] = [
+  { value: 'GOOGLE_MEET', label: 'Google Meet', icon: <Video size={18} /> },
+  { value: 'IN_PERSON', label: 'In person', icon: <MapPin size={18} /> },
+  { value: 'ZOOM', label: 'Zoom', icon: <Video size={18} /> },
+  { value: 'PHONE', label: 'Phone call', icon: <Phone size={18} /> },
+]
+
+const AUTOSAVE_DELAY_MS = 600
+
 export const BookingSettings: React.FC = () => {
   const { chatbotId } = useParams<{ chatbotId: string }>()
   const {
     duration,
     timezone,
     notificationEmail,
+    locationType,
+    locationAddress,
+    locationPhone,
     calendarIntegration,
     connectingCalendar,
     disconnectingCalendar,
@@ -62,6 +80,7 @@ export const BookingSettings: React.FC = () => {
     updateDuration,
     updateTimezone,
     updateNotificationEmail,
+    updateLocation,
     connectGoogleCalendar,
     disconnectCalendar,
   } = useBookingStore()
@@ -77,12 +96,17 @@ export const BookingSettings: React.FC = () => {
   const [savingEmail, setSavingEmail] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  useEffect(() => {
-    setLocalDuration(String(duration))
-  }, [duration])
-  useEffect(() => {
-    setLocalTimezone(timezone)
-  }, [timezone])
+  const [draftAddress, setDraftAddress] = useState<string>(locationAddress ?? '')
+  const [draftPhone, setDraftPhone] = useState<string>(locationPhone ?? '')
+  const [optimisticType, setOptimisticType] = useState<LocationType | null>(null)
+  const [savingType, setSavingType] = useState(false)
+  const [autosaving, setAutosaving] = useState(false)
+  const effectiveType = optimisticType ?? locationType
+
+  useEffect(() => setLocalDuration(String(duration)), [duration])
+  useEffect(() => setLocalTimezone(timezone), [timezone])
+  useEffect(() => setDraftAddress(locationAddress ?? ''), [locationAddress])
+  useEffect(() => setDraftPhone(locationPhone ?? ''), [locationPhone])
 
   const handleDurationChange = async (val: string | null) => {
     if (!val || !chatbotId || updatingDuration) return
@@ -157,6 +181,51 @@ export const BookingSettings: React.FC = () => {
     }
     if (e.key === 'Escape') cancelEmailEdit()
   }
+
+  const handleSelectLocationType = async (type: LocationType) => {
+    if (!chatbotId || savingType || type === effectiveType) return
+    setOptimisticType(type)
+    setSavingType(true)
+    try {
+      await updateLocation(chatbotId, { locationType: type })
+    } catch {
+      notifications.show({ message: 'Could not update location.', className: 'error' })
+    } finally {
+      setOptimisticType(null)
+      setSavingType(false)
+    }
+  }
+
+  // Debounced auto-save. The equality check skips the no-op write that
+  // would otherwise fire after hydration sets the draft from the server.
+  useEffect(() => {
+    if (!chatbotId) return
+    if (draftAddress === (locationAddress ?? '')) return
+    const t = setTimeout(() => {
+      setAutosaving(true)
+      updateLocation(chatbotId, { locationAddress: draftAddress || null })
+        .catch(() =>
+          notifications.show({ message: 'Could not save address.', className: 'error' })
+        )
+        .finally(() => setAutosaving(false))
+    }, AUTOSAVE_DELAY_MS)
+    return () => clearTimeout(t)
+  }, [draftAddress, locationAddress, chatbotId, updateLocation])
+
+  useEffect(() => {
+    if (!chatbotId) return
+    const trimmed = draftPhone.trim()
+    if (trimmed === (locationPhone ?? '')) return
+    const t = setTimeout(() => {
+      setAutosaving(true)
+      updateLocation(chatbotId, { locationPhone: trimmed || null })
+        .catch(() =>
+          notifications.show({ message: 'Could not save phone number.', className: 'error' })
+        )
+        .finally(() => setAutosaving(false))
+    }, AUTOSAVE_DELAY_MS)
+    return () => clearTimeout(t)
+  }, [draftPhone, locationPhone, chatbotId, updateLocation])
 
   const handleConnectCalendar = async () => {
     if (!chatbotId || connectingCalendar) return
@@ -310,6 +379,79 @@ export const BookingSettings: React.FC = () => {
                   Once connected, every new appointment will be added to this calendar
                   automatically.
                 </p>
+              </div>
+
+              {/* Location */}
+              <div className="border-b border-border-week pb-6">
+                <div className="mb-1.5 flex items-center justify-between">
+                  <label className="block text-sm font-medium text-text-secondary">Location</label>
+                  {autosaving && (
+                    <span className="flex items-center gap-1.5 text-xs text-text-weak">
+                      <Loader size={12} /> Saving…
+                    </span>
+                  )}
+                </div>
+                <p className="mb-3 text-xs text-text-weak">
+                  Where the meeting will take place. Shared with invitees on confirmation.
+                </p>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 max-w-2xl">
+                  {LOCATION_OPTIONS.map(opt => {
+                    const selected = effectiveType === opt.value
+                    const disabled =
+                      savingType || (opt.value === 'GOOGLE_MEET' && !calendarIntegration)
+                    return (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => handleSelectLocationType(opt.value)}
+                        disabled={disabled}
+                        title={
+                          opt.value === 'GOOGLE_MEET' && !calendarIntegration
+                            ? 'Connect Google Calendar to enable Meet links.'
+                            : undefined
+                        }
+                        className={`flex flex-col items-center justify-center gap-1.5 px-3 py-4 rounded-lg border text-center transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                          selected
+                            ? 'border-color-primary bg-color-primary/5 text-color-primary'
+                            : 'border-border-week bg-white hover:border-border-strong text-text-secondary'
+                        }`}
+                      >
+                        {opt.icon}
+                        <span className="text-xs font-medium">{opt.label}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+
+                {effectiveType === 'IN_PERSON' && (
+                  <div className="mt-4 max-w-2xl">
+                    <label className="mb-1.5 block text-xs font-medium text-text-secondary">
+                      Address
+                    </label>
+                    <TextEditor
+                      value={draftAddress}
+                      onChange={setDraftAddress}
+                      placeholder="Add the address or any details about the location..."
+                      minHeight="120px"
+                      variant="simple"
+                    />
+                  </div>
+                )}
+
+                {effectiveType === 'PHONE' && (
+                  <div className="mt-4 max-w-2xl">
+                    <label className="mb-1.5 block text-xs font-medium text-text-secondary">
+                      Phone number
+                    </label>
+                    <input
+                      type="tel"
+                      value={draftPhone}
+                      onChange={e => setDraftPhone(e.currentTarget.value)}
+                      placeholder="555 123 4567"
+                      className="px-3 h-9 rounded-lg border border-border-week focus:border-border-strong bg-white outline-none text-sm w-72 transition-colors"
+                    />
+                  </div>
+                )}
               </div>
 
               {/* Notification Email */}

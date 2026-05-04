@@ -90,15 +90,19 @@ export type CalendarEventInput = {
   endDateTime: string
   timeZone: string
   attendees: { email: string; displayName?: string }[]
+  location?: string | undefined
+  // When true, requests Google to create a Google Meet conference for the event.
+  withGoogleMeet?: boolean
 }
+
+// Drop the integration so the UI prompts to reconnect instead of failing forever.
+const clearIntegration = (chatbotId: string) =>
+  prisma.calendarIntegration.deleteMany({ where: { chatbotId } }).catch(() => undefined)
 
 export async function createCalendarEvent(chatbotId: string, event: CalendarEventInput) {
   const integration = await prisma.calendarIntegration.findUnique({ where: { chatbotId } })
-  if (!integration) return null
-  if (integration.provider !== 'google') return null
-  if (!integration.refreshToken) {
-    throw new Error('No refresh token stored for calendar integration')
-  }
+  if (!integration || integration.provider !== 'google') return null
+  if (!integration.refreshToken) throw new Error('No refresh token stored for calendar integration')
 
   const client = getOAuth2Client()
   client.setCredentials({
@@ -107,8 +111,7 @@ export async function createCalendarEvent(chatbotId: string, event: CalendarEven
     expiry_date: integration.tokenExpiry.getTime(),
   })
 
-  // The OAuth client emits 'tokens' when it auto-refreshes; persist the new
-  // access token so subsequent requests don't keep re-refreshing.
+  // Persist auto-refreshed tokens so we don't refresh on every call.
   client.on('tokens', tokens => {
     if (!tokens.access_token) return
     prisma.calendarIntegration
@@ -125,25 +128,21 @@ export async function createCalendarEvent(chatbotId: string, event: CalendarEven
 
   let token: string | null | undefined
   try {
-    const accessTokenRes = await client.getAccessToken()
-    token = accessTokenRes.token
+    token = (await client.getAccessToken()).token
   } catch (err) {
-    // Refresh token was revoked or no longer valid — clear the integration so
-    // the next page load shows "Connect" instead of repeatedly failing.
     const msg = err instanceof Error ? err.message : ''
     if (/invalid_grant|invalid_token|unauthorized_client/i.test(msg)) {
-      await prisma.calendarIntegration
-        .deleteMany({ where: { chatbotId } })
-        .catch(() => undefined)
+      await clearIntegration(chatbotId)
     }
     throw err
   }
   if (!token) throw new Error('Could not obtain Google access token')
 
   const calendarId = integration.calendarId || 'primary'
+  // conferenceDataVersion=1 is required for Google to honor conferenceData.createRequest.
   const url =
     `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events` +
-    `?sendUpdates=all`
+    `?sendUpdates=all${event.withGoogleMeet ? '&conferenceDataVersion=1' : ''}`
 
   const body: Record<string, unknown> = {
     summary: event.summary,
@@ -153,6 +152,15 @@ export async function createCalendarEvent(chatbotId: string, event: CalendarEven
     reminders: { useDefault: true },
   }
   if (event.description) body.description = event.description
+  if (event.location) body.location = event.location
+  if (event.withGoogleMeet) {
+    body.conferenceData = {
+      createRequest: {
+        requestId: crypto.randomUUID(),
+        conferenceSolutionKey: { type: 'hangoutsMeet' },
+      },
+    }
+  }
 
   const res = await fetch(url, {
     method: 'POST',
@@ -161,19 +169,14 @@ export async function createCalendarEvent(chatbotId: string, event: CalendarEven
   })
 
   if (!res.ok) {
-    let text = ''
-    try {
-      text = await res.text()
-    } catch {
-      /* ignore */
-    }
-    if (res.status === 401 || res.status === 403) {
-      await prisma.calendarIntegration
-        .deleteMany({ where: { chatbotId } })
-        .catch(() => undefined)
-    }
-    throw new Error(`Calendar API ${res.status}: ${text}`)
+    if (res.status === 401 || res.status === 403) await clearIntegration(chatbotId)
+    throw new Error(`Calendar API ${res.status}: ${await res.text().catch(() => '')}`)
   }
 
-  return (await res.json()) as { id: string; htmlLink?: string }
+  return (await res.json()) as {
+    id: string
+    htmlLink?: string
+    hangoutLink?: string
+    conferenceData?: { entryPoints?: { entryPointType?: string; uri?: string }[] }
+  }
 }

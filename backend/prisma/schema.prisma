@@ -182,20 +182,31 @@ model DocumentChunk {
 }
 
 model BookingConfig {
-  id                  String   @id @default(cuid())
-  chatbotId           String   @unique
-  chatbot             Chatbot  @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
+  id                  String        @id @default(cuid())
+  chatbotId           String        @unique
+  chatbot             Chatbot       @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
 
-  isEnabled           Boolean  @default(true)
+  isEnabled           Boolean       @default(true)
   timezone            String
   appointmentDuration Int
   confirmationMessage String?
   notificationEmail   String?
 
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  locationType        LocationType?
+  locationAddress     String?
+  locationPhone       String?
+
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
 
   @@map("booking_configs")
+}
+
+enum LocationType {
+  GOOGLE_MEET
+  IN_PERSON
+  ZOOM
+  PHONE
 }
 
 model AvailabilitySchedule {

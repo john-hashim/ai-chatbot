@@ -280,18 +280,28 @@ export const updateBookingConfig = async (req: Request, res: Response, next: Nex
       } satisfies ApiResponse)
     }
 
-    const { isEnabled, timezone: tz, appointmentDuration, notificationEmail } = req.body
+    const {
+      isEnabled,
+      timezone: tz,
+      appointmentDuration,
+      notificationEmail,
+      locationType,
+      locationAddress,
+      locationPhone,
+    } = req.body
 
     if (
       isEnabled === undefined &&
       tz === undefined &&
       appointmentDuration === undefined &&
-      notificationEmail === undefined
+      notificationEmail === undefined &&
+      locationType === undefined &&
+      locationAddress === undefined &&
+      locationPhone === undefined
     ) {
       return res.status(400).json({
         status: ApiStatus.FAILURE,
-        message:
-          'At least one field (isEnabled, timezone, appointmentDuration, notificationEmail) must be provided',
+        message: 'At least one field must be provided',
       } satisfies ApiResponse)
     }
 
@@ -305,6 +315,18 @@ export const updateBookingConfig = async (req: Request, res: Response, next: Nex
       } satisfies ApiResponse)
     }
 
+    const VALID_LOCATION_TYPES = ['GOOGLE_MEET', 'IN_PERSON', 'ZOOM', 'PHONE']
+    if (
+      locationType !== undefined &&
+      locationType !== null &&
+      !VALID_LOCATION_TYPES.includes(locationType)
+    ) {
+      return res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'locationType must be GOOGLE_MEET, IN_PERSON, ZOOM, or PHONE',
+      } satisfies ApiResponse)
+    }
+
     const config = await prisma.bookingConfig.upsert({
       where: { chatbotId },
       update: {
@@ -314,6 +336,9 @@ export const updateBookingConfig = async (req: Request, res: Response, next: Nex
           appointmentDuration: Number(appointmentDuration),
         }),
         ...(notificationEmail !== undefined && { notificationEmail }),
+        ...(locationType !== undefined && { locationType }),
+        ...(locationAddress !== undefined && { locationAddress }),
+        ...(locationPhone !== undefined && { locationPhone }),
       },
       create: {
         chatbotId,
@@ -321,6 +346,9 @@ export const updateBookingConfig = async (req: Request, res: Response, next: Nex
         timezone: tz ?? 'UTC',
         appointmentDuration: appointmentDuration ? Number(appointmentDuration) : 30,
         notificationEmail: notificationEmail ?? null,
+        locationType: locationType ?? null,
+        locationAddress: locationAddress ?? null,
+        locationPhone: locationPhone ?? null,
       },
     })
 

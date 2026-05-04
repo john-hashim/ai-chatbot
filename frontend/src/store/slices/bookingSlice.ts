@@ -5,6 +5,8 @@ import type {
   AvailabilitySchedule,
   CalendarIntegration,
   CreateAvailabilityRequest,
+  LocationType,
+  UpdateBookingConfigRequest,
   UpdateTimeSlotsRequest,
 } from '@/types/bookings'
 import type { StateCreator } from 'zustand'
@@ -14,6 +16,9 @@ export interface BookingSlice {
   duration: number
   timezone: string
   notificationEmail: string | null
+  locationType: LocationType | null
+  locationAddress: string | null
+  locationPhone: string | null
   availabilities: AvailabilitySchedule[]
   appointments: Appointment[]
   calendarIntegration: CalendarIntegration | null
@@ -34,6 +39,7 @@ export interface BookingSlice {
   updateDuration: (chatbotId: string, duration: number) => Promise<void>
   updateTimezone: (chatbotId: string, timezone: string) => Promise<void>
   updateNotificationEmail: (chatbotId: string, email: string) => Promise<void>
+  updateLocation: (chatbotId: string, data: UpdateBookingConfigRequest) => Promise<void>
   createAvailability: (chatbotId: string, data: CreateAvailabilityRequest) => Promise<void>
   updateAvailability: (
     chatbotId: string,
@@ -55,6 +61,9 @@ export const createBookingSlice: StateCreator<
   duration: 30,
   timezone: 'UTC',
   notificationEmail: null,
+  locationType: null,
+  locationAddress: null,
+  locationPhone: null,
   availabilities: [],
   appointments: [],
   calendarIntegration: null,
@@ -73,6 +82,9 @@ export const createBookingSlice: StateCreator<
         duration: 30,
         timezone: 'UTC',
         notificationEmail: null,
+        locationType: null,
+        locationAddress: null,
+        locationPhone: null,
         calendarIntegration: null,
       },
       undefined,
@@ -124,6 +136,9 @@ export const createBookingSlice: StateCreator<
           duration: config?.appointmentDuration ?? 30,
           timezone: config?.timezone ?? 'UTC',
           notificationEmail: config?.notificationEmail ?? null,
+          locationType: config?.locationType ?? null,
+          locationAddress: config?.locationAddress ?? null,
+          locationPhone: config?.locationPhone ?? null,
           availabilities,
           calendarIntegration,
         },
@@ -161,6 +176,21 @@ export const createBookingSlice: StateCreator<
       { notificationEmail: config.notificationEmail || null },
       undefined,
       '[Booking] Update Notification Email'
+    )
+  },
+
+  updateLocation: async (chatbotId: string, data: UpdateBookingConfigRequest) => {
+    const response = await bookingsService.updateBookingConfig(chatbotId, data)
+    const config = response.data.data
+    if (!config) throw new Error('Failed to update location')
+    set(
+      {
+        locationType: config.locationType ?? null,
+        locationAddress: config.locationAddress ?? null,
+        locationPhone: config.locationPhone ?? null,
+      },
+      undefined,
+      '[Booking] Update Location'
     )
   },
 
