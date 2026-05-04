@@ -248,6 +248,7 @@ model Appointment {
     locationAddress String?
     locationPhone   String?
     meetLink        String?
+    googleEventId   String?
     createdAt  DateTime          @default(now())
     updatedAt  DateTime          @updatedAt
 

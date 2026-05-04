@@ -10,10 +10,12 @@ dayjs.extend(customParseFormat)
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
-// To use a branded address (e.g. notifications@pulsechat.com) verify the
-// sending domain in Resend → Domains. Until then, the display name is
-// "Pulsechat" and the address falls back to the shared resend.dev sender.
-const FROM_ADDRESS = 'Pulsechat <onboarding@resend.dev>'
+// Resend's shared `onboarding@resend.dev` only delivers to the Resend account
+// owner — every other recipient is silently dropped. Set BOOKING_EMAIL_FROM
+// (e.g. "Pulsechat <notifications@yourdomain.com>") once a domain is verified
+// in Resend → Domains so invitees actually receive booking confirmations.
+const FROM_ADDRESS = process.env.BOOKING_EMAIL_FROM || 'Pulsechat <onboarding@resend.dev>'
+const USING_SANDBOX_SENDER = FROM_ADDRESS.includes('onboarding@resend.dev')
 
 // Inline SVG matches the frontend logo (frontend/public/favicon.svg). Gmail
 // strips inline <svg>; the "Pulsechat" wordmark beside it preserves the brand
@@ -134,6 +136,14 @@ function buildEmail(opts: {
 }
 
 export async function sendBookingConfirmationToUser(opts: BookingEmailFields) {
+  if (USING_SANDBOX_SENDER) {
+    console.warn(
+      `[email] Skipping invitee confirmation to ${opts.inviteeEmail}: ` +
+        `BOOKING_EMAIL_FROM is unset and Resend's sandbox sender cannot deliver to arbitrary recipients. ` +
+        `Verify a domain in Resend and set BOOKING_EMAIL_FROM to enable invitee emails.`
+    )
+    return
+  }
   const html = buildEmail({
     greeting: `Hi ${opts.inviteeName},`,
     intro: 'Your event has been scheduled.',

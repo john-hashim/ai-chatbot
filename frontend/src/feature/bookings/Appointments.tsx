@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { Button, Loader } from '@mantine/core'
+import { Button, Loader, Text } from '@mantine/core'
+import { modals } from '@mantine/modals'
 import { Calendar, Clock, MapPin, Phone, Video } from 'lucide-react'
 import { useBookingStore } from '@/store'
+import { showLoadingNotification } from '@/utils/notifications'
 import type { Appointment, LocationType } from '@/types/bookings'
 import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc'
@@ -76,7 +78,11 @@ export const Appointments: React.FC = () => {
         ) : (
           <ul className="flex flex-col gap-3">
             {items.map(appt => (
-              <AppointmentRow key={appt.id} appointment={appt} />
+              <AppointmentRow
+                key={appt.id}
+                appointment={appt}
+                showCancel={activeTab === 'upcoming'}
+              />
             ))}
           </ul>
         )}
@@ -103,7 +109,12 @@ const deriveName = (email: string): string => {
   )
 }
 
-const AppointmentRow: React.FC<{ appointment: Appointment }> = ({ appointment }) => {
+const AppointmentRow: React.FC<{ appointment: Appointment; showCancel: boolean }> = ({
+  appointment,
+  showCancel,
+}) => {
+  const { chatbotId } = useParams<{ chatbotId: string }>()
+  const { cancelAppointment, cancellingAppointmentId } = useBookingStore()
   const name = appointment.name ?? deriveName(appointment.email)
   const { locationType, locationAddress, locationPhone } = appointment
   const locationLabel = locationType ? LOCATION_LABELS[locationType] : 'No location set'
@@ -111,6 +122,33 @@ const AppointmentRow: React.FC<{ appointment: Appointment }> = ({ appointment })
     locationType === 'IN_PERSON' ? locationAddress : locationType === 'PHONE' ? locationPhone : null
   const LocationIcon =
     locationType === 'IN_PERSON' ? MapPin : locationType === 'PHONE' ? Phone : Video
+  const isCancelling = cancellingAppointmentId === appointment.id
+
+  const handleCancel = () => {
+    if (!chatbotId) return
+    modals.openConfirmModal({
+      title: 'Cancel appointment',
+      centered: true,
+      children: (
+        <Text size="sm">
+          {`Cancel the appointment with ${name} on ${dayjs(appointment.date).format('MMM D, YYYY')} at ${dayjs(
+            `${appointment.date}T${appointment.timeslot}`
+          ).format('h:mm A')}? This will remove it from Google Calendar and notify the invitee.`}
+        </Text>
+      ),
+      labels: { confirm: 'Cancel appointment', cancel: 'Keep' },
+      confirmProps: { color: 'red', variant: 'filled' },
+      onConfirm: async () => {
+        const notification = showLoadingNotification('Cancelling', 'Please wait...')
+        try {
+          await cancelAppointment(chatbotId, appointment.id)
+          notification.success('Appointment cancelled')
+        } catch (e) {
+          notification.error(`Failed to cancel: ${e instanceof Error ? e.message : e}`)
+        }
+      },
+    })
+  }
 
   return (
     <li className="flex flex-row items-center gap-6 border border-border-week rounded-lg p-4 hover:bg-background-dark-week transition-colors">
@@ -140,11 +178,19 @@ const AppointmentRow: React.FC<{ appointment: Appointment }> = ({ appointment })
         </div>
       </div>
 
-      <div className="ml-auto shrink-0">
-        <Button variant="outline" color="red" size="xs">
-          Cancel
-        </Button>
-      </div>
+      {showCancel && (
+        <div className="ml-auto shrink-0">
+          <Button
+            variant="outline"
+            color="red"
+            size="xs"
+            onClick={handleCancel}
+            loading={isCancelling}
+          >
+            Cancel
+          </Button>
+        </div>
+      )}
     </li>
   )
 }

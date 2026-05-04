@@ -78,4 +78,16 @@ export const bookingsService = {
       params: { status },
     })
   },
+
+  cancelAppointment: (
+    chatbotId: string,
+    appointmentId: string
+  ): Promise<AxiosResponse<ApiResponse<Appointment>>> => {
+    return apiClient.post(
+      ENDPOINTS.BOOKINGS.CANCEL_APPOINTMENT.replace(':chatbotId', chatbotId).replace(
+        ':appointmentId',
+        appointmentId
+      )
+    )
+  },
 }

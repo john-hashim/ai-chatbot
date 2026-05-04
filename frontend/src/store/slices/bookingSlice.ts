@@ -31,6 +31,7 @@ export interface BookingSlice {
   creatingDayId: number | null
   updatingSlotId: string | null
   deletingSlotId: string | null
+  cancellingAppointmentId: string | null
   connectingCalendar: boolean
   disconnectingCalendar: boolean
 
@@ -50,6 +51,7 @@ export interface BookingSlice {
   ) => Promise<void>
   deleteAvailability: (chatbotId: string, slotId: string) => Promise<void>
   fetchAppointments: (chatbotId: string, status?: 'UPCOMING' | 'PAST') => Promise<void>
+  cancelAppointment: (chatbotId: string, appointmentId: string) => Promise<void>
   clearAppointments: () => void
   connectGoogleCalendar: (chatbotId: string) => Promise<void>
   disconnectCalendar: (chatbotId: string) => Promise<void>
@@ -76,6 +78,7 @@ export const createBookingSlice: StateCreator<
   creatingDayId: null,
   updatingSlotId: null,
   deletingSlotId: null,
+  cancellingAppointmentId: null,
   connectingCalendar: false,
   disconnectingCalendar: false,
 
@@ -102,6 +105,30 @@ export const createBookingSlice: StateCreator<
       undefined,
       '[Booking] Clear Appointments'
     )
+  },
+
+  cancelAppointment: async (chatbotId: string, appointmentId: string) => {
+    set(
+      { cancellingAppointmentId: appointmentId },
+      undefined,
+      '[Booking] Cancelling Appointment'
+    )
+    try {
+      await bookingsService.cancelAppointment(chatbotId, appointmentId)
+      set(
+        state => ({
+          upcomingAppointments: state.upcomingAppointments.filter(a => a.id !== appointmentId),
+        }),
+        undefined,
+        '[Booking] Appointment Cancelled'
+      )
+    } finally {
+      set(
+        { cancellingAppointmentId: null },
+        undefined,
+        '[Booking] Cancelling Appointment Done'
+      )
+    }
   },
 
   fetchAppointments: async (chatbotId: string, status: 'UPCOMING' | 'PAST' = 'UPCOMING') => {

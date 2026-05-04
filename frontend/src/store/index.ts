@@ -67,6 +67,8 @@ export const useBookingStore = () =>
       updateAvailability: state.updateAvailability,
       deleteAvailability: state.deleteAvailability,
       fetchAppointments: state.fetchAppointments,
+      cancelAppointment: state.cancelAppointment,
+      cancellingAppointmentId: state.cancellingAppointmentId,
       clearAppointments: state.clearAppointments,
       connectGoogleCalendar: state.connectGoogleCalendar,
       disconnectCalendar: state.disconnectCalendar,

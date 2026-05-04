@@ -180,3 +180,61 @@ export async function createCalendarEvent(chatbotId: string, event: CalendarEven
     conferenceData?: { entryPoints?: { entryPointType?: string; uri?: string }[] }
   }
 }
+
+export async function deleteCalendarEvent(chatbotId: string, eventId: string): Promise<boolean> {
+  const integration = await prisma.calendarIntegration.findUnique({ where: { chatbotId } })
+  if (!integration || integration.provider !== 'google') return false
+  if (!integration.refreshToken) throw new Error('No refresh token stored for calendar integration')
+
+  const client = getOAuth2Client()
+  client.setCredentials({
+    access_token: integration.accessToken,
+    refresh_token: integration.refreshToken,
+    expiry_date: integration.tokenExpiry.getTime(),
+  })
+
+  client.on('tokens', tokens => {
+    if (!tokens.access_token) return
+    prisma.calendarIntegration
+      .update({
+        where: { chatbotId },
+        data: {
+          accessToken: tokens.access_token,
+          tokenExpiry: new Date(tokens.expiry_date ?? Date.now() + 3600 * 1000),
+          ...(tokens.refresh_token ? { refreshToken: tokens.refresh_token } : {}),
+        },
+      })
+      .catch(err => console.error('Failed to persist refreshed calendar token:', err))
+  })
+
+  let token: string | null | undefined
+  try {
+    token = (await client.getAccessToken()).token
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : ''
+    if (/invalid_grant|invalid_token|unauthorized_client/i.test(msg)) {
+      await clearIntegration(chatbotId)
+    }
+    throw err
+  }
+  if (!token) throw new Error('Could not obtain Google access token')
+
+  const calendarId = integration.calendarId || 'primary'
+  // sendUpdates=all triggers Google's cancellation email to attendees.
+  const url =
+    `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}` +
+    `/events/${encodeURIComponent(eventId)}?sendUpdates=all`
+
+  const res = await fetch(url, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+  })
+
+  // 410 Gone = already deleted on Google's side; treat as success so DB cleanup proceeds.
+  if (res.status === 404 || res.status === 410) return true
+  if (!res.ok) {
+    if (res.status === 401 || res.status === 403) await clearIntegration(chatbotId)
+    throw new Error(`Calendar API ${res.status}: ${await res.text().catch(() => '')}`)
+  }
+  return true
+}

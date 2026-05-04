@@ -4,7 +4,7 @@ import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc.js'
 import timezone from 'dayjs/plugin/timezone.js'
 import customParseFormat from 'dayjs/plugin/customParseFormat.js'
-import { createCalendarEvent } from './calendar.service.js'
+import { createCalendarEvent, deleteCalendarEvent } from './calendar.service.js'
 import {
   sendBookingConfirmationToUser,
   sendBookingNotificationToOwner,
@@ -164,18 +164,23 @@ export async function confirmBooking(input: ConfirmBookingInput): Promise<Confir
   }
 
   if (isNew) {
-    const meetLink = await notifyBookingConfirmed(input)
-    if (meetLink) {
+    const { meetLink, googleEventId } = await notifyBookingConfirmed(input)
+    if (meetLink || googleEventId) {
       appointment = await prisma.appointment.update({
         where: { id: appointment.id },
-        data: { meetLink },
+        data: {
+          ...(meetLink ? { meetLink } : {}),
+          ...(googleEventId ? { googleEventId } : {}),
+        },
       })
     }
   }
   return { status: 'confirmed', appointment, isNew }
 }
 
-async function notifyBookingConfirmed(input: ConfirmBookingInput): Promise<string | undefined> {
+async function notifyBookingConfirmed(
+  input: ConfirmBookingInput
+): Promise<{ meetLink?: string; googleEventId?: string }> {
   const { chatbotId, date, timeslot, name, email } = input
 
   const [bookingConfig, chatbot] = await Promise.all([
@@ -241,5 +246,38 @@ async function notifyBookingConfirmed(input: ConfirmBookingInput): Promise<strin
     ).catch(console.error)
   }
 
-  return meetLink ?? undefined
+  return {
+    ...(meetLink ? { meetLink } : {}),
+    ...(event?.id ? { googleEventId: event.id } : {}),
+  }
+}
+
+export type CancelAppointmentResult =
+  | { status: 'not_found' }
+  | { status: 'already_cancelled' }
+  | { status: 'cancelled'; appointment: Appointment }
+
+export async function cancelAppointment(
+  chatbotId: string,
+  appointmentId: string
+): Promise<CancelAppointmentResult> {
+  const appointment = await prisma.appointment.findFirst({
+    where: { id: appointmentId, chatbotId },
+  })
+  if (!appointment) return { status: 'not_found' }
+  if (appointment.status === 'CANCELLED') return { status: 'already_cancelled' }
+
+  // Delete from Google first; if Google fails we surface the error so the
+  // user can retry rather than ending up with a stale event on their calendar.
+  // Rows without googleEventId (legacy or calendar-disconnected) skip the API call.
+  if (appointment.googleEventId) {
+    await deleteCalendarEvent(chatbotId, appointment.googleEventId)
+  }
+
+  const updated = await prisma.appointment.update({
+    where: { id: appointment.id },
+    data: { status: 'CANCELLED' },
+  })
+
+  return { status: 'cancelled', appointment: updated }
 }

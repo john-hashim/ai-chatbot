@@ -39,5 +39,10 @@ router.get(
   authMiddleware.authenticateToken,
   bookingsController.getAppointments
 )
+router.post(
+  '/:chatbotId/appointments/:appointmentId/cancel',
+  authMiddleware.authenticateToken,
+  bookingsController.cancelAppointment
+)
 
 export default router

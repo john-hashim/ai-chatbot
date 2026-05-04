@@ -6,6 +6,7 @@ import customParseFormat from 'dayjs/plugin/customParseFormat.js'
 import { Prisma } from '@prisma/client'
 import { ApiStatus, type ApiResponse } from '../types/api.js'
 import { prisma } from '../prisma/client.js'
+import { cancelAppointment as cancelAppointmentService } from '../services/booking.service.js'
 
 dayjs.extend(utc)
 dayjs.extend(timezone)
@@ -559,6 +560,43 @@ export const getAppointments = async (req: Request, res: Response, next: NextFun
       status: ApiStatus.SUCCESS,
       message: 'Appointments fetched successfully',
       data: appointments,
+    } satisfies ApiResponse)
+  } catch (error) {
+    next(error)
+  }
+}
+
+export const cancelAppointment = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { chatbotId, appointmentId } = req.params
+
+    if (!chatbotId || !appointmentId) {
+      return res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'Chatbot ID and appointment ID are required',
+      } satisfies ApiResponse)
+    }
+
+    const result = await cancelAppointmentService(chatbotId, appointmentId)
+
+    if (result.status === 'not_found') {
+      return res.status(404).json({
+        status: ApiStatus.FAILURE,
+        message: 'Appointment not found',
+      } satisfies ApiResponse)
+    }
+
+    if (result.status === 'already_cancelled') {
+      return res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'Appointment is already cancelled',
+      } satisfies ApiResponse)
+    }
+
+    return res.status(200).json({
+      status: ApiStatus.SUCCESS,
+      message: 'Appointment cancelled successfully',
+      data: result.appointment,
     } satisfies ApiResponse)
   } catch (error) {
     next(error)
