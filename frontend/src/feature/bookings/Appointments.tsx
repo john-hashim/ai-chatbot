@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { Button, Loader, Text } from '@mantine/core'
+import { Avatar, Button, Loader, Text } from '@mantine/core'
 import { modals } from '@mantine/modals'
-import { Calendar, Clock, MapPin, Phone, Video } from 'lucide-react'
+import { Calendar, MapPin, Phone, Video } from 'lucide-react'
 import { useBookingStore } from '@/store'
 import { showLoadingNotification } from '@/utils/notifications'
 import type { Appointment, LocationType } from '@/types/bookings'
@@ -109,6 +109,14 @@ const deriveName = (email: string): string => {
   )
 }
 
+const getInitials = (name: string): string =>
+  name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(part => part.charAt(0).toUpperCase())
+    .join('')
+
 const AppointmentRow: React.FC<{ appointment: Appointment; showCancel: boolean }> = ({
   appointment,
   showCancel,
@@ -116,10 +124,8 @@ const AppointmentRow: React.FC<{ appointment: Appointment; showCancel: boolean }
   const { chatbotId } = useParams<{ chatbotId: string }>()
   const { cancelAppointment, cancellingAppointmentId } = useBookingStore()
   const name = appointment.name ?? deriveName(appointment.email)
-  const { locationType, locationAddress, locationPhone } = appointment
+  const { locationType, locationAddress, locationPhone, meetLink } = appointment
   const locationLabel = locationType ? LOCATION_LABELS[locationType] : 'No location set'
-  const locationDetail =
-    locationType === 'IN_PERSON' ? locationAddress : locationType === 'PHONE' ? locationPhone : null
   const LocationIcon =
     locationType === 'IN_PERSON' ? MapPin : locationType === 'PHONE' ? Phone : Video
   const isCancelling = cancellingAppointmentId === appointment.id
@@ -151,35 +157,64 @@ const AppointmentRow: React.FC<{ appointment: Appointment; showCancel: boolean }
   }
 
   return (
-    <li className="flex flex-row items-center gap-6 border border-border-week rounded-lg p-4 hover:bg-background-dark-week transition-colors">
-      <div className="flex flex-col min-w-0 flex-1">
-        <span className="text-sm font-medium truncate">{name}</span>
-        <span className="text-xs text-gray-500 truncate">{appointment.email}</span>
+    <li className="flex flex-col md:flex-row md:items-center gap-3 md:gap-4 border border-border-week rounded-lg p-4 hover:bg-background-dark-week transition-colors">
+      <div className="flex items-center gap-3 min-w-0 md:basis-1/4 md:shrink-0">
+        <Avatar size="md" color="brand" radius="xl">
+          {getInitials(name)}
+        </Avatar>
+        <div className="flex flex-col min-w-0 flex-1">
+          <span className="text-sm font-medium truncate">{name}</span>
+          <span className="text-xs text-gray-500 truncate">{appointment.email}</span>
+        </div>
+        {showCancel && (
+          <div className="shrink-0 md:hidden">
+            <Button
+              variant="outline"
+              color="red"
+              size="xs"
+              onClick={handleCancel}
+              loading={isCancelling}
+            >
+              Cancel
+            </Button>
+          </div>
+        )}
       </div>
 
-      <div className="flex flex-col gap-1 shrink-0">
-        <div className="flex items-center gap-1.5 text-sm">
-          <Calendar size={14} className="text-gray-500" />
-          <span>{dayjs(appointment.date).format('MMM D, YYYY')}</span>
+      <div className="flex flex-row items-center gap-4 min-w-0 md:contents">
+        <div className="flex flex-col min-w-0 md:basis-[15%] md:shrink-0">
+          <span className="text-xs text-gray-700 truncate">
+            {dayjs(appointment.date).format('MMM D, YYYY')}
+          </span>
+          <span className="text-xs text-gray-500 truncate">
+            {dayjs(`${appointment.date}T${appointment.timeslot}`).format('h:mm A')}
+          </span>
         </div>
-        <div className="flex items-center gap-1.5 text-sm">
-          <Clock size={14} className="text-gray-500" />
-          <span>{dayjs(`${appointment.date}T${appointment.timeslot}`).format('h:mm A')}</span>
-        </div>
-      </div>
 
-      <div className="flex items-center gap-1.5 text-sm text-gray-600 min-w-0 shrink-0 max-w-[220px]">
-        <LocationIcon size={14} className="text-gray-500 shrink-0" />
-        <div className="flex flex-col min-w-0">
-          <span className="truncate">{locationLabel}</span>
-          {locationDetail && (
-            <span className="text-xs text-gray-400 truncate">{locationDetail}</span>
-          )}
+        <div className="flex items-center gap-2 text-sm text-gray-700 min-w-0 flex-1">
+          <LocationIcon size={20} className="text-gray-500 shrink-0" />
+          <div className="flex flex-col min-w-0">
+            <span className="truncate">{locationLabel}</span>
+            {locationType === 'GOOGLE_MEET' && meetLink ? (
+              <a
+                href={meetLink}
+                target="_blank"
+                rel="noreferrer"
+                className="text-xs text-primary hover:underline truncate"
+              >
+                {meetLink}
+              </a>
+            ) : locationType === 'PHONE' && locationPhone ? (
+              <span className="text-xs text-gray-400 truncate">{locationPhone}</span>
+            ) : locationType === 'IN_PERSON' && locationAddress ? (
+              <span className="text-xs text-gray-400 truncate">{locationAddress}</span>
+            ) : null}
+          </div>
         </div>
       </div>
 
       {showCancel && (
-        <div className="ml-auto shrink-0">
+        <div className="shrink-0 hidden md:block">
           <Button
             variant="outline"
             color="red"

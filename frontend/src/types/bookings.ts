@@ -92,6 +92,7 @@ export interface Appointment {
   locationType: LocationType | null
   locationAddress: string | null
   locationPhone: string | null
+  meetLink: string | null
   createdAt: string
   updatedAt: string
 }
