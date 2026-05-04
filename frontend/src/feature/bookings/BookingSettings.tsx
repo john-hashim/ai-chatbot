@@ -8,7 +8,7 @@ import { notifications } from '@mantine/notifications'
 import { useBookingStore } from '@/store'
 import googleCalendarIcon from '@/assets/icons/google-calendar.svg'
 import googleMeetIcon from '@/assets/icons/google-meet.svg'
-import zoomIcon from '@/assets/icons/zoom-icon.svg'
+// import zoomIcon from '@/assets/icons/zoom-icon.svg'
 import type { LocationType } from '@/types/bookings'
 
 const DURATION_OPTIONS = [
@@ -62,11 +62,11 @@ const LOCATION_OPTIONS: {
     label: 'Google Meet',
     icon: <img src={googleMeetIcon} alt="" className="w-[18px] h-[18px]" />,
   },
-  {
-    value: 'ZOOM',
-    label: 'Zoom',
-    icon: <img src={zoomIcon} alt="" className="w-[18px] h-[18px]" />,
-  },
+  // {
+  //   value: 'ZOOM',
+  //   label: 'Zoom',
+  //   icon: <img src={zoomIcon} alt="" className="w-[18px] h-[18px]" />,
+  // },
   { value: 'IN_PERSON', label: 'In person', icon: <MapPin size={18} /> },
   { value: 'PHONE', label: 'Phone call', icon: <Phone size={18} /> },
 ]
