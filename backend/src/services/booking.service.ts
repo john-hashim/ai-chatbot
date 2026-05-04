@@ -163,11 +163,19 @@ export async function confirmBooking(input: ConfirmBookingInput): Promise<Confir
     }
   }
 
-  if (isNew) await notifyBookingConfirmed(input)
+  if (isNew) {
+    const meetLink = await notifyBookingConfirmed(input)
+    if (meetLink) {
+      appointment = await prisma.appointment.update({
+        where: { id: appointment.id },
+        data: { meetLink },
+      })
+    }
+  }
   return { status: 'confirmed', appointment, isNew }
 }
 
-async function notifyBookingConfirmed(input: ConfirmBookingInput): Promise<void> {
+async function notifyBookingConfirmed(input: ConfirmBookingInput): Promise<string | undefined> {
   const { chatbotId, date, timeslot, name, email } = input
 
   const [bookingConfig, chatbot] = await Promise.all([
@@ -232,4 +240,6 @@ async function notifyBookingConfirmed(input: ConfirmBookingInput): Promise<void>
       fields
     ).catch(console.error)
   }
+
+  return meetLink ?? undefined
 }
