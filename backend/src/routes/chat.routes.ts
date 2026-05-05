@@ -28,6 +28,12 @@ router.get(
   chatController.exportChatsAsPDF
 )
 
+router.get(
+  '/:chatbotId/:sessionId/download',
+  authMiddleware.authenticateToken,
+  chatController.downloadChatSession
+)
+
 // These must be last — /:sessionId is a catch-all param
 router.get(
   '/:chatbotId/:sessionId',

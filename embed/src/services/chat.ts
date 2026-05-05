@@ -15,6 +15,16 @@ interface StreamCallbacks {
   onError: (error: string) => void
 }
 
+export async function downloadChatSession(
+  apiBase: string,
+  embedKey: string,
+  sessionId: string
+): Promise<Blob> {
+  const res = await fetch(`${apiBase}/api/embed/${embedKey}/${sessionId}/download`)
+  if (!res.ok) throw new Error('Failed to download chat')
+  return res.blob()
+}
+
 export async function streamChat(
   apiBase: string,
   embedKey: string,

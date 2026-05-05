@@ -665,6 +665,77 @@ export const exportChatsAsPDF = async (req: Request, res: Response, next: NextFu
   }
 }
 
+export const downloadChatSession = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { chatbotId, sessionId } = req.params
+    if (!chatbotId) {
+      return res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'Chatbot ID is required',
+      } satisfies ApiResponse)
+    }
+
+    if (!sessionId) {
+      return res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'Chat session ID required',
+      } satisfies ApiResponse)
+    }
+
+    const chatbot = req.chatbot
+      ? req.chatbot
+      : await prisma.chatbot.findUnique({
+          where: { id: chatbotId, userId: req.user.id },
+        })
+
+    if (!chatbot) {
+      return res.status(404).json({
+        status: ApiStatus.FAILURE,
+        message: 'Chatbot not found',
+      } satisfies ApiResponse)
+    }
+
+    const session = await prisma.chatSession.findFirst({
+      where: { id: sessionId, chatbotId: chatbot.id },
+      include: {
+        messages: {
+          orderBy: { createdAt: 'asc' },
+        },
+      },
+    })
+
+    if (!session) {
+      return res.status(404).json({
+        status: ApiStatus.FAILURE,
+        message: 'Chat session not found',
+      } satisfies ApiResponse)
+    }
+
+    res.setHeader('Content-Type', 'application/pdf')
+    res.setHeader('Content-Disposition', `attachment; filename="chat-${sessionId}.pdf"`)
+
+    const doc = new PDFDocument({ margin: 50 })
+    doc.pipe(res)
+
+    doc.fontSize(20).text('Chat Session', { align: 'center' })
+    doc.moveDown()
+    doc.fontSize(10).font('Helvetica').text(`Session ID: ${session.id}`)
+    doc.fontSize(10).font('Helvetica').text(`Created: ${session.createdAt.toISOString()}`)
+    doc.moveDown()
+
+    for (const msg of session.messages) {
+      const label = msg.role === 'user' ? 'User' : 'Assistant'
+      doc.fontSize(10).font('Helvetica-Bold').text(`${label}:`, { continued: true })
+      doc.font('Helvetica').text(` ${msg.content}`)
+      doc.moveDown(0.3)
+    }
+
+    doc.end()
+  } catch (error) {
+    next(error)
+  }
+}
+
 export const updateMessage = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { chatbotId, sessionId, messageId } = req.params

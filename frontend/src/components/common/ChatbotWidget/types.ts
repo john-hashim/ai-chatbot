@@ -30,6 +30,7 @@ export interface ChatbotWidgetProps {
   onFeedback?: (messageId: string, type: string) => void
   onCopy?: (messageId: string, content: string) => void
   onReset?: () => void
+  onDownloadChat?: () => void
   onActionSelect?: (actionType: string, value: string) => void
   onActionCancel?: (actionType: string) => void
 }
@@ -41,7 +42,9 @@ export interface ChatHeaderProps {
   brandColor: string
   brandColorForHeader: boolean
   headerTextColor: string
+  canDownload: boolean
   onReset?: () => void
+  onDownloadChat?: () => void
 }
 
 export interface ChatMessagesProps {

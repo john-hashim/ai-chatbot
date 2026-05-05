@@ -9,6 +9,12 @@ const router = express.Router()
 router.get('/:embedKey/config', embedMiddleware.authenticateEmbed, embedController.getEmbedConfig)
 router.post('/:embedKey/chat', embedMiddleware.authenticateEmbed, chatController.chatController)
 
+router.get(
+  '/:embedKey/:sessionId/download',
+  embedMiddleware.authenticateEmbed,
+  chatController.downloadChatSession
+)
+
 router.patch(
   '/:embedKey/:sessionId/:messageId',
   embedMiddleware.authenticateEmbed,

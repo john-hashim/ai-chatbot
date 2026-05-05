@@ -23,6 +23,7 @@ export const ChatbotWidget: React.FC<ChatbotWidgetProps> = ({
   onFeedback,
   onCopy,
   onReset,
+  onDownloadChat,
   onActionSelect,
   onActionCancel,
   generating,
@@ -65,6 +66,8 @@ export const ChatbotWidget: React.FC<ChatbotWidgetProps> = ({
         brandColorForHeader={brandColorForHeader}
         headerTextColor={headerTextColor}
         onReset={onReset}
+        onDownloadChat={onDownloadChat}
+        canDownload={(messages?.length ?? 0) > 0}
       />
 
       <div className="flex flex-1 flex-col overflow-hidden">
@@ -99,14 +102,11 @@ export const ChatbotWidget: React.FC<ChatbotWidgetProps> = ({
             const last = messages[messages.length - 1]
             if (!last?.isAction) return false
             if (last.actionType === 'booking') {
-              return (
-                ((last.actionMeta as { dates?: unknown[] } | null)?.dates?.length ?? 0) > 0
-              )
+              return ((last.actionMeta as { dates?: unknown[] } | null)?.dates?.length ?? 0) > 0
             }
             if (last.actionType === 'confirm_date') {
               return (
-                ((last.actionMeta as { timeslots?: unknown[] } | null)?.timeslots?.length ??
-                  0) > 0
+                ((last.actionMeta as { timeslots?: unknown[] } | null)?.timeslots?.length ?? 0) > 0
               )
             }
             if (last.actionType === 'confirm_time') return true

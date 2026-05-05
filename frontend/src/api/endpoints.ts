@@ -37,6 +37,7 @@ export const ENDPOINTS = {
     EXPORT_JSON: 'chatbot/:chatbotId/export/json',
     EXPORT_CSV: 'chatbot/:chatbotId/export/csv',
     EXPORT_PDF: 'chatbot/:chatbotId/export/pdf',
+    DOWNLOAD_SESSION: 'chatbot/:chatbotId/:sessionId/download',
     UPDATE_MESSAGE: 'chatbot/:chatbotId/:sessionId/:messageId',
   },
   ANALYTICS: {

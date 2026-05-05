@@ -62,6 +62,18 @@ export const chatService = {
       )
     )
   },
+  downloadChatSession: (
+    chatbotId: string,
+    sessionId: string
+  ): Promise<AxiosResponse<Blob>> => {
+    return apiClient.get(
+      ENDPOINTS.CHAT.DOWNLOAD_SESSION.replace(':chatbotId', chatbotId).replace(
+        ':sessionId',
+        sessionId
+      ),
+      { responseType: 'blob' }
+    )
+  },
   exportChatsAsJSON: (chatbotId: string): Promise<AxiosResponse<Blob>> => {
     return apiClient.get(ENDPOINTS.CHAT.EXPORT_JSON.replace(':chatbotId', chatbotId), {
       responseType: 'blob',

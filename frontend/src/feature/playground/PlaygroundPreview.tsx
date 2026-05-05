@@ -4,7 +4,7 @@ import { useApi } from '@/hooks/useApi'
 import { useStore } from '@/store'
 import type { ApiResponse } from '@/types/api'
 import type { ChatMessage } from '@/types/chatbot'
-import { useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 
 export const PlaygroundPreview: React.FC = () => {
   const { currentChatbot } = useStore()
@@ -145,6 +145,21 @@ export const PlaygroundPreview: React.FC = () => {
     }
   }
 
+  const downloadBlob = useCallback((blob: Blob, filename: string) => {
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    a.click()
+    URL.revokeObjectURL(url)
+  }, [])
+
+  const handleDownload = useCallback(async () => {
+    if (!currentChatbot || !sessionId) return
+    const response = await chatService.downloadChatSession(currentChatbot.id, sessionId)
+    downloadBlob(response.data, `chat-${sessionId}.pdf`)
+  }, [currentChatbot, sessionId, downloadBlob])
+
   return (
     <div className="flex h-full items-center p-6">
       <div className="mx-auto h-full max-h-180 w-full max-w-102 overflow-hidden rounded-[20px] border border-border-week">
@@ -164,6 +179,7 @@ export const PlaygroundPreview: React.FC = () => {
           onSendMessage={handleSendMessage}
           onFeedback={handleFeedback}
           onReset={handleReset}
+          onDownloadChat={handleDownload}
           onActionSelect={handleActionSelect}
           onActionCancel={handleActionCancel}
           generating={generating}

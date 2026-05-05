@@ -1,6 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from "preact/hooks";
 import { fetchConfig, sendFeedback, type ChatbotConfig } from "../services/api";
-import { streamChat, type ChatMessage } from "../services/chat";
+import {
+  downloadChatSession,
+  streamChat,
+  type ChatMessage,
+} from "../services/chat";
 import { getContrastColor } from "../utils";
 import { ChatBubbleButton } from "./ChatBubbleButton";
 import { ChatHeader } from "./ChatHeader";
@@ -150,6 +154,26 @@ export function ChatWidget({ embedKey, apiBase, mode }: Props) {
     setSessionId(null);
   }, []);
 
+  const handleDownload = useCallback(async () => {
+    if (!sessionId) {
+      showError("Send a message first to start a chat");
+      return;
+    }
+    try {
+      const blob = await downloadChatSession(apiBase, embedKey, sessionId);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `chat-${sessionId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      showError("Failed to download chat");
+    }
+  }, [apiBase, embedKey, sessionId, showError]);
+
   const handleActionSelect = useCallback(
     (actionType: string, value: string) => {
       if (
@@ -207,7 +231,9 @@ export function ChatWidget({ embedKey, apiBase, mode }: Props) {
         brandColor={config.brandColor}
         brandColorForHeader={config.brandColorForHeader}
         headerTextColor={headerTextColor}
+        canDownload={messages.length > 0 && !!sessionId}
         onReset={handleReset}
+        onDownloadChat={handleDownload}
         onClose={mode === "widget" ? () => setOpen(false) : undefined}
       />
       <div className="cbw-body">
