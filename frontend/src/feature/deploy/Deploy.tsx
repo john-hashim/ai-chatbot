@@ -107,9 +107,18 @@ export const Deploy: React.FC = () => {
   const getSnippet = () => {
     if (!embedConfig) return ''
     if (embedType === 'widget') {
-      return `<script src="${EMBED_BASE}/embed-assets/embed.js" data-chatbot-key="${embedConfig.embedKey}"></script>`
+      return `<script
+  src="${EMBED_BASE}/embed-assets/embed.js"
+  data-chatbot-key="${embedConfig.embedKey}"
+  data-identifier="REPLACE_WITH_USER_EMAIL_OR_ID"
+></script>`
     }
-    return `<iframe src="${EMBED_BASE}/embed/${embedConfig.embedKey}" width="400" height="600" frameborder="0"></iframe>`
+    return `<iframe
+  src="${EMBED_BASE}/embed/${embedConfig.embedKey}?identifier=REPLACE_WITH_USER_EMAIL_OR_ID"
+  width="400"
+  height="600"
+  frameborder="0"
+></iframe>`
   }
 
   const directChatLink = embedConfig
@@ -275,6 +284,11 @@ export const Deploy: React.FC = () => {
                     )}
                   </button>
                 </div>
+                <p className="text-text-weak text-[11px] mt-2">
+                  Replace <code className="font-mono">REPLACE_WITH_USER_EMAIL_OR_ID</code> with the
+                  signed-in user&apos;s email, phone, or your internal user id — or remove the
+                  identifier entirely to track visitors anonymously.
+                </p>
               </div>
 
               {/* Direct Chat Link */}

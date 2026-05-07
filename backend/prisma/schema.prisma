@@ -70,11 +70,13 @@ model Chatbot {
   chatBubbleButtonPosition String        @default("right")
   instructionType          String        @default("base")
   customInstruction        String?
+  defaultLanguage          String        @default("en") // ISO 639-1 code; user can override per session
   embedConfig              EmbedConfig?
   availabilitySchedules    AvailabilitySchedule[]
   bookingConfig            BookingConfig?
   appointments             Appointment[]
   calendarIntegration      CalendarIntegration?
+  endUsers                 EndUser[]
 
   @@unique([name, userId])
   @@index([userId])
@@ -99,6 +101,7 @@ model EmbedConfig {
 model ChatSession {
   id           String        @id @default(cuid())
   chatbotId    String
+  endUserId    String?
   source       String        @default("playground") // 'playground', 'iframe', 'widget', 'whatsapp', 'api', 'messenger', 'zendesk', 'slack', 'email', 'salesforce'
   country      String?       // Country name from IP geolocation
   countryCode  String?       // ISO 3166-1 alpha-2 code (e.g., "US", "GB")
@@ -107,10 +110,40 @@ model ChatSession {
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   chatbot      Chatbot       @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
+  endUser      EndUser?      @relation(fields: [endUserId], references: [id], onDelete: SetNull)
   messages     ChatMessage[]
 
   @@index([chatbotId])
+  @@index([endUserId])
   @@map("chat_sessions")
+}
+
+model EndUser {
+  id                String        @id @default(cuid())
+  chatbotId         String
+  // Resolved identifier: email, E.164 phone, or anonymous uuid from localStorage.
+  identifier        String
+  kind              EndUserKind
+  // Sticky cross-session language choice (ISO 639-1). Falls back to chatbot.defaultLanguage.
+  preferredLanguage String?
+  // Only set when kind=ANONYMOUS. Bumped on each new session (sliding window)
+  // so returning visitors keep their identity; expired rows can be GC'd.
+  expiresAt         DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  chatbot           Chatbot       @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
+  sessions          ChatSession[]
+
+  @@unique([chatbotId, kind, identifier])
+  @@index([chatbotId])
+  @@index([expiresAt])
+  @@map("end_users")
+}
+
+enum EndUserKind {
+  EMAIL
+  PHONE
+  ANONYMOUS
 }
 
 enum BookingState {

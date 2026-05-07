@@ -7,7 +7,7 @@ import type { ChatMessage } from '@/types/chatbot'
 import { useCallback, useRef, useState } from 'react'
 
 export const PlaygroundPreview: React.FC = () => {
-  const { currentChatbot } = useStore()
+  const { currentChatbot, user } = useStore()
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [generating, setGenerating] = useState(false)
@@ -112,7 +112,8 @@ export const PlaygroundPreview: React.FC = () => {
             setGenerating(false)
           },
         },
-        'playground'
+        'playground',
+        user?.email ? { identifier: user.email, identifierKind: 'EMAIL' } : undefined
       )
     } catch {
       setMessages(prev => prev.filter(msg => msg.id !== assistantIdRef.current))

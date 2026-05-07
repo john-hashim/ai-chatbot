@@ -1,11 +1,12 @@
 import type { Request, Response, NextFunction } from 'express'
-import { Prisma } from '@prisma/client'
+import { Prisma, EndUserKind } from '@prisma/client'
 import { prisma } from '../prisma/client.js'
 import { ApiStatus, type ApiResponse } from '../types/api.js'
 import PDFDocument from 'pdfkit'
 import * as chatService from '../services/chat.service.js'
 import { getSystemInstruction } from '../constants/instructions.js'
 import { resolveCountry } from '../services/geolocation.service.js'
+import { resolveEndUser } from '../services/end-user.service.js'
 import type { NestedSort } from '../types/common.js'
 import { actionHandlers } from '../actions/registry.js'
 import {
@@ -22,7 +23,7 @@ import {
 export const chatController = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { chatbotId } = req.params
-    let { sessionId, message, source } = req.body
+    let { sessionId, message, source, identifier, identifierKind } = req.body
 
     if (!chatbotId) {
       return res.status(400).json({
@@ -52,10 +53,29 @@ export const chatController = async (req: Request, res: Response, next: NextFunc
 
     // --- Session creation / validation ---
     if (!sessionId) {
+      // Resolve EndUser only at session creation. Returning visitors with the
+      // same anonymous id get the existing row (with expiresAt bumped); logged-in
+      // users / WhatsApp numbers map to a stable EndUser across sessions.
+      let endUserId: string | null = null
+      if (
+        typeof identifier === 'string' &&
+        identifier.length > 0 &&
+        (identifierKind === EndUserKind.EMAIL ||
+          identifierKind === EndUserKind.PHONE ||
+          identifierKind === EndUserKind.ANONYMOUS)
+      ) {
+        endUserId = await resolveEndUser({
+          chatbotId,
+          identifier,
+          kind: identifierKind,
+        })
+      }
+
       const session = await prisma.chatSession.create({
         data: {
           chatbotId,
           source: source || 'playground',
+          endUserId,
           messages: {
             create: {
               role: 'user',

@@ -30,7 +30,8 @@ export async function streamChat(
   embedKey: string,
   message: string,
   sessionId: string | null,
-  callbacks: StreamCallbacks
+  callbacks: StreamCallbacks,
+  identity?: { identifier: string; identifierKind: 'EMAIL' | 'PHONE' | 'ANONYMOUS' }
 ): Promise<void> {
   const res = await fetch(`${apiBase}/api/embed/${embedKey}/chat`, {
     method: 'POST',
@@ -39,6 +40,7 @@ export async function streamChat(
       message,
       sessionId,
       source: 'embed',
+      ...(identity ?? {}),
     }),
   })
 

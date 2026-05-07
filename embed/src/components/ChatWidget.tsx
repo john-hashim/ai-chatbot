@@ -5,6 +5,7 @@ import {
   streamChat,
   type ChatMessage,
 } from "../services/chat";
+import type { EndUserIdentity } from "../identity";
 import { getContrastColor } from "../utils";
 import { ChatBubbleButton } from "./ChatBubbleButton";
 import { ChatHeader } from "./ChatHeader";
@@ -15,9 +16,10 @@ interface Props {
   embedKey: string;
   apiBase: string;
   mode: "widget" | "iframe";
+  identity?: EndUserIdentity;
 }
 
-export function ChatWidget({ embedKey, apiBase, mode }: Props) {
+export function ChatWidget({ embedKey, apiBase, mode, identity }: Props) {
   const [config, setConfig] = useState<ChatbotConfig | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -87,42 +89,49 @@ export function ChatWidget({ embedKey, apiBase, mode }: Props) {
       streamContentRef.current = "";
 
       try {
-        await streamChat(apiBase, embedKey, text, sessionId, {
-          onSessionId: (id) => setSessionId(id),
-          onToken: (token) => {
-            streamContentRef.current += token;
-            const content = streamContentRef.current;
-            setMessages((prev) => {
-              const updated = [...prev];
-              updated[updated.length - 1] = {
-                ...updated[updated.length - 1],
-                content,
-              };
-              return updated;
-            });
+        await streamChat(
+          apiBase,
+          embedKey,
+          text,
+          sessionId,
+          {
+            onSessionId: (id) => setSessionId(id),
+            onToken: (token) => {
+              streamContentRef.current += token;
+              const content = streamContentRef.current;
+              setMessages((prev) => {
+                const updated = [...prev];
+                updated[updated.length - 1] = {
+                  ...updated[updated.length - 1],
+                  content,
+                };
+                return updated;
+              });
+            },
+            onDone: (finalMsg) => {
+              setMessages((prev) => {
+                const updated = [...prev];
+                updated[updated.length - 1] = finalMsg;
+                return updated;
+              });
+              setStreaming(false);
+            },
+            onError: (errMsg) => {
+              // Remove the empty assistant placeholder on error
+              setMessages((prev) => prev.slice(0, -1));
+              showError(errMsg);
+              setStreaming(false);
+            },
           },
-          onDone: (finalMsg) => {
-            setMessages((prev) => {
-              const updated = [...prev];
-              updated[updated.length - 1] = finalMsg;
-              return updated;
-            });
-            setStreaming(false);
-          },
-          onError: (errMsg) => {
-            // Remove the empty assistant placeholder on error
-            setMessages((prev) => prev.slice(0, -1));
-            showError(errMsg);
-            setStreaming(false);
-          },
-        });
+          identity,
+        );
       } catch {
         setMessages((prev) => prev.slice(0, -1));
         showError("Connection failed");
         setStreaming(false);
       }
     },
-    [input, streaming, apiBase, embedKey, sessionId, showError],
+    [input, streaming, apiBase, embedKey, sessionId, showError, identity],
   );
 
   const handleFeedback = useCallback(

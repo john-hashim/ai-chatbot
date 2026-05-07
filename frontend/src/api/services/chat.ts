@@ -111,6 +111,13 @@ export interface StreamChatCallbacks {
   onError: (error: string) => void
 }
 
+export type EndUserKind = 'EMAIL' | 'PHONE' | 'ANONYMOUS'
+
+export interface EndUserIdentity {
+  identifier: string
+  identifierKind: EndUserKind
+}
+
 /**
  * Stream a chat response via SSE using native fetch.
  * Axios does not support streaming, so we use fetch + ReadableStream.
@@ -120,7 +127,8 @@ export async function streamChat(
   message: string,
   sessionId: string | undefined,
   callbacks: StreamChatCallbacks,
-  source?: ChatSessionSource
+  source?: ChatSessionSource,
+  identity?: EndUserIdentity
 ): Promise<void> {
   const token = useStore.getState().token
   const baseUrl = (import.meta.env.VITE_API_URL as string).replace(/\/+$/, '')
@@ -133,7 +141,12 @@ export async function streamChat(
       'Content-Type': 'application/json',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
-    body: JSON.stringify({ message, sessionId, source }),
+    body: JSON.stringify({
+      message,
+      sessionId,
+      source,
+      ...(identity ?? {}),
+    }),
   })
 
   if (!response.ok) {
