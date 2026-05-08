@@ -22,8 +22,7 @@ export const Chats: React.FC = () => {
   const isLargeScreen = useMediaQuery('(min-width: 1024px)')
   const {
     currentChatbot,
-    chatSessions = [],
-    chatSessionFilters,
+    chatSession,
     isLoadingSessions,
     isLoadingSessionDetails,
     getChatSessions,
@@ -32,8 +31,7 @@ export const Chats: React.FC = () => {
   } = useStore(
     useShallow(state => ({
       currentChatbot: state.currentChatbot,
-      chatSessions: state.chatSession.chatSessions,
-      chatSessionFilters: state.chatSession.filters,
+      chatSession: state.chatSession,
       isLoadingSessions: state.isLoadingSessions,
       isLoadingSessionDetails: state.isLoadingSessionDetails,
       getChatSessions: state.getChatSessions,
@@ -81,10 +79,10 @@ export const Chats: React.FC = () => {
   }, [currentChatbot?.id, getChatSessions])
 
   useEffect(() => {
-    if (chatSessions.length > 0 && !selectedSession) {
-      setSelectedSession(chatSessions[0])
+    if (chatSession.chatSessions.length > 0 && !selectedSession) {
+      setSelectedSession(chatSession.chatSessions[0])
     }
-  }, [chatSessions, selectedSession])
+  }, [chatSession.chatSessions, selectedSession])
 
   // Fetch full messages when selected session changes
   useEffect(() => {
@@ -96,17 +94,17 @@ export const Chats: React.FC = () => {
   // Sync selectedSession with store after messages are fetched
   useEffect(() => {
     if (selectedSession) {
-      const updated = chatSessions.find(s => s.id === selectedSession.id)
+      const updated = chatSession.chatSessions.find(s => s.id === selectedSession.id)
       if (updated && updated !== selectedSession) setSelectedSession(updated)
     }
-  }, [chatSessions, selectedSession])
+  }, [chatSession.chatSessions, selectedSession])
 
   const handleSelectSession = useCallback(
     (id: string) => {
-      const session = chatSessions.find(s => s.id === id) ?? null
+      const session = chatSession.chatSessions.find(s => s.id === id) ?? null
       setSelectedSession(session)
     },
-    [chatSessions]
+    [chatSession.chatSessions]
   )
 
   const handleSessionDelete = useCallback(() => {
@@ -133,7 +131,7 @@ export const Chats: React.FC = () => {
 
   const handleSortChange = (value: string | null) => {
     if (value && !!currentChatbot?.id ) {
-      setChatSessionFilters({ ...chatSessionFilters, sortBy: value as ChatSessionSortOption })
+      setChatSessionFilters({ ...chatSession.filters, sortBy: value as ChatSessionSortOption })
       getChatSessions(currentChatbot?.id)
     }
   }
@@ -160,7 +158,7 @@ export const Chats: React.FC = () => {
                 />
               </Button>
             </Tooltip>
-            {chatSessions?.length > 0 && (
+            {chatSession.chatSessions?.length > 0 && (
               <Menu shadow="md" width={180}>
                 <Menu.Target>
                   <Tooltip label="Export">
@@ -210,7 +208,7 @@ export const Chats: React.FC = () => {
               classNames={{ input: classes.selectInputBorderless }}
               rightSection={<ChevronDown size={16} />}
               comboboxProps={{ width: 200, position: 'bottom-end' }}
-              value={chatSessionFilters.sortBy}
+              value={chatSession.filters.sortBy}
               onChange={handleSortChange}
             />
           </div>
@@ -246,7 +244,7 @@ export const Chats: React.FC = () => {
             {activeTab === 'chatslist' && (
               <div className="h-full">
                 <ChatsList
-                  chatSessions={chatSessions}
+                  chatSessions={chatSession.chatSessions}
                   selectedSessionId={selectedSession?.id ?? null}
                   onSelectSession={handleSelectSession}
                   loading={isLoadingSessions}

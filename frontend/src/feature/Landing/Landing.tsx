@@ -29,7 +29,7 @@ export const Landing: React.FC = () => {
     clearChatSessions,
     isLoadingChatbot,
   } = useChatbotStore()
-  const { clearAvailabilities } = useBookingStore()
+  const { clearAvailabilities, clearAppointments } = useBookingStore()
   const { user } = useUserStore()
   const navigate = useNavigate()
 
@@ -43,7 +43,15 @@ export const Landing: React.FC = () => {
     clearChatSessions()
     clearCurrentChatbot()
     clearAvailabilities()
-  }, [clearCurrentChatbot, getChatbots, resetDocumentFilters, clearChatSessions, clearAvailabilities])
+    clearAppointments()
+  }, [
+    clearCurrentChatbot,
+    getChatbots,
+    resetDocumentFilters,
+    clearChatSessions,
+    clearAvailabilities,
+    clearAppointments,
+  ])
 
   const firstName = user?.name.split(' ')[0]
   const formattedFirstName = firstName

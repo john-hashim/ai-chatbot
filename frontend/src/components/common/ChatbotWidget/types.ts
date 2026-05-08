@@ -1,6 +1,6 @@
-import type { ChatMessage } from '@/types/chatbot'
+import type { ChatMessage, ChatSession } from '@/types/chatbot'
 
-export type { ChatMessage }
+export type { ChatMessage, ChatSession }
 
 export interface ChatbotWidgetProps {
   // Appearance
@@ -21,9 +21,13 @@ export interface ChatbotWidgetProps {
   // Chat state
   messages?: ChatMessage[]
   generating: boolean
+  chatSessions?: ChatSession[] | null
+  chatSessionsLoading?: boolean
+  messagesLoading?: boolean
 
   // Behavior
   readOnly?: boolean
+  chatView?: 'recent' | 'session'
 
   // Callbacks
   onSendMessage?: (message: string) => void
@@ -33,6 +37,9 @@ export interface ChatbotWidgetProps {
   onDownloadChat?: () => void
   onActionSelect?: (actionType: string, value: string) => void
   onActionCancel?: (actionType: string) => void
+  onHandleView?: () => void
+  onSelectChatSession?: (sessionId: string) => void
+  onBack?: () => void
 }
 
 export interface ChatHeaderProps {
@@ -43,8 +50,11 @@ export interface ChatHeaderProps {
   brandColorForHeader: boolean
   headerTextColor: string
   canDownload: boolean
+  chatView?: 'recent' | 'session'
   onReset?: () => void
   onDownloadChat?: () => void
+  onHandleView?: () => void
+  onBack?: () => void
 }
 
 export interface ChatMessagesProps {

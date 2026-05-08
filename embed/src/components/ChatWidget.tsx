@@ -1,5 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from "preact/hooks";
-import { fetchConfig, sendFeedback, type ChatbotConfig } from "../services/api";
+import {
+  fetchConfig,
+  fetchChatSession,
+  fetchChatSessions,
+  sendFeedback,
+  type ChatbotConfig,
+  type ChatSessionSummary,
+} from "../services/api";
 import {
   downloadChatSession,
   streamChat,
@@ -11,6 +18,7 @@ import { ChatBubbleButton } from "./ChatBubbleButton";
 import { ChatHeader } from "./ChatHeader";
 import { ChatMessages } from "./ChatMessages";
 import { ChatInput } from "./ChatInput";
+import { ChatSessions } from "./ChatSessions";
 
 interface Props {
   embedKey: string;
@@ -27,14 +35,23 @@ export function ChatWidget({ embedKey, apiBase, mode, identity }: Props) {
   const [open, setOpen] = useState(mode === "iframe");
   const [input, setInput] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [chatView, setChatView] = useState<"session" | "recent">("session");
+  const [chatSessions, setChatSessions] = useState<ChatSessionSummary[] | null>(null);
+  const [chatSessionsLoading, setChatSessionsLoading] = useState(false);
+  const [messagesLoading, setMessagesLoading] = useState(false);
 
   // Track streaming content with a ref to avoid stale closures
   const streamContentRef = useRef("");
   const errorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Bumped whenever the active session changes (load-by-id, reset). In-flight
+  // stream callbacks and session fetches check this before writing state, so a
+  // stale operation can't clobber the new view.
+  const sessionEpochRef = useRef(0);
+  const mountedRef = useRef(true);
 
-  // Clear error timer on unmount
   useEffect(() => {
     return () => {
+      mountedRef.current = false;
       if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
     };
   }, []);
@@ -48,8 +65,14 @@ export function ChatWidget({ embedKey, apiBase, mode, identity }: Props) {
   // Fetch config on mount
   useEffect(() => {
     fetchConfig(apiBase, embedKey)
-      .then(setConfig)
-      .catch(() => setError("Failed to load chatbot"));
+      .then((c) => {
+        if (!mountedRef.current) return;
+        setConfig(c);
+      })
+      .catch(() => {
+        if (!mountedRef.current) return;
+        setError("Failed to load chatbot");
+      });
   }, [apiBase, embedKey]);
 
   // Autoshow popup after delay
@@ -87,6 +110,9 @@ export function ChatWidget({ embedKey, apiBase, mode, identity }: Props) {
 
       setStreaming(true);
       streamContentRef.current = "";
+      const epoch = sessionEpochRef.current;
+      const isCurrent = () =>
+        mountedRef.current && sessionEpochRef.current === epoch;
 
       try {
         await streamChat(
@@ -95,9 +121,13 @@ export function ChatWidget({ embedKey, apiBase, mode, identity }: Props) {
           text,
           sessionId,
           {
-            onSessionId: (id) => setSessionId(id),
+            onSessionId: (id) => {
+              if (!isCurrent()) return;
+              setSessionId(id);
+            },
             onToken: (token) => {
               streamContentRef.current += token;
+              if (!isCurrent()) return;
               const content = streamContentRef.current;
               setMessages((prev) => {
                 const updated = [...prev];
@@ -109,6 +139,7 @@ export function ChatWidget({ embedKey, apiBase, mode, identity }: Props) {
               });
             },
             onDone: (finalMsg) => {
+              if (!isCurrent()) return;
               setMessages((prev) => {
                 const updated = [...prev];
                 updated[updated.length - 1] = finalMsg;
@@ -117,7 +148,7 @@ export function ChatWidget({ embedKey, apiBase, mode, identity }: Props) {
               setStreaming(false);
             },
             onError: (errMsg) => {
-              // Remove the empty assistant placeholder on error
+              if (!isCurrent()) return;
               setMessages((prev) => prev.slice(0, -1));
               showError(errMsg);
               setStreaming(false);
@@ -126,6 +157,7 @@ export function ChatWidget({ embedKey, apiBase, mode, identity }: Props) {
           identity,
         );
       } catch {
+        if (!isCurrent()) return;
         setMessages((prev) => prev.slice(0, -1));
         showError("Connection failed");
         setStreaming(false);
@@ -159,9 +191,69 @@ export function ChatWidget({ embedKey, apiBase, mode, identity }: Props) {
   }, []);
 
   const handleReset = useCallback(() => {
+    sessionEpochRef.current++;
     setMessages([]);
     setSessionId(null);
+    setStreaming(false);
+    setMessagesLoading(false);
+    setChatView("session");
   }, []);
+
+  const handleViewRecent = useCallback(async () => {
+    setChatView("recent");
+    setChatSessionsLoading(true);
+    const epoch = sessionEpochRef.current;
+    try {
+      const sessions = await fetchChatSessions(apiBase, embedKey);
+      if (!mountedRef.current || sessionEpochRef.current !== epoch) return;
+      setChatSessions(sessions);
+    } catch {
+      if (!mountedRef.current || sessionEpochRef.current !== epoch) return;
+      setChatSessions([]);
+      showError("Failed to load chats");
+    } finally {
+      if (mountedRef.current && sessionEpochRef.current === epoch) {
+        setChatSessionsLoading(false);
+      }
+    }
+  }, [apiBase, embedKey, showError]);
+
+  const handleBack = useCallback(() => {
+    setChatView("session");
+  }, []);
+
+  const handleSelectChatSession = useCallback(
+    async (id: string) => {
+      const epoch = ++sessionEpochRef.current;
+      setChatView("session");
+      setSessionId(id);
+      setMessages([]);
+      setStreaming(false);
+      setMessagesLoading(true);
+      try {
+        const session = await fetchChatSession(apiBase, embedKey, id);
+        if (!mountedRef.current || sessionEpochRef.current !== epoch) return;
+        const mapped: ChatMessage[] = (session.messages ?? []).map((m) => ({
+          id: m.id,
+          role: m.role,
+          content: m.content,
+          feedback: m.feedback ?? null,
+          isAction: m.isAction ?? false,
+          actionType: m.actionType ?? null,
+          actionMeta: m.actionMeta ?? null,
+        }));
+        setMessages(mapped);
+      } catch {
+        if (!mountedRef.current || sessionEpochRef.current !== epoch) return;
+        showError("Failed to load chat");
+      } finally {
+        if (mountedRef.current && sessionEpochRef.current === epoch) {
+          setMessagesLoading(false);
+        }
+      }
+    },
+    [apiBase, embedKey, showError],
+  );
 
   const handleDownload = useCallback(async () => {
     if (!sessionId) {
@@ -241,11 +333,31 @@ export function ChatWidget({ embedKey, apiBase, mode, identity }: Props) {
         brandColorForHeader={config.brandColorForHeader}
         headerTextColor={headerTextColor}
         canDownload={messages.length > 0 && !!sessionId}
+        chatView={chatView}
         onReset={handleReset}
         onDownloadChat={handleDownload}
+        onHandleView={handleViewRecent}
+        onBack={handleBack}
         onClose={mode === "widget" ? () => setOpen(false) : undefined}
       />
       <div className="cbw-body">
+        {chatView === "recent" ? (
+          <ChatSessions
+            appearance={config.appearance}
+            chatSessions={chatSessions}
+            loading={chatSessionsLoading}
+            brandColor={config.brandColor}
+            buttonTextColor={contrastHex}
+            onSelectSession={handleSelectChatSession}
+            onStartNewChat={handleReset}
+          />
+        ) : (
+          <>
+        {messagesLoading ? (
+          <div className="cbw-messages-loading">
+            <div className={`cbw-spinner${isDark ? " cbw-spinner--light" : ""}`} />
+          </div>
+        ) : (
         <ChatMessages
           name={config.name}
           profilePicture={config.profilePicture}
@@ -263,6 +375,7 @@ export function ChatWidget({ embedKey, apiBase, mode, identity }: Props) {
           onActionSelect={handleActionSelect}
           onActionCancel={handleActionCancel}
         />
+        )}
         <ChatInput
           appearance={config.appearance}
           messagePlaceholder={config.messagePlaceholder}
@@ -291,6 +404,8 @@ export function ChatWidget({ embedKey, apiBase, mode, identity }: Props) {
             return false;
           })()}
         />
+          </>
+        )}
       </div>
       {error && <div className="cbw-error">{error}</div>}
     </div>

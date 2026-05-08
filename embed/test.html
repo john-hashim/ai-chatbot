@@ -26,7 +26,7 @@
     </p>
     <p>Below is an iframe embed test:</p>
     <iframe
-      src="http://localhost:3001/embed/ek_c3d1ac0df3da65ec7d4c810be874f2e36a19990dbeeb1594?identifier=REPLACE_WITH_USER_EMAIL_OR_ID"
+      src="http://localhost:3001/embed/ek_47eefb0bb38878c4c1d96e535e1267016a83a389e5ddd454?identifier="
       width="400"
       height="600"
       frameborder="0"
@@ -34,8 +34,40 @@
     <!-- Script tag widget -->
     <script
       src="http://localhost:3001/embed-assets/embed.js"
-      data-chatbot-key="ek_c3d1ac0df3da65ec7d4c810be874f2e36a19990dbeeb1594"
+      data-chatbot-key="ek_47eefb0bb38878c4c1d96e535e1267016a83a389e5ddd454"
       data-identifier=""
     ></script>
+    <!-- <script>
+      (function () {
+        if (!window.chatbase || window.chatbase("getState") !== "initialized") {
+          window.chatbase = (...arguments) => {
+            if (!window.chatbase.q) {
+              window.chatbase.q = [];
+            }
+            window.chatbase.q.push(arguments);
+          };
+          window.chatbase = new Proxy(window.chatbase, {
+            get(target, prop) {
+              if (prop === "q") {
+                return target.q;
+              }
+              return (...args) => target(prop, ...args);
+            },
+          });
+        }
+        const onLoad = function () {
+          const script = document.createElement("script");
+          script.src = "https://www.chatbase.co/embed.min.js";
+          script.id = "7mmFz4nOwZ-hPUVfhPxDo";
+          script.domain = "www.chatbase.co";
+          document.body.appendChild(script);
+        };
+        if (document.readyState === "complete") {
+          onLoad();
+        } else {
+          window.addEventListener("load", onLoad);
+        }
+      })();
+    </script> -->
   </body>
 </html>

@@ -123,6 +123,10 @@ export const chatController = async (req: Request, res: Response, next: NextFunc
           sources: [],
         },
       })
+      await prisma.chatSession.update({
+        where: { id: sessionId },
+        data: { updatedAt: new Date() },
+      })
     }
 
     const systemInstruction = getSystemInstruction(
@@ -260,6 +264,10 @@ export const chatController = async (req: Request, res: Response, next: NextFunc
             confidenceScore: 0,
           },
         })
+        await prisma.chatSession.update({
+          where: { id: sessionId },
+          data: { updatedAt: new Date() },
+        })
         sendSSE({ type: 'done', message: assistantMessage })
         res.end()
         return
@@ -336,6 +344,10 @@ export const chatController = async (req: Request, res: Response, next: NextFunc
             actionMeta: Prisma.JsonNull,
           },
         })
+        await prisma.chatSession.update({
+          where: { id: sessionId },
+          data: { updatedAt: new Date() },
+        })
         sendSSE({ type: 'done', message: assistantMessage })
         res.end()
       },
@@ -358,6 +370,10 @@ export const chatController = async (req: Request, res: Response, next: NextFunc
             sources: [],
             confidenceScore: 0,
           },
+        })
+        await prisma.chatSession.update({
+          where: { id: sessionId },
+          data: { updatedAt: new Date() },
         })
         sendSSE({ type: 'done', message: assistantMessage })
         res.end()

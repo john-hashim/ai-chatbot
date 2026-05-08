@@ -42,6 +42,49 @@ export async function sendFeedback(
   })
 }
 
+export interface ChatSessionMessage {
+  id: string
+  sessionId: string
+  role: 'user' | 'assistant'
+  content: string
+  feedback?: 'like' | 'dislike' | null
+  isAction?: boolean
+  actionType?: string | null
+  actionMeta?: unknown
+  createdAt: string
+}
+
+export interface ChatSessionSummary {
+  id: string
+  chatbotId: string
+  source: string
+  createdAt: string
+  updatedAt: string
+  messages?: ChatSessionMessage[]
+  _count?: { messages: number }
+}
+
+export async function fetchChatSessions(
+  apiBase: string,
+  embedKey: string
+): Promise<ChatSessionSummary[]> {
+  const res = await fetch(`${apiBase}/api/embed/${embedKey}/sessions`)
+  if (!res.ok) throw new Error('Failed to fetch sessions')
+  const json = await res.json()
+  return json.data ?? []
+}
+
+export async function fetchChatSession(
+  apiBase: string,
+  embedKey: string,
+  sessionId: string
+): Promise<{ id: string; messages: ChatSessionMessage[] }> {
+  const res = await fetch(`${apiBase}/api/embed/${embedKey}/sessions/${sessionId}`)
+  if (!res.ok) throw new Error('Failed to fetch session')
+  const json = await res.json()
+  return json.data?.chatSession
+}
+
 export interface BookingMessage {
   id: string
   sessionId: string

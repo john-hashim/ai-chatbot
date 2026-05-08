@@ -7,11 +7,20 @@ import type { ChatMessage } from '@/types/chatbot'
 import { useCallback, useRef, useState } from 'react'
 
 export const PlaygroundPreview: React.FC = () => {
-  const { currentChatbot, user } = useStore()
+  const {
+    currentChatbot,
+    user,
+    chatSession,
+    isLoadingSessions,
+    isLoadingSessionDetails,
+    getChatSessions,
+    getSessionDetails,
+  } = useStore()
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [generating, setGenerating] = useState(false)
   const assistantIdRef = useRef<string>('')
+  const [chatView, setChatView] = useState<'recent' | 'session'>('session')
 
   const { execute: excuteUpdateMessage } = useApi<
     ApiResponse<ChatMessage>,
@@ -124,6 +133,28 @@ export const PlaygroundPreview: React.FC = () => {
   const handleReset = () => {
     setMessages([])
     setSessionId(null)
+    setChatView('session')
+  }
+
+  const handleView = () => {
+    setChatView('recent')
+    if (currentChatbot?.id) {
+      getChatSessions(currentChatbot.id)
+    }
+  }
+
+  const handleBack = () => {
+    setChatView('session')
+  }
+
+  const handleSelectChatSession = async (id: string) => {
+    if (!currentChatbot?.id) return
+    setChatView('session')
+    setSessionId(id)
+    setMessages([])
+    await getSessionDetails(currentChatbot.id, id)
+    const session = useStore.getState().chatSession.chatSessions.find(s => s.id === id)
+    setMessages(session?.messages ?? [])
   }
 
   const handleActionSelect = (actionType: string, value: string) => {
@@ -184,6 +215,13 @@ export const PlaygroundPreview: React.FC = () => {
           onActionSelect={handleActionSelect}
           onActionCancel={handleActionCancel}
           generating={generating}
+          onHandleView={handleView}
+          chatView={chatView}
+          chatSessions={chatSession.chatSessions}
+          chatSessionsLoading={isLoadingSessions}
+          messagesLoading={isLoadingSessionDetails}
+          onSelectChatSession={handleSelectChatSession}
+          onBack={handleBack}
         />
       </div>
     </div>

@@ -10,6 +10,17 @@ router.get('/:embedKey/config', embedMiddleware.authenticateEmbed, embedControll
 router.post('/:embedKey/chat', embedMiddleware.authenticateEmbed, chatController.chatController)
 
 router.get(
+  '/:embedKey/sessions',
+  embedMiddleware.authenticateEmbed,
+  embedController.getEmbedChatSessions
+)
+router.get(
+  '/:embedKey/sessions/:sessionId',
+  embedMiddleware.authenticateEmbed,
+  embedController.getEmbedChatSession
+)
+
+router.get(
   '/:embedKey/:sessionId/download',
   embedMiddleware.authenticateEmbed,
   chatController.downloadChatSession

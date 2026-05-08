@@ -4,6 +4,7 @@ import { ChatHeader } from './ChatHeader'
 import { ChatInput } from './ChatInput'
 import { ChatMessages } from './ChatMessages'
 import type { ChatbotWidgetProps } from './types'
+import { ChatSessions } from './chatSessions'
 
 export const ChatbotWidget: React.FC<ChatbotWidgetProps> = ({
   name,
@@ -19,6 +20,11 @@ export const ChatbotWidget: React.FC<ChatbotWidgetProps> = ({
   footer,
   messages = [],
   readOnly = false,
+  generating,
+  chatView,
+  chatSessions,
+  chatSessionsLoading,
+  messagesLoading,
   onSendMessage,
   onFeedback,
   onCopy,
@@ -26,7 +32,9 @@ export const ChatbotWidget: React.FC<ChatbotWidgetProps> = ({
   onDownloadChat,
   onActionSelect,
   onActionCancel,
-  generating,
+  onHandleView,
+  onSelectChatSession,
+  onBack,
 }) => {
   const [inputValue, setInputValue] = useState('')
   const headerContrast = useContrastColor(brandColor)
@@ -68,51 +76,78 @@ export const ChatbotWidget: React.FC<ChatbotWidgetProps> = ({
         onReset={onReset}
         onDownloadChat={onDownloadChat}
         canDownload={(messages?.length ?? 0) > 0}
+        chatView={chatView}
+        onHandleView={onHandleView}
+        onBack={onBack}
       />
 
       <div className="flex flex-1 flex-col overflow-hidden">
-        <ChatMessages
-          name={name}
-          profilePicture={profilePicture}
-          appearance={appearance}
-          brandColor={brandColor}
-          initialMessages={initialMessages}
-          suggestedMessages={suggestedMessages}
-          showSuggestedAfterFirst={showSuggestedAfterFirst}
-          messages={messages}
-          contrastColor={headerContrast.contrastHex}
-          onSuggestionClick={handleSuggestionClick}
-          onFeedback={onFeedback}
-          onCopy={handleCopy}
-          onActionSelect={onActionSelect}
-          onActionCancel={onActionCancel}
-          generating={generating}
-        />
-
-        <ChatInput
-          appearance={appearance}
-          messagePlaceholder={messagePlaceholder}
-          dismissibleNotice={dismissibleNotice}
-          footer={footer}
-          value={inputValue}
-          onChange={setInputValue}
-          onSubmit={handleSubmit}
-          readOnly={readOnly}
-          disabled={(() => {
-            const last = messages[messages.length - 1]
-            if (!last?.isAction) return false
-            if (last.actionType === 'booking') {
-              return ((last.actionMeta as { dates?: unknown[] } | null)?.dates?.length ?? 0) > 0
-            }
-            if (last.actionType === 'confirm_date') {
-              return (
-                ((last.actionMeta as { timeslots?: unknown[] } | null)?.timeslots?.length ?? 0) > 0
-              )
-            }
-            if (last.actionType === 'confirm_time') return true
-            return false
-          })()}
-        />
+        {chatView === 'recent' ? (
+          <ChatSessions
+            appearance={appearance}
+            chatSessions={chatSessions}
+            loading={chatSessionsLoading}
+            brandColor={brandColor}
+            buttonTextColor={headerContrast.contrastHex}
+            onSelectSession={onSelectChatSession}
+            onStartNewChat={onReset}
+          />
+        ) : (
+          <div className="flex flex-1 flex-col overflow-hidden">
+            {messagesLoading ? (
+              <div className="flex flex-1 items-center justify-center">
+                <div
+                  className={`h-5 w-5 animate-spin rounded-full border-2 border-t-transparent ${
+                    isDark ? 'border-white' : 'border-black'
+                  }`}
+                />
+              </div>
+            ) : (
+              <ChatMessages
+                name={name}
+                profilePicture={profilePicture}
+                appearance={appearance}
+                brandColor={brandColor}
+                initialMessages={initialMessages}
+                suggestedMessages={suggestedMessages}
+                showSuggestedAfterFirst={showSuggestedAfterFirst}
+                messages={messages}
+                contrastColor={headerContrast.contrastHex}
+                onSuggestionClick={handleSuggestionClick}
+                onFeedback={onFeedback}
+                onCopy={handleCopy}
+                onActionSelect={onActionSelect}
+                onActionCancel={onActionCancel}
+                generating={generating}
+              />
+            )}
+            <ChatInput
+              appearance={appearance}
+              messagePlaceholder={messagePlaceholder}
+              dismissibleNotice={dismissibleNotice}
+              footer={footer}
+              value={inputValue}
+              onChange={setInputValue}
+              onSubmit={handleSubmit}
+              readOnly={readOnly}
+              disabled={(() => {
+                const last = messages[messages.length - 1]
+                if (!last?.isAction) return false
+                if (last.actionType === 'booking') {
+                  return ((last.actionMeta as { dates?: unknown[] } | null)?.dates?.length ?? 0) > 0
+                }
+                if (last.actionType === 'confirm_date') {
+                  return (
+                    ((last.actionMeta as { timeslots?: unknown[] } | null)?.timeslots?.length ??
+                      0) > 0
+                  )
+                }
+                if (last.actionType === 'confirm_time') return true
+                return false
+              })()}
+            />
+          </div>
+        )}
       </div>
     </div>
   )

@@ -7,8 +7,11 @@ interface Props {
   brandColorForHeader: boolean;
   headerTextColor: string;
   canDownload: boolean;
+  chatView: "session" | "recent";
   onReset: () => void;
   onDownloadChat: () => void;
+  onHandleView: () => void;
+  onBack: () => void;
   onClose?: () => void;
 }
 
@@ -19,8 +22,11 @@ export function ChatHeader({
   brandColorForHeader,
   headerTextColor,
   canDownload,
+  chatView,
   onReset,
   onDownloadChat,
+  onHandleView,
+  onBack,
   onClose,
 }: Props) {
   const [popoverOpen, setPopoverOpen] = useState(false);
@@ -47,6 +53,11 @@ export function ChatHeader({
     onDownloadChat();
   };
 
+  const handleViewRecent = () => {
+    setPopoverOpen(false);
+    onHandleView();
+  };
+
   return (
     <header
       className="cbw-header"
@@ -57,18 +68,64 @@ export function ChatHeader({
       }}
     >
       <div className="cbw-header-info">
-        {profilePicture && (
-          <img
-            src={profilePicture}
-            alt="Chatbot"
-            className="cbw-header-avatar"
-          />
+        {chatView === "recent" ? (
+          <>
+            <button
+              type="button"
+              className="cbw-header-btn cbw-back-btn"
+              title="Back"
+              style={{ color: headerTextColor }}
+              onClick={onBack}
+            >
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+            </button>
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              style={{ color: headerTextColor }}
+            >
+              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+              <path d="M3 3v5h5" />
+              <path d="M12 7v5l4 2" />
+            </svg>
+            <span className="cbw-header-name" style={{ color: headerTextColor }}>
+              Recent Chats
+            </span>
+          </>
+        ) : (
+          <>
+            {profilePicture && (
+              <img
+                src={profilePicture}
+                alt="Chatbot"
+                className="cbw-header-avatar"
+              />
+            )}
+            <span className="cbw-header-name" style={{ color: headerTextColor }}>
+              {name}
+            </span>
+          </>
         )}
-        <span className="cbw-header-name" style={{ color: headerTextColor }}>
-          {name}
-        </span>
       </div>
       <div className="cbw-header-actions">
+        {chatView !== "recent" && (
         <div className="cbw-popover-wrapper" ref={popoverRef}>
           <button
             className="cbw-header-btn"
@@ -131,7 +188,7 @@ export function ChatHeader({
               </button>
               <button
                 className="cbw-popover-item"
-                onClick={() => setPopoverOpen(false)}
+                onClick={handleViewRecent}
               >
                 <svg
                   width="14"
@@ -151,6 +208,7 @@ export function ChatHeader({
             </div>
           )}
         </div>
+        )}
         {onClose && (
           <button
             className="cbw-header-btn"
