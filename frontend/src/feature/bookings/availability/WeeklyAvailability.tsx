@@ -3,7 +3,7 @@ import { Clock, Plus, X } from 'lucide-react'
 import { Avatar, Loader, Select, Tooltip } from '@mantine/core'
 import dayjs from 'dayjs'
 import customParseFormat from 'dayjs/plugin/customParseFormat'
-import { useStore } from '@/store'
+import { useBookingStore, useChatbotStore } from '@/store'
 import type { UpdateTimeSlotsRequest } from '@/types/bookings'
 
 dayjs.extend(customParseFormat)
@@ -23,14 +23,9 @@ export interface WeeklyAvailabilityProps {
 }
 
 export const WeeklyAvailability = memo<WeeklyAvailabilityProps>(({ createWeeklyAvailablity }) => {
-  const {
-    duration,
-    availabilities,
-    updateAvailability,
-    deleteAvailability,
-    currentChatbot,
-    creatingDayId,
-  } = useStore()
+  const { duration, availabilities, updateAvailability, deleteAvailability, creatingDayId } =
+    useBookingStore()
+  const { currentChatbot } = useChatbotStore()
 
   const timeOptions = useMemo(() => {
     const steps = Math.floor((24 * 60) / duration)

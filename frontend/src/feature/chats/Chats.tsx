@@ -5,8 +5,7 @@ import { Button, Menu, Modal, Select, Text, Tooltip } from '@mantine/core'
 import { ChevronDown, Download, FileJson, FileSpreadsheet, FileText, RefreshCw } from 'lucide-react'
 import { ChatsList } from './ChatsList'
 import { ChatDetails } from './ChatDetails'
-import { useStore } from '@/store'
-import { useShallow } from 'zustand/react/shallow'
+import { useChatbotStore } from '@/store'
 import { useApi } from '@/hooks/useApi'
 import { chatService } from '@/api/services/chat'
 import { type ChatSession } from '@/types/chatbot'
@@ -27,18 +26,8 @@ export const Chats: React.FC = () => {
     isLoadingSessionDetails,
     getChatSessions,
     getSessionDetails,
-    setChatBotSessionFilters: setChatSessionFilters
-  } = useStore(
-    useShallow(state => ({
-      currentChatbot: state.currentChatbot,
-      chatSession: state.chatSession,
-      isLoadingSessions: state.isLoadingSessions,
-      isLoadingSessionDetails: state.isLoadingSessionDetails,
-      getChatSessions: state.getChatSessions,
-      getSessionDetails: state.getSessionDetails,
-      setChatBotSessionFilters: state.setChatSessionFilters
-    }))
-  )
+    setChatSessionFilters,
+  } = useChatbotStore()
   const { execute: exportJSON, loading: jsonLoading } = useApi(chatService.exportChatsAsJSON)
   const { execute: exportCSV, loading: csvLoading } = useApi(chatService.exportChatsAsCSV)
   const { execute: exportPDF, loading: pdfLoading } = useApi(chatService.exportChatsAsPDF)

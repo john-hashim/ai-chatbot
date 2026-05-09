@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { uploadImageToR2, deleteImageFromR2 } from '@/api/services/upload'
-import { useStore } from '@/store'
+import { useChatbotStore } from '@/store'
 import { showNotification } from '@/utils/notifications'
 
 type ChatbotImageField = 'profilePicture' | 'chatIcon'
@@ -23,7 +23,7 @@ export const useChatbotImageUpload = ({
   directory,
 }: UseChatbotImageUploadOptions): UseChatbotImageUploadReturn => {
   const [isUploading, setIsUploading] = useState(false)
-  const { updateChatbot, currentChatbot } = useStore()
+  const { updateChatbot, currentChatbot } = useChatbotStore()
 
   const upload = async (file: File) => {
     setIsUploading(true)

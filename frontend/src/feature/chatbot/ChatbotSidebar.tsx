@@ -16,7 +16,7 @@ import {
   ChevronRight,
   ChevronLeft,
 } from 'lucide-react'
-import { useStore } from '@/store'
+import { useChatbotStore } from '@/store'
 
 const navItems = [
   {
@@ -86,7 +86,7 @@ export const ChatbotSidebar: React.FC<ChatbotSidebarProps> = ({
   const navigate = useNavigate()
   const location = useLocation()
   const { chatbotId } = useParams()
-  const { clearChatSessions } = useStore()
+  const { clearChatSessions } = useChatbotStore()
 
   const expanded = isMobile ? mobileOpen : pinned || hovered
 

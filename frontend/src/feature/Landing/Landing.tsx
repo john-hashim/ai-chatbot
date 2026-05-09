@@ -20,13 +20,12 @@ export const Landing: React.FC = () => {
   const date = format(new Date(), 'MMMM dd')
   const {
     getChatbots,
-    clearCurrentChatbot,
     setCurrentChatbot,
-    resetDocumentFilters,
+    clearCurrentChatbot,
     currentChatbot,
     chatbots,
     deleteChatbot,
-    clearChatSessions,
+    clearChatbotState,
     isLoadingChatbot,
   } = useChatbotStore()
   const { clearAvailabilities, clearAppointments } = useBookingStore()
@@ -38,20 +37,11 @@ export const Landing: React.FC = () => {
   )
 
   useEffect(() => {
-    resetDocumentFilters()
-    getChatbots()
-    clearChatSessions()
-    clearCurrentChatbot()
+    clearChatbotState()
     clearAvailabilities()
     clearAppointments()
-  }, [
-    clearCurrentChatbot,
-    getChatbots,
-    resetDocumentFilters,
-    clearChatSessions,
-    clearAvailabilities,
-    clearAppointments,
-  ])
+    getChatbots()
+  }, [clearChatbotState, clearAvailabilities, clearAppointments, getChatbots])
 
   const firstName = user?.name.split(' ')[0]
   const formattedFirstName = firstName

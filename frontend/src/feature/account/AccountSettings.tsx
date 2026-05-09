@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom'
 import { ImageUp, Loader2, X } from 'lucide-react'
 import { modals } from '@mantine/modals'
 import { usePageTitle } from '@/hooks/usePageTitle'
-import { useUserStore, useStore } from '@/store'
+import { useUserStore, useChatbotStore, useBookingStore } from '@/store'
 import { useApi } from '@/hooks/useApi'
 import { useUserAvatarUpload } from '@/hooks/useUserAvatarUpload'
 import { authService } from '@/api/services/auth'
@@ -19,21 +19,14 @@ export const AccountSettings: React.FC = () => {
   usePageTitle('Account Settings')
 
   const { user, updateUser, logout } = useUserStore()
-  const {
-    clearChatbotState,
-    clearCurrentChatbot,
-    resetDocumentFilters,
-    clearChatSessions,
-    clearAvailabilities,
-  } = useStore()
+  const { clearChatbotState } = useChatbotStore()
+  const { clearAvailabilities } = useBookingStore()
   const navigate = useNavigate()
 
   useEffect(() => {
-    resetDocumentFilters()
-    clearChatSessions()
-    clearCurrentChatbot()
+    clearChatbotState()
     clearAvailabilities()
-  }, [clearCurrentChatbot, resetDocumentFilters, clearChatSessions, clearAvailabilities])
+  }, [clearChatbotState, clearAvailabilities])
 
   const [name, setName] = useState(user?.name ?? '')
   const [email, setEmail] = useState(user?.email ?? '')

@@ -5,7 +5,7 @@ import { Style } from './Style'
 import { Preview } from './Preview'
 import { Content } from './Content'
 import type { Chatbot } from '@/types/chatbot'
-import { useStore } from '@/store'
+import { useChatbotStore } from '@/store'
 import { FormProvider, useForm } from 'react-hook-form'
 import { showLoadingNotification } from '@/utils/notifications'
 
@@ -33,7 +33,7 @@ export const Customize: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'content' | 'style' | 'preview'>('content')
   const [isSaving, setIsSaving] = useState(false)
   const isLargeScreen = useMediaQuery('(min-width: 1024px)')
-  const { currentChatbot, updateChatbot } = useStore()
+  const { currentChatbot, updateChatbot } = useChatbotStore()
 
   const methods = useForm<ChatbotFormValues>({
     mode: 'onChange',

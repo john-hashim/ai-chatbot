@@ -30,7 +30,7 @@ import { GoogleOAuthProvider } from '@react-oauth/google'
 import { Dropzone } from '@mantine/dropzone'
 import { ProtectedRoute } from '@/routes/ProtectedRoute'
 import { MainLayout } from '@/components/layout/MainLayout'
-import { useStore } from '@/store'
+import { useUserStore } from '@/store'
 
 const Login = lazy(() => import('@/feature/auth/Login'))
 const Landing = lazy(() => import('@/feature/Landing/Landing').then(m => ({ default: m.Landing })))
@@ -150,7 +150,7 @@ function App() {
 }
 
 function AppRoutes() {
-  const token = useStore(state => state.token)
+  const { token } = useUserStore()
 
   return (
     <Suspense fallback={<LoadingOverlay visible zIndex={1000} overlayProps={{ blur: 2 }} />}>

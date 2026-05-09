@@ -1,7 +1,7 @@
 import { chatService, streamChat } from '@/api/services/chat'
 import { ChatbotWidget } from '@/components/common/ChatbotWidget'
 import { useApi } from '@/hooks/useApi'
-import { useStore } from '@/store'
+import { useChatbotStore, useUserStore, useStore } from '@/store'
 import type { ApiResponse } from '@/types/api'
 import type { ChatMessage } from '@/types/chatbot'
 import { useCallback, useRef, useState } from 'react'
@@ -9,13 +9,13 @@ import { useCallback, useRef, useState } from 'react'
 export const PlaygroundPreview: React.FC = () => {
   const {
     currentChatbot,
-    user,
     chatSessionsByEndUser,
     isLoadingSessionsByEndUser,
     isLoadingSessionDetails,
     getChatSessionsByEndUser,
     getSessionDetails,
-  } = useStore()
+  } = useChatbotStore()
+  const { user } = useUserStore()
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [generating, setGenerating] = useState(false)

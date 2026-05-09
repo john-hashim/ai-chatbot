@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { uploadImageToR2, deleteImageFromR2 } from '@/api/services/upload'
-import { useStore } from '@/store'
+import { useUserStore } from '@/store'
 import { authService } from '@/api/services/auth'
 import { showNotification } from '@/utils/notifications'
 
@@ -12,7 +12,7 @@ interface UseUserAvatarUploadReturn {
 
 export const useUserAvatarUpload = (): UseUserAvatarUploadReturn => {
   const [isUploading, setIsUploading] = useState(false)
-  const { user, updateUser } = useStore()
+  const { user, updateUser } = useUserStore()
 
   const upload = async (file: File) => {
     setIsUploading(true)

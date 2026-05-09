@@ -2,7 +2,7 @@ import { Select, Textarea } from '@mantine/core'
 import { Controller, useFormContext, useWatch } from 'react-hook-form'
 import type { PlaygroundFormValues } from './Playground'
 import { INSTRUCTION_OPTIONS, getInstructionByType } from '@/constants/instructions'
-import { useStore } from '@/store'
+import { useChatbotStore } from '@/store'
 import { formatRelativeDate } from '@/hooks/useRelativeDate'
 
 const selectData = INSTRUCTION_OPTIONS.map(opt => ({
@@ -16,7 +16,7 @@ export const PlaygroundSettings: React.FC = () => {
   const instructionType = useWatch({ name: 'instructionType', control })
   const selectedOption = getInstructionByType(instructionType)
 
-  const { currentChatbot } = useStore()
+  const { currentChatbot } = useChatbotStore()
 
   return (
     <div className="flex flex-col gap-5 p-6">

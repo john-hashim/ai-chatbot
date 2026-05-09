@@ -10,7 +10,7 @@ import {
   RefreshCw,
   Loader2,
 } from 'lucide-react'
-import { useStore } from '@/store'
+import { useChatbotStore } from '@/store'
 import { embedService, type EmbedConfig } from '@/api/services/embed'
 import { useApi } from '@/hooks/useApi'
 import { showNotification } from '@/utils/notifications'
@@ -21,7 +21,7 @@ const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001/api/'
 const EMBED_BASE = API_BASE.replace('/api/', '')
 
 export const Deploy: React.FC = () => {
-  const { currentChatbot } = useStore()
+  const { currentChatbot } = useChatbotStore()
   const [embedConfig, setEmbedConfig] = useState<EmbedConfig | null>(null)
   const [embedType, setEmbedType] = useState<EmbedType>('widget')
   const [copiedField, setCopiedField] = useState<string | null>(null)

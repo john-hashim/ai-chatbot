@@ -3,7 +3,7 @@ import { Button, Indicator, Select, Tooltip } from '@mantine/core'
 import { modals } from '@mantine/modals'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import dayjs from 'dayjs'
-import { useStore } from '@/store'
+import { useBookingStore } from '@/store'
 import type { TimeSlot } from '@/types/bookings'
 import { Plus, X } from 'lucide-react'
 
@@ -23,7 +23,7 @@ export const DateSpecificHoursModal = ({
   const [value, setValue] = useState<string[]>([])
   const [schedules, setSchedules] = useState<TimeSlot[]>([{ startTime: '09:00', endTime: '17:00' }])
 
-  const { duration, creatingDayId } = useStore()
+  const { duration, creatingDayId } = useBookingStore()
   const isCreating = creatingDayId === -1
   const wasCreating = useRef(false)
 

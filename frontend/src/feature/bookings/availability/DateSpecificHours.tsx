@@ -5,7 +5,7 @@ import { modals } from '@mantine/modals'
 import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc'
 import timezone from 'dayjs/plugin/timezone'
-import { useStore } from '@/store'
+import { useBookingStore, useChatbotStore } from '@/store'
 
 dayjs.extend(utc)
 dayjs.extend(timezone)
@@ -21,7 +21,8 @@ export interface DateSpecificHoursProps {
 
 export const DateSpecificHours = memo<DateSpecificHoursProps>(
   ({ createDateSpecificAvailability }) => {
-    const { availabilities, currentChatbot, deleteAvailability } = useStore()
+    const { availabilities, deleteAvailability } = useBookingStore()
+    const { currentChatbot } = useChatbotStore()
 
     const specificSchedules = useMemo(() => {
       return availabilities

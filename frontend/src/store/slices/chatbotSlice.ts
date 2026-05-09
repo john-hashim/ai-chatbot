@@ -2,7 +2,7 @@ import { chatbotService } from '@/api/services/chatbot'
 import { documentService } from '@/api/services/document'
 import { chatService } from '@/api/services/chat'
 import type { Chatbot, ChatMessage, ChatSession, ChatSessionState } from '@/types/chatbot'
-import type {  ChatSessionSortOption, Filter } from "@/types/common"
+import type { ChatSessionSortOption, Filter } from '@/types/common'
 import type { StateCreator } from 'zustand'
 
 export interface ChatbotSlice {
@@ -37,7 +37,7 @@ export interface ChatbotSlice {
   getSessionDetails: (chatbotId: string, sessionId: string) => Promise<void>
   updateSessionMessages: (sessionId: string, messages: ChatMessage[]) => void
   clearChatSessions: () => void
-  setChatSessionFilters: (filter: Filter<ChatSessionSortOption>) => void;
+  setChatSessionFilters: (filter: Filter<ChatSessionSortOption>) => void
   resetChatSessionFilters: () => void
   getChatSessionsByEndUser: (chatbotId: string, identifier: string) => Promise<void>
   clearChatSessionsByEndUser: () => void
@@ -64,11 +64,10 @@ const defaultChatSessionFilters: Filter<ChatSessionSortOption> = {
   sortBy: 'Newest',
 }
 
-export const createChatbotSlice: StateCreator<
-  ChatbotSlice,
-  [['zustand/devtools', never]],
-  []
-> = (set, get) => ({
+export const createChatbotSlice: StateCreator<ChatbotSlice, [['zustand/devtools', never]], []> = (
+  set,
+  get
+) => ({
   // Chatbot state
   chatbots: [],
   currentChatbot: null,
@@ -77,7 +76,7 @@ export const createChatbotSlice: StateCreator<
   // Chat session state
   chatSession: {
     chatSessions: [],
-    filters: defaultChatSessionFilters
+    filters: defaultChatSessionFilters,
   },
   chatSessionsByEndUser: [],
   isLoadingSessions: false,
@@ -126,13 +125,18 @@ export const createChatbotSlice: StateCreator<
   },
 
   setCurrentChatbot: (chatbotId: string) => {
-    set(state => {
-      const currentChatbot = state.chatbots.find(chatbot => chatbot.id === chatbotId)
-      return { currentChatbot }
-    }, undefined, '[Chat Bot] Set Current Chat')
+    set(
+      state => {
+        const currentChatbot = state.chatbots.find(chatbot => chatbot.id === chatbotId)
+        return { currentChatbot }
+      },
+      undefined,
+      '[Chat Bot] Set Current Chat'
+    )
   },
 
-  clearCurrentChatbot: () => set({ currentChatbot: null }, undefined, '[Chat Bot] Clear Current Chat Bot'),
+  clearCurrentChatbot: () =>
+    set({ currentChatbot: null }, undefined, '[Chat Bot] Clear Current Chat Bot'),
 
   updateChatbot: async (data: Partial<Chatbot>) => {
     const state = get()
@@ -149,27 +153,40 @@ export const createChatbotSlice: StateCreator<
       throw new Error('Failed to update chatbot')
     }
 
-    set(state => ({
-      currentChatbot: updatedChatbot,
-      chatbots: state.chatbots.map(bot => (bot.id === id ? updatedChatbot : bot)),
-    }), undefined, '[Chat Bot] Update Chat Bot')
+    set(
+      state => ({
+        currentChatbot: updatedChatbot,
+        chatbots: state.chatbots.map(bot => (bot.id === id ? updatedChatbot : bot)),
+      }),
+      undefined,
+      '[Chat Bot] Update Chat Bot'
+    )
 
     return updatedChatbot
   },
 
   upsertChatbot: chatbot =>
-    set(state => {
-      const existingIndex = state.chatbots.findIndex(bot => bot.id === chatbot.id)
-      if (existingIndex >= 0) {
-        const updatedChatbots = [...state.chatbots]
-        updatedChatbots[existingIndex] = chatbot
-        return { chatbots: updatedChatbots }
-      } else {
-        return { chatbots: [chatbot, ...state.chatbots] }
-      }
-    }, undefined, '[Chat Bot] Clear Current Chat Bot'),
+    set(
+      state => {
+        const existingIndex = state.chatbots.findIndex(bot => bot.id === chatbot.id)
+        if (existingIndex >= 0) {
+          const updatedChatbots = [...state.chatbots]
+          updatedChatbots[existingIndex] = chatbot
+          return { chatbots: updatedChatbots }
+        } else {
+          return { chatbots: [chatbot, ...state.chatbots] }
+        }
+      },
+      undefined,
+      '[Chat Bot] Clear Current Chat Bot'
+    ),
 
-  deleteChatbot: id => set(state => ({ chatbots: state.chatbots.filter(bot => bot.id !== id) }), undefined, '[Chat Bot] Delete Chat Bot'),
+  deleteChatbot: id =>
+    set(
+      state => ({ chatbots: state.chatbots.filter(bot => bot.id !== id) }),
+      undefined,
+      '[Chat Bot] Delete Chat Bot'
+    ),
 
   clearChatbots: () => set({ chatbots: [] }, undefined, '[Chat Bot] Clear Chat Bots'),
 
@@ -178,26 +195,42 @@ export const createChatbotSlice: StateCreator<
   getChatSessions: async (chatbotId: string) => {
     set({ isLoadingSessions: true }, undefined, '[Chat Bot] Set isLoading Session True')
     try {
-      const filter = get().chatSession.filters;
+      const filter = get().chatSession.filters
       const response = await chatService.getChatSessions(chatbotId, filter)
       if (!response.data.data) {
         throw new Error('No data received from server')
       }
-      set((state: ChatbotSlice): Partial<ChatbotSlice> => ({
-        chatSession: { chatSessions: response.data?.data ?? [], filters: state.chatSession.filters }
-      }), undefined, '[Chat Bot] Set Chat Session')
+      set(
+        (state: ChatbotSlice): Partial<ChatbotSlice> => ({
+          chatSession: {
+            chatSessions: response.data?.data ?? [],
+            filters: state.chatSession.filters,
+          },
+        }),
+        undefined,
+        '[Chat Bot] Set Chat Session'
+      )
     } finally {
       set({ isLoadingSessions: false }, undefined, '[Chat Bot] Set isLoading Session False')
       console.log('Sessions fetch completed')
     }
   },
 
-  setChatSessions: (chatSessions: ChatSession[]) => set((state: ChatbotSlice): Partial<ChatbotSlice> => ({
-    chatSession: { ...state.chatSession, chatSessions }
-  }), undefined, '[Chat Bot] Set Chat Sessions'),
+  setChatSessions: (chatSessions: ChatSession[]) =>
+    set(
+      (state: ChatbotSlice): Partial<ChatbotSlice> => ({
+        chatSession: { ...state.chatSession, chatSessions },
+      }),
+      undefined,
+      '[Chat Bot] Set Chat Sessions'
+    ),
 
   getSessionDetails: async (chatbotId: string, sessionId: string) => {
-    set({ isLoadingSessionDetails: true }, undefined, '[Chat Bot] Set isLoading Session Details True')
+    set(
+      { isLoadingSessionDetails: true },
+      undefined,
+      '[Chat Bot] Set isLoading Session Details True'
+    )
     try {
       const response = await chatService.getChatSession(chatbotId, sessionId)
       const chatSession = response.data.data?.chatSession
@@ -206,39 +239,65 @@ export const createChatbotSlice: StateCreator<
       }
       get().updateSessionMessages(sessionId, chatSession.messages || [])
     } finally {
-      set({ isLoadingSessionDetails: false }, undefined, '[Chat Bot] Set isLoading Session Details False')
+      set(
+        { isLoadingSessionDetails: false },
+        undefined,
+        '[Chat Bot] Set isLoading Session Details False'
+      )
     }
   },
 
   updateSessionMessages: (sessionId: string, messages: ChatMessage[]) =>
-    set((state: ChatbotSlice): Partial<ChatbotSlice> => ({
-      chatSession: {
-        ...state.chatSession,
-        chatSessions: state.chatSession.chatSessions.map(session =>
+    set(
+      (state: ChatbotSlice): Partial<ChatbotSlice> => ({
+        chatSession: {
+          ...state.chatSession,
+          chatSessions: state.chatSession.chatSessions.map(session =>
+            session.id === sessionId ? { ...session, messages } : session
+          ),
+        },
+        chatSessionsByEndUser: state.chatSessionsByEndUser.map(session =>
           session.id === sessionId ? { ...session, messages } : session
-        )
-      },
-      chatSessionsByEndUser: state.chatSessionsByEndUser.map(session =>
-        session.id === sessionId ? { ...session, messages } : session
-      ),
-    }), undefined, '[Chat Bot] Update Session Messages'),
+        ),
+      }),
+      undefined,
+      '[Chat Bot] Update Session Messages'
+    ),
 
-  clearChatSessions: () => set({ chatSession: { chatSessions: [], filters: defaultChatSessionFilters } }, undefined, '[Chat Bot] Clear Chat Sessions'),
+  clearChatSessions: () =>
+    set(
+      { chatSession: { chatSessions: [], filters: defaultChatSessionFilters } },
+      undefined,
+      '[Chat Bot] Clear Chat Sessions'
+    ),
 
   getChatSessionsByEndUser: async (chatbotId: string, identifier: string) => {
-    set({ isLoadingSessionsByEndUser: true }, undefined, '[Chat Bot] Set isLoading Sessions By End User True')
+    set(
+      { isLoadingSessionsByEndUser: true },
+      undefined,
+      '[Chat Bot] Set isLoading Sessions By End User True'
+    )
     try {
       const response = await chatbotService.getChatSessionsByEndUser(chatbotId, identifier)
       if (!response.data.data) {
         throw new Error('No data received from server')
       }
-      set({ chatSessionsByEndUser: response.data.data ?? [] }, undefined, '[Chat Bot] Set Chat Sessions By End User')
+      set(
+        { chatSessionsByEndUser: response.data.data ?? [] },
+        undefined,
+        '[Chat Bot] Set Chat Sessions By End User'
+      )
     } finally {
-      set({ isLoadingSessionsByEndUser: false }, undefined, '[Chat Bot] Set isLoading Sessions By End User False')
+      set(
+        { isLoadingSessionsByEndUser: false },
+        undefined,
+        '[Chat Bot] Set isLoading Sessions By End User False'
+      )
     }
   },
 
-  clearChatSessionsByEndUser: () => set({ chatSessionsByEndUser: [] }, undefined, '[Chat Bot] Clear Chat Sessions By End User'),
+  clearChatSessionsByEndUser: () =>
+    set({ chatSessionsByEndUser: [] }, undefined, '[Chat Bot] Clear Chat Sessions By End User'),
 
   // Document actions
 
@@ -269,38 +328,57 @@ export const createChatbotSlice: StateCreator<
   },
 
   setDocumentFilters: filter =>
-    set(state => ({ documentFilters: { ...state.documentFilters, ...filter } }), undefined, '[Chat Bot] Set Document Filters'),
+    set(
+      state => ({ documentFilters: { ...state.documentFilters, ...filter } }),
+      undefined,
+      '[Chat Bot] Set Document Filters'
+    ),
 
-  resetDocumentFilters: () => set({ documentFilters: defaultFilters }, undefined, '[Chat Bot] Reset Document Filters'),
+  resetDocumentFilters: () =>
+    set({ documentFilters: defaultFilters }, undefined, '[Chat Bot] Reset Document Filters'),
 
-  setChatSessionFilters: (filter: Filter<ChatSessionSortOption>) => set((state: ChatbotSlice): Partial<ChatbotSlice> => ({
-    chatSession: {
-      ...state.chatSession,
-      filters: filter
-    }
-  }), undefined, '[Chat Bot] Set Chat Session Filters'),
+  setChatSessionFilters: (filter: Filter<ChatSessionSortOption>) =>
+    set(
+      (state: ChatbotSlice): Partial<ChatbotSlice> => ({
+        chatSession: {
+          ...state.chatSession,
+          filters: filter,
+        },
+      }),
+      undefined,
+      '[Chat Bot] Set Chat Session Filters'
+    ),
 
-  resetChatSessionFilters: () => set((state: ChatbotSlice): Partial<ChatbotSlice> => ({
-    chatSession: {
-      ...state.chatSession,
-      filters: defaultChatSessionFilters
-    }
-  }), undefined, '[Chat Bot] Reset Chat Session Filters'),
+  resetChatSessionFilters: () =>
+    set(
+      (state: ChatbotSlice): Partial<ChatbotSlice> => ({
+        chatSession: {
+          ...state.chatSession,
+          filters: defaultChatSessionFilters,
+        },
+      }),
+      undefined,
+      '[Chat Bot] Reset Chat Session Filters'
+    ),
 
   // Global
 
   clearChatbotState: () =>
-    set({
-      chatbots: [],
-      currentChatbot: null,
-      documentFilters: defaultFilters,
-      chatSession: {
-        chatSessions: [],
-        filters: defaultChatSessionFilters
+    set(
+      {
+        chatbots: [],
+        currentChatbot: null,
+        documentFilters: defaultFilters,
+        chatSession: {
+          chatSessions: [],
+          filters: defaultChatSessionFilters,
+        },
+        chatSessionsByEndUser: [],
+        isLoadingSessionDetails: false,
+        isLoadingChatbot: false,
+        isLoadingSessionsByEndUser: false,
       },
-      chatSessionsByEndUser: [],
-      isLoadingSessionDetails: false,
-      isLoadingChatbot: false,
-      isLoadingSessionsByEndUser: false,
-    }, undefined, '[Chat Bot] Clear Chat Bot State'),
+      undefined,
+      '[Chat Bot] Clear Chat Bot State'
+    ),
 })

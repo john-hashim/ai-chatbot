@@ -5,7 +5,7 @@ import { Button, Transition } from '@mantine/core'
 import { FormProvider, useForm } from 'react-hook-form'
 import { PlaygroundSettings } from './PlaygroundSettings'
 import { PlaygroundPreview } from './PlaygroundPreview'
-import { useStore } from '@/store'
+import { useChatbotStore } from '@/store'
 import { showLoadingNotification } from '@/utils/notifications'
 import type { Chatbot } from '@/types/chatbot'
 
@@ -15,7 +15,7 @@ export const Playground: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'settings' | 'preview'>('settings')
   const [isSaving, setIsSaving] = useState(false)
   const isLargeScreen = useMediaQuery('(min-width: 1024px)')
-  const { currentChatbot, updateChatbot } = useStore()
+  const { currentChatbot, updateChatbot } = useChatbotStore()
 
   const methods = useForm<PlaygroundFormValues>({
     mode: 'onChange',

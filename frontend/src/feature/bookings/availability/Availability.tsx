@@ -10,14 +10,14 @@ import type {
   CreateWeeklyAvailabilityRequest,
   TimeSlot,
 } from '@/types/bookings'
-import { useStore } from '@/store'
+import { useBookingStore, useChatbotStore } from '@/store'
 import { useCallback } from 'react'
 import { Loader } from '@mantine/core'
 
 export const Availability: React.FC = () => {
   // const [view, setView] = useState<'List' | 'Calendar'>('List')
-  const { timezone, createAvailability, currentChatbot, fetchingAvailabilities, availabilities } =
-    useStore()
+  const { timezone, createAvailability, fetchingAvailabilities, availabilities } = useBookingStore()
+  const { currentChatbot } = useChatbotStore()
 
   const getDefaultTimeSlot = (): TimeSlot => ({ startTime: '09:00', endTime: '17:00' })
 
