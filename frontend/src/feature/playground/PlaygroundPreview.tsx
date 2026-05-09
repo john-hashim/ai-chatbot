@@ -10,10 +10,10 @@ export const PlaygroundPreview: React.FC = () => {
   const {
     currentChatbot,
     user,
-    chatSession,
-    isLoadingSessions,
+    chatSessionsByEndUser,
+    isLoadingSessionsByEndUser,
     isLoadingSessionDetails,
-    getChatSessions,
+    getChatSessionsByEndUser,
     getSessionDetails,
   } = useStore()
   const [messages, setMessages] = useState<ChatMessage[]>([])
@@ -138,8 +138,8 @@ export const PlaygroundPreview: React.FC = () => {
 
   const handleView = () => {
     setChatView('recent')
-    if (currentChatbot?.id) {
-      getChatSessions(currentChatbot.id)
+    if (currentChatbot?.id && user?.email) {
+      getChatSessionsByEndUser(currentChatbot.id, user.email)
     }
   }
 
@@ -152,9 +152,18 @@ export const PlaygroundPreview: React.FC = () => {
     setChatView('session')
     setSessionId(id)
     setMessages([])
-    await getSessionDetails(currentChatbot.id, id)
-    const session = useStore.getState().chatSession.chatSessions.find(s => s.id === id)
-    setMessages(session?.messages ?? [])
+    try {
+      await getSessionDetails(currentChatbot.id, id)
+      const session = useStore.getState().chatSessionsByEndUser.find(s => s.id === id)
+      setMessages(session?.messages ?? [])
+    } catch (e) {
+      // Loading the selected session failed (404, network drop, etc.).
+      // Drop back to the recent-chats list so the user isn't stuck on a
+      // blank session view.
+      console.error('Failed to load chat session:', e)
+      setSessionId(null)
+      setChatView('recent')
+    }
   }
 
   const handleActionSelect = (actionType: string, value: string) => {
@@ -217,8 +226,8 @@ export const PlaygroundPreview: React.FC = () => {
           generating={generating}
           onHandleView={handleView}
           chatView={chatView}
-          chatSessions={chatSession.chatSessions}
-          chatSessionsLoading={isLoadingSessions}
+          chatSessions={chatSessionsByEndUser}
+          chatSessionsLoading={isLoadingSessionsByEndUser}
           messagesLoading={isLoadingSessionDetails}
           onSelectChatSession={handleSelectChatSession}
           onBack={handleBack}

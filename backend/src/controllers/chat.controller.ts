@@ -405,9 +405,11 @@ export const getChatSessions = async (req: Request, res: Response, next: NextFun
       } satisfies ApiResponse)
     }
 
-    const chatbot = await prisma.chatbot.findUnique({
-      where: { id: chatbotId, userId: req.user.id },
-    })
+    const chatbot = req.chatbot
+      ? req.chatbot
+      : await prisma.chatbot.findUnique({
+          where: { id: chatbotId, userId: req.user.id },
+        })
 
     if (!chatbot) {
       return res.status(404).json({
@@ -468,6 +470,69 @@ export const getChatSessions = async (req: Request, res: Response, next: NextFun
   }
 }
 
+export const getChatSessionsByEndUser = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { chatbotId } = req.params
+    const { identifier } = (req.body ?? {}) as { identifier?: unknown }
+
+    if (!chatbotId) {
+      return res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'Chatbot ID is required',
+      } satisfies ApiResponse)
+    }
+
+    if (typeof identifier !== 'string' || identifier.length === 0) {
+      return res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'End user identifier is required',
+      } satisfies ApiResponse)
+    }
+
+    const endUser = await prisma.endUser.findFirst({
+      where: { chatbotId, identifier },
+      select: { id: true },
+    })
+
+    if (!endUser) {
+      return res.status(200).json({
+        status: ApiStatus.SUCCESS,
+        data: [],
+        message: 'No chat sessions found for this end user',
+      } satisfies ApiResponse)
+    }
+
+    const sessions = await prisma.chatSession.findMany({
+      where: { chatbotId, endUserId: endUser.id },
+      orderBy: { updatedAt: 'desc' },
+      select: {
+        id: true,
+        chatbotId: true,
+        createdAt: true,
+        updatedAt: true,
+        source: true,
+        messages: {
+          take: 2,
+          orderBy: { createdAt: 'asc' },
+        },
+        _count: { select: { messages: true } },
+      },
+    })
+
+    res.status(200).json({
+      status: ApiStatus.SUCCESS,
+      data: sessions,
+      message: 'Chat sessions retrieved successfully',
+    } satisfies ApiResponse)
+  } catch (error) {
+    next(error)
+  }
+}
+
 export const getChatSession = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { chatbotId, sessionId } = req.params
@@ -485,9 +550,11 @@ export const getChatSession = async (req: Request, res: Response, next: NextFunc
       } satisfies ApiResponse)
     }
 
-    const chatbot = await prisma.chatbot.findUnique({
-      where: { id: chatbotId, userId: req.user.id },
-    })
+    const chatbot = req.chatbot
+      ? req.chatbot
+      : await prisma.chatbot.findUnique({
+          where: { id: chatbotId, userId: req.user.id },
+        })
 
     if (!chatbot) {
       return res.status(404).json({
@@ -496,7 +563,7 @@ export const getChatSession = async (req: Request, res: Response, next: NextFunc
       } satisfies ApiResponse)
     }
     const session = await prisma.chatSession.findFirst({
-      where: { id: sessionId, chatbotId },
+      where: { id: sessionId, chatbotId: chatbot.id },
       include: {
         messages: {
           orderBy: { createdAt: 'asc' },

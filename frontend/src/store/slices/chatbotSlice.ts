@@ -13,8 +13,10 @@ export interface ChatbotSlice {
 
   // Chat session state
   chatSession: ChatSessionState
+  chatSessionsByEndUser: ChatSession[]
   isLoadingSessions: boolean
   isLoadingSessionDetails: boolean
+  isLoadingSessionsByEndUser: boolean
 
   // Document state
   documentFilters: Filter
@@ -37,6 +39,8 @@ export interface ChatbotSlice {
   clearChatSessions: () => void
   setChatSessionFilters: (filter: Filter<ChatSessionSortOption>) => void;
   resetChatSessionFilters: () => void
+  getChatSessionsByEndUser: (chatbotId: string, identifier: string) => Promise<void>
+  clearChatSessionsByEndUser: () => void
 
   // Document actions
   addDocument: () => Promise<void>
@@ -75,8 +79,10 @@ export const createChatbotSlice: StateCreator<
     chatSessions: [],
     filters: defaultChatSessionFilters
   },
+  chatSessionsByEndUser: [],
   isLoadingSessions: false,
   isLoadingSessionDetails: false,
+  isLoadingSessionsByEndUser: false,
 
   // Document state
   documentFilters: defaultFilters,
@@ -211,10 +217,28 @@ export const createChatbotSlice: StateCreator<
         chatSessions: state.chatSession.chatSessions.map(session =>
           session.id === sessionId ? { ...session, messages } : session
         )
-      }
+      },
+      chatSessionsByEndUser: state.chatSessionsByEndUser.map(session =>
+        session.id === sessionId ? { ...session, messages } : session
+      ),
     }), undefined, '[Chat Bot] Update Session Messages'),
 
   clearChatSessions: () => set({ chatSession: { chatSessions: [], filters: defaultChatSessionFilters } }, undefined, '[Chat Bot] Clear Chat Sessions'),
+
+  getChatSessionsByEndUser: async (chatbotId: string, identifier: string) => {
+    set({ isLoadingSessionsByEndUser: true }, undefined, '[Chat Bot] Set isLoading Sessions By End User True')
+    try {
+      const response = await chatbotService.getChatSessionsByEndUser(chatbotId, identifier)
+      if (!response.data.data) {
+        throw new Error('No data received from server')
+      }
+      set({ chatSessionsByEndUser: response.data.data ?? [] }, undefined, '[Chat Bot] Set Chat Sessions By End User')
+    } finally {
+      set({ isLoadingSessionsByEndUser: false }, undefined, '[Chat Bot] Set isLoading Sessions By End User False')
+    }
+  },
+
+  clearChatSessionsByEndUser: () => set({ chatSessionsByEndUser: [] }, undefined, '[Chat Bot] Clear Chat Sessions By End User'),
 
   // Document actions
 
@@ -274,7 +298,9 @@ export const createChatbotSlice: StateCreator<
         chatSessions: [],
         filters: defaultChatSessionFilters
       },
+      chatSessionsByEndUser: [],
       isLoadingSessionDetails: false,
       isLoadingChatbot: false,
+      isLoadingSessionsByEndUser: false,
     }, undefined, '[Chat Bot] Clear Chat Bot State'),
 })

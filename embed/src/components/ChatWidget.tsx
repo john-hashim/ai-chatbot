@@ -12,7 +12,6 @@ import {
   streamChat,
   type ChatMessage,
 } from "../services/chat";
-import type { EndUserIdentity } from "../identity";
 import { getContrastColor } from "../utils";
 import { ChatBubbleButton } from "./ChatBubbleButton";
 import { ChatHeader } from "./ChatHeader";
@@ -24,10 +23,19 @@ interface Props {
   embedKey: string;
   apiBase: string;
   mode: "widget" | "iframe";
-  identity?: EndUserIdentity;
+  // Stable identifier for this end user. Used for both chat-send (so the
+  // backend can attach an EndUser row to each session) and the recent-chats
+  // lookup. Always present — `resolveEndUserIdentifier` falls back to a
+  // generated anon UUID when nothing else is known.
+  endUserIdentifier: string;
 }
 
-export function ChatWidget({ embedKey, apiBase, mode, identity }: Props) {
+export function ChatWidget({
+  embedKey,
+  apiBase,
+  mode,
+  endUserIdentifier,
+}: Props) {
   const [config, setConfig] = useState<ChatbotConfig | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -115,47 +123,40 @@ export function ChatWidget({ embedKey, apiBase, mode, identity }: Props) {
         mountedRef.current && sessionEpochRef.current === epoch;
 
       try {
-        await streamChat(
-          apiBase,
-          embedKey,
-          text,
-          sessionId,
-          {
-            onSessionId: (id) => {
-              if (!isCurrent()) return;
-              setSessionId(id);
-            },
-            onToken: (token) => {
-              streamContentRef.current += token;
-              if (!isCurrent()) return;
-              const content = streamContentRef.current;
-              setMessages((prev) => {
-                const updated = [...prev];
-                updated[updated.length - 1] = {
-                  ...updated[updated.length - 1],
-                  content,
-                };
-                return updated;
-              });
-            },
-            onDone: (finalMsg) => {
-              if (!isCurrent()) return;
-              setMessages((prev) => {
-                const updated = [...prev];
-                updated[updated.length - 1] = finalMsg;
-                return updated;
-              });
-              setStreaming(false);
-            },
-            onError: (errMsg) => {
-              if (!isCurrent()) return;
-              setMessages((prev) => prev.slice(0, -1));
-              showError(errMsg);
-              setStreaming(false);
-            },
+        await streamChat(apiBase, embedKey, text, sessionId, endUserIdentifier, {
+          onSessionId: (id) => {
+            if (!isCurrent()) return;
+            setSessionId(id);
           },
-          identity,
-        );
+          onToken: (token) => {
+            streamContentRef.current += token;
+            if (!isCurrent()) return;
+            const content = streamContentRef.current;
+            setMessages((prev) => {
+              const updated = [...prev];
+              updated[updated.length - 1] = {
+                ...updated[updated.length - 1],
+                content,
+              };
+              return updated;
+            });
+          },
+          onDone: (finalMsg) => {
+            if (!isCurrent()) return;
+            setMessages((prev) => {
+              const updated = [...prev];
+              updated[updated.length - 1] = finalMsg;
+              return updated;
+            });
+            setStreaming(false);
+          },
+          onError: (errMsg) => {
+            if (!isCurrent()) return;
+            setMessages((prev) => prev.slice(0, -1));
+            showError(errMsg);
+            setStreaming(false);
+          },
+        });
       } catch {
         if (!isCurrent()) return;
         setMessages((prev) => prev.slice(0, -1));
@@ -163,7 +164,7 @@ export function ChatWidget({ embedKey, apiBase, mode, identity }: Props) {
         setStreaming(false);
       }
     },
-    [input, streaming, apiBase, embedKey, sessionId, showError, identity],
+    [input, streaming, apiBase, embedKey, sessionId, endUserIdentifier, showError],
   );
 
   const handleFeedback = useCallback(
@@ -204,7 +205,11 @@ export function ChatWidget({ embedKey, apiBase, mode, identity }: Props) {
     setChatSessionsLoading(true);
     const epoch = sessionEpochRef.current;
     try {
-      const sessions = await fetchChatSessions(apiBase, embedKey);
+      const sessions = await fetchChatSessions(
+        apiBase,
+        embedKey,
+        endUserIdentifier,
+      );
       if (!mountedRef.current || sessionEpochRef.current !== epoch) return;
       setChatSessions(sessions);
     } catch {
@@ -216,7 +221,7 @@ export function ChatWidget({ embedKey, apiBase, mode, identity }: Props) {
         setChatSessionsLoading(false);
       }
     }
-  }, [apiBase, embedKey, showError]);
+  }, [apiBase, embedKey, endUserIdentifier, showError]);
 
   const handleBack = useCallback(() => {
     setChatView("session");

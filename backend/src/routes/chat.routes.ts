@@ -28,6 +28,12 @@ router.get(
   chatController.exportChatsAsPDF
 )
 
+router.post(
+  '/:chatbotId/end-user-sessions',
+  authMiddleware.authenticateToken,
+  chatController.getChatSessionsByEndUser
+)
+
 router.get(
   '/:chatbotId/:sessionId/download',
   authMiddleware.authenticateToken,

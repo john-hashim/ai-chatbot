@@ -1,3 +1,5 @@
+import { detectKind } from '../identity'
+
 export interface ChatMessage {
   id?: string
   role: 'user' | 'assistant'
@@ -30,8 +32,8 @@ export async function streamChat(
   embedKey: string,
   message: string,
   sessionId: string | null,
-  callbacks: StreamCallbacks,
-  identity?: { identifier: string; identifierKind: 'EMAIL' | 'PHONE' | 'ANONYMOUS' }
+  identifier: string,
+  callbacks: StreamCallbacks
 ): Promise<void> {
   const res = await fetch(`${apiBase}/api/embed/${embedKey}/chat`, {
     method: 'POST',
@@ -40,7 +42,8 @@ export async function streamChat(
       message,
       sessionId,
       source: 'embed',
-      ...(identity ?? {}),
+      identifier,
+      identifierKind: detectKind(identifier),
     }),
   })
 

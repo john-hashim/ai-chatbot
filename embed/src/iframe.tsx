@@ -1,6 +1,6 @@
 import { render } from "preact";
 import { ChatWidget } from "./components/ChatWidget";
-import { resolveIdentity } from "./identity";
+import { resolveEndUserIdentifier } from "./identity";
 import "./widget.css";
 
 const pathParts = window.location.pathname.split("/");
@@ -11,7 +11,7 @@ const providedIdentifier = new URLSearchParams(window.location.search).get(
 );
 
 if (embedKey) {
-  const identity = resolveIdentity(embedKey, providedIdentifier);
+  const endUserIdentifier = resolveEndUserIdentifier(providedIdentifier);
   const app = document.getElementById("app");
   if (app) {
     render(
@@ -19,7 +19,7 @@ if (embedKey) {
         embedKey={embedKey}
         apiBase={apiBase}
         mode="iframe"
-        identity={identity}
+        endUserIdentifier={endUserIdentifier}
       />,
       app,
     );

@@ -12,12 +12,18 @@ router.post('/:embedKey/chat', embedMiddleware.authenticateEmbed, chatController
 router.get(
   '/:embedKey/sessions',
   embedMiddleware.authenticateEmbed,
-  embedController.getEmbedChatSessions
+  chatController.getChatSessions
 )
 router.get(
   '/:embedKey/sessions/:sessionId',
   embedMiddleware.authenticateEmbed,
-  embedController.getEmbedChatSession
+  chatController.getChatSession
+)
+
+router.post(
+  '/:embedKey/end-user-sessions',
+  embedMiddleware.authenticateEmbed,
+  chatController.getChatSessionsByEndUser
 )
 
 router.get(

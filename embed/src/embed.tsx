@@ -1,6 +1,6 @@
 import { render } from "preact";
 import { ChatWidget } from "./components/ChatWidget";
-import { resolveIdentity } from "./identity";
+import { resolveEndUserIdentifier } from "./identity";
 import css from "./widget.css?inline";
 
 const script = (document.currentScript ||
@@ -12,7 +12,7 @@ const apiBase = script?.src
   : window.location.origin;
 
 if (embedKey) {
-  const identity = resolveIdentity(embedKey, providedIdentifier);
+  const endUserIdentifier = resolveEndUserIdentifier(providedIdentifier);
 
   const host = document.createElement("div");
   host.id = "ai-chatbot-embed";
@@ -32,7 +32,7 @@ if (embedKey) {
       embedKey={embedKey}
       apiBase={apiBase}
       mode="widget"
-      identity={identity}
+      endUserIdentifier={endUserIdentifier}
     />,
     root,
   );

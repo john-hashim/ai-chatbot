@@ -66,9 +66,14 @@ export interface ChatSessionSummary {
 
 export async function fetchChatSessions(
   apiBase: string,
-  embedKey: string
+  embedKey: string,
+  identifier: string
 ): Promise<ChatSessionSummary[]> {
-  const res = await fetch(`${apiBase}/api/embed/${embedKey}/sessions`)
+  const res = await fetch(`${apiBase}/api/embed/${embedKey}/end-user-sessions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ identifier }),
+  })
   if (!res.ok) throw new Error('Failed to fetch sessions')
   const json = await res.json()
   return json.data ?? []

@@ -1,47 +1,54 @@
 export type EndUserKind = "EMAIL" | "PHONE" | "ANONYMOUS";
 
-export interface EndUserIdentity {
-  identifier: string;
-  identifierKind: EndUserKind;
-}
+const STORAGE_KEY = "cbw-identifier";
 
-const STORAGE_PREFIX = "cbw-anon-";
-const TTL_MS = 30 * 24 * 60 * 60 * 1000;
-
-function detectKind(v: string): EndUserKind {
+export function detectKind(v: string): EndUserKind {
   if (v.includes("@")) return "EMAIL";
   if (/^\+?\d[\d\s\-()]{6,}$/.test(v)) return "PHONE";
   return "ANONYMOUS";
 }
 
-function getOrCreateAnon(embedKey: string): string {
-  const key = STORAGE_PREFIX + embedKey;
+// `crypto.randomUUID` only exists in secure contexts (HTTPS / localhost).
+// Embed scripts run on arbitrary customer sites, some on plain HTTP, so we
+// fall back to a Math.random-based v4-style UUID. Not cryptographically
+// strong, but adequate for an end-user identifier.
+function safeRandomUUID(): string {
   try {
-    const raw = localStorage.getItem(key);
-    if (raw) {
-      const { uuid, lastUsed } = JSON.parse(raw);
-      if (uuid && Date.now() - lastUsed < TTL_MS) {
-        localStorage.setItem(key, JSON.stringify({ uuid, lastUsed: Date.now() }));
-        return uuid;
-      }
+    if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+      return crypto.randomUUID();
     }
-    const fresh = crypto.randomUUID();
-    localStorage.setItem(key, JSON.stringify({ uuid: fresh, lastUsed: Date.now() }));
-    return fresh;
   } catch {
-    return crypto.randomUUID();
+    // Fall through to the manual generator.
   }
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === "x" ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
 }
 
-export function resolveIdentity(
-  embedKey: string,
-  identifier?: string | null,
-): EndUserIdentity {
-  const id = identifier?.trim();
-  // Treat the deploy-snippet placeholder as "no identifier" so unforgetful
-  // embedders don't accidentally collapse all visitors into one EndUser row.
-  if (id && !id.startsWith("REPLACE_WITH_")) {
-    return { identifier: id, identifierKind: detectKind(id) };
+// Single source of truth for the end-user identifier used by both the
+// chat-send flow and the past-sessions lookup. Order:
+//   1. `data-identifier` / `?identifier=` from the script or iframe.
+//   2. localStorage["cbw-identifier"].
+//   3. A fresh anon UUID, persisted to localStorage so the same visitor
+//      keeps the same identity on return visits.
+export function resolveEndUserIdentifier(
+  providedIdentifier?: string | null,
+): string {
+  const fromAttr = providedIdentifier?.trim();
+  // Treat the deploy-snippet placeholder as "no identifier".
+  if (fromAttr && !fromAttr.startsWith("REPLACE_WITH_")) {
+    return fromAttr;
   }
-  return { identifier: getOrCreateAnon(embedKey), identifierKind: "ANONYMOUS" };
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY)?.trim();
+    if (stored) return stored;
+    const fresh = safeRandomUUID();
+    localStorage.setItem(STORAGE_KEY, fresh);
+    return fresh;
+  } catch {
+    // localStorage unavailable (private mode, etc.) — return an ephemeral id.
+    return safeRandomUUID();
+  }
 }

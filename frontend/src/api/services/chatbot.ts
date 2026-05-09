@@ -1,7 +1,7 @@
 import { type AxiosResponse } from 'axios'
 import apiClient from '../index'
 import { ENDPOINTS } from '../endpoints'
-import type { Chatbot, ChatbotFormData } from '@/types/chatbot'
+import type { Chatbot, ChatbotFormData, ChatSession } from '@/types/chatbot'
 import type { ApiResponse } from '@/types/api'
 import type { Filter } from "@/types/common"
 
@@ -58,5 +58,21 @@ export const chatbotService = {
     return apiClient.get(ENDPOINTS.CHATBOT.GET_BY_ID.replace(':chatbotId', chatbotId), {
       params: filter,
     })
+  },
+  /**
+   * Get chat sessions for a specific end user (by identifier) of a chatbot.
+   * Sorted by updatedAt desc.
+   * @param chatbotId - ID of the chatbot
+   * @param identifier - End user identifier (email, phone, or anonymous id)
+   * @returns Promise with array of chat sessions
+   */
+  getChatSessionsByEndUser: (
+    chatbotId: string,
+    identifier: string
+  ): Promise<AxiosResponse<ApiResponse<ChatSession[]>>> => {
+    return apiClient.post(
+      ENDPOINTS.CHAT.GET_SESSIONS_BY_END_USER.replace(':chatbotId', chatbotId),
+      { identifier }
+    )
   },
 }
