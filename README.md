@@ -16,7 +16,7 @@ A full-stack SaaS platform for creating, training, and deploying custom AI chatb
 - **Chat History** — View sessions with sort/filter, export as JSON/CSV/PDF
 - **Account & Profile** — Profile popover in header, profile editing, editable notification email, chatbot switcher
 - **Streaming UX** — Single-stream chat controller with typewriter effect and action-token detection
-- **Groq + HuggingFace** — Pluggable LLM backend (Groq `llama-3.3-70b-versatile` or HF Inference) via `USE_GROQ` flag
+- **Per-chatbot model selection** — Choose any OpenRouter-hosted LLM (OpenAI, Anthropic, Google, Meta, DeepSeek, etc.) per chatbot via a curated registry grouped into free / standard / premium tiers
 - **Google OAuth** — Authentication for users
 
 ## Tech Stack
@@ -40,7 +40,7 @@ A full-stack SaaS platform for creating, training, and deploying custom AI chatb
 | Framework | Express 5, TypeScript |
 | ORM | Prisma 6 |
 | Database | PostgreSQL + pgvector |
-| LLM | Groq SDK (llama-3.3-70b-versatile) or HuggingFace Inference |
+| LLM | OpenRouter SDK (`@openrouter/sdk`) — model selectable per chatbot from a curated registry |
 | Embeddings | HuggingFace (BGE-small-en, 384-dim) |
 | Storage | Cloudflare R2 (S3-compatible) |
 | Auth | Google OAuth |
@@ -156,12 +156,14 @@ R2_SECRET_ACCESS_KEY=your-secret-key
 R2_BUCKET_NAME=chatbot
 R2_PUBLIC_URL=https://your-r2-public-url
 
-# HuggingFace (used for embeddings; also chat completions when USE_GROQ is not set)
+# HuggingFace (used for text embeddings)
 HUGGINGFACE_API_KEY=hf_your_key
 
-# Groq (optional — preferred LLM provider when USE_GROQ=true)
-USE_GROQ=true
-GROQ_API_KEY=gsk_your_key
+# OpenRouter (all chat completions: streaming responses + booking classifier)
+OPENROUTER_API_KEY=sk-or-your_key
+# Optional — surfaces your app in the OpenRouter dashboard for attribution
+OPENROUTER_SITE_URL=https://yourapp.com
+OPENROUTER_SITE_NAME=AI Chatbot Builder
 
 # Email notifications (booking confirmations)
 SMTP_HOST=smtp.example.com
@@ -204,8 +206,8 @@ npm run dev                     # runs on port 5173
 |---|---|---|
 | Google OAuth | User authentication | [Google Cloud Console](https://console.cloud.google.com/) → APIs & Services → Credentials |
 | Cloudflare R2 | File/document storage | Cloudflare dashboard → R2 |
-| HuggingFace | Text embeddings (BGE-small-en); fallback chat LLM | [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens) |
-| Groq | Chat LLM (llama-3.3-70b-versatile) | [console.groq.com/keys](https://console.groq.com/keys) |
+| HuggingFace | Text embeddings (BGE-small-en) | [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens) |
+| OpenRouter | Chat completions — OpenAI, Anthropic, Google, Meta, DeepSeek, etc. | [openrouter.ai/keys](https://openrouter.ai/keys) |
 | SMTP | Booking confirmation emails | Any SMTP provider (SendGrid, Mailgun, Gmail SMTP, etc.) |
 
 ## API Endpoints
@@ -227,6 +229,12 @@ npm run dev                     # runs on port 5173
 | GET | `/:chatbotId` | Get chatbot details |
 | PATCH | `/:chatbotId` | Update chatbot |
 | DELETE | `/:chatbotId` | Delete chatbot |
+
+### Models (`/api/models`)
+
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/` | List curated chat models grouped by tier (free / standard / premium), plus the default model id used as a fallback |
 
 ### Embed Config (`/api/chatbot`)
 
@@ -297,6 +305,6 @@ npm run dev                     # runs on port 5173
 - The same **Google OAuth Client ID** is used in both frontend and backend `.env` files.
 - `npx playwright install` downloads Chromium, required for the website crawling feature.
 - The backend uses **ESM** (`"type": "module"` in package.json).
-- **LLM provider** — set `USE_GROQ=true` (with `GROQ_API_KEY`) to use Groq for chat completions; otherwise the HuggingFace Inference API is used. Embeddings always use HuggingFace.
+- **LLM provider** — all chat completions (streaming responses + the booking-flow classifier) go through OpenRouter via `@openrouter/sdk`. The model used per request comes from `Chatbot.selectedModel`; the curated catalog lives in `backend/src/constants/models.ts` and is exposed via `GET /api/models`. Unknown / null ids fall back to `DEFAULT_MODEL_ID`. Embeddings always use HuggingFace.
 - **Action tokens** — the LLM emits sentinel tokens (e.g. `__ACTION:BOOKING__`) that the chat controller intercepts to drive structured flows like appointment booking. Tokens are buffered server-side so they never leak to the client.
 - **SMTP** is required only if you want booking confirmation emails sent on appointment creation.

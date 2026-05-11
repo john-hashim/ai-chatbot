@@ -9,7 +9,10 @@ import { useChatbotStore } from '@/store'
 import { showLoadingNotification } from '@/utils/notifications'
 import type { Chatbot } from '@/types/chatbot'
 
-export type PlaygroundFormValues = Pick<Chatbot, 'instructionType' | 'customInstruction'>
+export type PlaygroundFormValues = Pick<
+  Chatbot,
+  'instructionType' | 'customInstruction' | 'selectedModel'
+>
 
 export const Playground: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'settings' | 'preview'>('settings')
@@ -22,6 +25,7 @@ export const Playground: React.FC = () => {
     defaultValues: {
       instructionType: currentChatbot?.instructionType ?? 'base',
       customInstruction: currentChatbot?.customInstruction ?? '',
+      selectedModel: currentChatbot?.selectedModel ?? null,
     },
   })
 
@@ -36,6 +40,7 @@ export const Playground: React.FC = () => {
       reset({
         instructionType: currentChatbot.instructionType ?? 'base',
         customInstruction: currentChatbot.customInstruction ?? '',
+        selectedModel: currentChatbot.selectedModel ?? null,
       })
     }
   }, [currentChatbot, reset])
@@ -47,6 +52,7 @@ export const Playground: React.FC = () => {
       await updateChatbot({
         instructionType: data.instructionType,
         customInstruction: data.instructionType === 'manual' ? data.customInstruction : undefined,
+        selectedModel: data.selectedModel,
       })
       notification.success('Settings saved successfully')
     } catch (error) {

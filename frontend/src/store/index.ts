@@ -4,8 +4,9 @@ import { useShallow } from 'zustand/react/shallow'
 import { createUserSlice, type UserSlice } from './slices/userSlice'
 import { createChatbotSlice, type ChatbotSlice } from './slices/chatbotSlice'
 import { createBookingSlice, type BookingSlice } from './slices/bookingSlice'
+import { createModelsSlice, type ModelsSlice } from './slices/modelsSlice'
 
-type StoreState = UserSlice & ChatbotSlice & BookingSlice
+type StoreState = UserSlice & ChatbotSlice & BookingSlice & ModelsSlice
 
 export const useStore = create<StoreState>()(
   devtools(
@@ -14,6 +15,7 @@ export const useStore = create<StoreState>()(
         ...createUserSlice(...a),
         ...createChatbotSlice(...a),
         ...createBookingSlice(...a),
+        ...createModelsSlice(...a),
       }),
       {
         name: 'app-storage',
@@ -116,5 +118,18 @@ export const useChatbotStore = () =>
       setDocumentFilters: state.setDocumentFilters,
       resetDocumentFilters: state.resetDocumentFilters,
       clearChatbotState: state.clearChatbotState,
+    }))
+  )
+
+export const useModelsStore = () =>
+  useStore(
+    useShallow(state => ({
+      models: state.models,
+      defaultModelId: state.defaultModelId,
+      groupedModels: state.groupedModels,
+      isLoadingModels: state.isLoadingModels,
+      modelsError: state.modelsError,
+      fetchModels: state.fetchModels,
+      clearModels: state.clearModels,
     }))
   )

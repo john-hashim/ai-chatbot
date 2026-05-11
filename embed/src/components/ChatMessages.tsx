@@ -615,7 +615,8 @@ export function ChatMessages({
                                 className="cbw-msg-text cbw-animate-message-in"
                                 dangerouslySetInnerHTML={{
                                   __html: snarkdown(
-                                    chat.content || "dummy content",
+                                    chat.content ||
+                                      "I couldn't generate a response for that. Please try again.",
                                   ),
                                 }}
                               />

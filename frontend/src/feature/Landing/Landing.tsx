@@ -1,6 +1,6 @@
 import { ChatbotSkeleton } from '@/components/common/ChatbotSkeleton'
 import { Button, Menu, Text } from '@mantine/core'
-import { useBookingStore, useChatbotStore, useUserStore } from '@/store'
+import { useBookingStore, useChatbotStore, useModelsStore, useUserStore } from '@/store'
 import { format, getHours } from 'date-fns'
 import { Plus, TrendingUp, Ellipsis, Trash } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
@@ -29,6 +29,7 @@ export const Landing: React.FC = () => {
     isLoadingChatbot,
   } = useChatbotStore()
   const { clearAvailabilities, clearAppointments } = useBookingStore()
+  const { clearModels } = useModelsStore()
   const { user } = useUserStore()
   const navigate = useNavigate()
 
@@ -40,8 +41,9 @@ export const Landing: React.FC = () => {
     clearChatbotState()
     clearAvailabilities()
     clearAppointments()
+    clearModels()
     getChatbots()
-  }, [clearChatbotState, clearAvailabilities, clearAppointments, getChatbots])
+  }, [clearChatbotState, clearAvailabilities, clearAppointments, clearModels, getChatbots])
 
   const firstName = user?.name.split(' ')[0]
   const formattedFirstName = firstName

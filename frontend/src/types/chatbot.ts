@@ -82,4 +82,19 @@ export interface Chatbot extends ChatbotFormData {
   chatBubbleButtonPosition: 'left' | 'right'
   instructionType: string
   customInstruction?: string
+  selectedModel: string | null
+}
+
+export type ModelTier = 'free' | 'standard' | 'premium'
+
+export interface ChatModel {
+  id: string
+  label: string
+  tier: ModelTier
+  vendor: string
+}
+
+export interface ModelsResponse {
+  models: ChatModel[]
+  defaultModelId: string
 }

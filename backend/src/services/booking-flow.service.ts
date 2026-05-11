@@ -11,8 +11,8 @@
  *    action handler to run. No I/O — fully unit-testable.
  */
 
-import Groq from 'groq-sdk'
 import { buildBookingClassifierPrompt } from '../constants/instructions.js'
+import { chatCompletion } from './chat.service.js'
 
 // Mirrors the Prisma `BookingState` enum. Defined locally so this module is
 // self-contained (and unit-testable) and isn't blocked on `prisma generate`.
@@ -83,7 +83,7 @@ export function parseStructuredPayload(message: string): BookingDraft | null {
 
 // ---------------------------------------------------------------------------
 // 2. Unified LLM classifier. Replaces the previous keyword-based intent and
-//    cancel detectors and the slot-only extractor. One Groq call returns the
+//    cancel detectors and the slot-only extractor. One LLM call returns the
 //    user's booking intent and any slots they mentioned.
 //
 //    Tolerant to typos ("bok appointment"), paraphrases ("can you fix a
@@ -107,27 +107,25 @@ const VALID_INTENTS = new Set<BookingIntent>([
 export async function classifyMessage(
   message: string,
   state: BookingState,
-  draft: BookingDraft
+  draft: BookingDraft,
+  modelId?: string | null
 ): Promise<Classification> {
-  const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
-
   const today = new Date().toISOString().split('T')[0] ?? ''
   const systemPrompt = buildBookingClassifierPrompt({ state, draft, today })
 
   try {
-    const completion = await groq.chat.completions.create({
-      model: 'llama-3.3-70b-versatile',
+    const raw = await chatCompletion({
+      modelId,
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: message },
       ],
-      max_tokens: 200,
+      maxTokens: 200,
       temperature: 0,
-      response_format: { type: 'json_object' },
+      jsonMode: true,
     })
 
-    const raw = completion.choices[0]?.message?.content ?? '{}'
-    const parsed = JSON.parse(raw) as Record<string, unknown>
+    const parsed = JSON.parse(raw || '{}') as Record<string, unknown>
 
     let intent: BookingIntent = VALID_INTENTS.has(parsed.intent as BookingIntent)
       ? (parsed.intent as BookingIntent)

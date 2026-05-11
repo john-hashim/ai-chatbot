@@ -70,6 +70,7 @@ model Chatbot {
   chatBubbleButtonPosition String        @default("right")
   instructionType          String        @default("base")
   customInstruction        String?
+  selectedModel            String?
   defaultLanguage          String        @default("en") // ISO 639-1 code; user can override per session
   embedConfig              EmbedConfig?
   availabilitySchedules    AvailabilitySchedule[]

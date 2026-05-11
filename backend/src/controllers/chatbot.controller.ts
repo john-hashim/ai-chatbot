@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client'
 import { prisma } from '../prisma/client.js'
 import { ApiStatus, type ApiResponse } from '../types/api.js'
 import * as r2Service from '../services/r2.service.js'
+import { isValidModelId } from '../constants/models.js'
 import crypto from 'crypto'
 
 export const createChatbot = async (req: Request, res: Response, next: NextFunction) => {
@@ -100,6 +101,7 @@ export const updateChatbot = async (req: Request, res: Response, next: NextFunct
       'chatBubbleButtonPosition',
       'instructionType',
       'customInstruction',
+      'selectedModel',
     ] as const
 
     const updateData: Record<string, unknown> = {}
@@ -108,6 +110,15 @@ export const updateChatbot = async (req: Request, res: Response, next: NextFunct
       if (req.body[field] !== undefined) {
         if (field === 'name' && typeof req.body[field] === 'string') {
           updateData[field] = req.body[field].trim()
+        } else if (field === 'selectedModel') {
+          const value = req.body[field]
+          if (value !== null && !isValidModelId(value)) {
+            return res.status(400).json({
+              status: ApiStatus.FAILURE,
+              message: 'Invalid model id',
+            } satisfies ApiResponse)
+          }
+          updateData[field] = value
         } else {
           updateData[field] = req.body[field]
         }

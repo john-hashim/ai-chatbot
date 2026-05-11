@@ -5,6 +5,7 @@ import { ApiStatus, type ApiResponse } from '../types/api.js'
 import PDFDocument from 'pdfkit'
 import * as chatService from '../services/chat.service.js'
 import { getSystemInstruction } from '../constants/instructions.js'
+import { resolveModel } from '../constants/models.js'
 import { resolveCountry } from '../services/geolocation.service.js'
 import { resolveEndUser } from '../services/end-user.service.js'
 import type { NestedSort } from '../types/common.js'
@@ -134,6 +135,8 @@ export const chatController = async (req: Request, res: Response, next: NextFunc
       chatbot.customInstruction
     )
 
+    const activeModelId = resolveModel(chatbot.selectedModel).id
+
     // --- SSE headers ---
     res.setHeader('Content-Type', 'text/event-stream')
     res.setHeader('Cache-Control', 'no-cache')
@@ -190,7 +193,12 @@ export const chatController = async (req: Request, res: Response, next: NextFunc
         bookingState === BookingState.IDLE ? BookingState.AWAITING_DATE : bookingState
       ;({ nextState, action } = advance(fromState, mergedDraft))
     } else {
-      const { intent, slots } = await classifyMessage(message, bookingState, bookingDraft)
+      const { intent, slots } = await classifyMessage(
+        message,
+        bookingState,
+        bookingDraft,
+        activeModelId
+      )
 
       if (intent === 'cancel_booking' && bookingState !== BookingState.IDLE) {
         action = 'BOOKING_CANCEL'
@@ -236,7 +244,7 @@ export const chatController = async (req: Request, res: Response, next: NextFunc
             sessionId,
             role: 'assistant',
             content: result.message,
-            model: chatService.ACTIVE_MODEL,
+            model: activeModelId,
             responseTime: Date.now() - startTime,
             sources: [],
             confidenceScore: 0,
@@ -258,7 +266,7 @@ export const chatController = async (req: Request, res: Response, next: NextFunc
             sessionId,
             role: 'assistant',
             content: errorMessage,
-            model: chatService.ACTIVE_MODEL,
+            model: activeModelId,
             responseTime: Date.now() - startTime,
             sources: [],
             confidenceScore: 0,
@@ -325,17 +333,30 @@ export const chatController = async (req: Request, res: Response, next: NextFunc
       context,
       chatHistory,
       systemInstruction,
+      modelId: activeModelId,
       onToken: async (token: string) => {
         fullResponse += token
         sendSSE({ type: 'token', token })
       },
       onComplete: async () => {
+        // Reasoning models (e.g. GPT-5 nano) can spend their entire token
+        // budget on hidden reasoning and emit no visible content. Stream a
+        // fallback so the user never sees an empty bubble.
+        if (!fullResponse.trim()) {
+          const words = chatService.EMPTY_RESPONSE_FALLBACK.split(/(\s+)/)
+          for (const word of words) {
+            if (!word) continue
+            await new Promise(r => setTimeout(r, 20))
+            sendSSE({ type: 'token', token: word })
+          }
+          fullResponse = chatService.EMPTY_RESPONSE_FALLBACK
+        }
         const assistantMessage = await prisma.chatMessage.create({
           data: {
             sessionId,
             role: 'assistant',
             content: fullResponse,
-            model: chatService.ACTIVE_MODEL,
+            model: activeModelId,
             responseTime: Date.now() - startTime,
             sources: sourceDocIds,
             confidenceScore,
@@ -353,7 +374,7 @@ export const chatController = async (req: Request, res: Response, next: NextFunc
       },
       onError: async (error: Error) => {
         console.error('LLM streaming error:', error)
-        const errorMessage = 'Something went wrong, please try again later.'
+        const errorMessage = chatService.humanizeChatError(error)
         const words = errorMessage.split(/(\s+)/)
         for (const word of words) {
           if (!word) continue
@@ -365,7 +386,7 @@ export const chatController = async (req: Request, res: Response, next: NextFunc
             sessionId,
             role: 'assistant',
             content: errorMessage,
-            model: chatService.ACTIVE_MODEL,
+            model: activeModelId,
             responseTime: Date.now() - startTime,
             sources: [],
             confidenceScore: 0,

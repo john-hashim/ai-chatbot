@@ -61,7 +61,7 @@ export const ChatDetails: React.FC<ChatDetailsInterface> = ({ session, handleSes
               >
                 <div className="text-sm leading-6">
                   <ReactMarkdown remarkPlugins={REMARK_PLUGINS} rehypePlugins={REHYPE_PLUGINS}>
-                    {message.content || 'dummy content'}
+                    {message.content || "I couldn't generate a response for that. Please try again."}
                   </ReactMarkdown>
                 </div>
                 {message.role === 'assistant' && (

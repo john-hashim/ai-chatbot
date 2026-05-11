@@ -445,7 +445,8 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                                   remarkPlugins={REMARK_PLUGINS}
                                   rehypePlugins={REHYPE_PLUGINS}
                                 >
-                                  {chat.content || 'dummy content'}
+                                  {chat.content ||
+                                    "I couldn't generate a response for that. Please try again."}
                                 </ReactMarkdown>
                               </div>
                             )

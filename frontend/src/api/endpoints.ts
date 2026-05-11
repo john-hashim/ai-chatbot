@@ -60,6 +60,9 @@ export const ENDPOINTS = {
     GET_APPOINTMENTS: 'chatbot/:chatbotId/appointments',
     CANCEL_APPOINTMENT: 'chatbot/:chatbotId/appointments/:appointmentId/cancel',
   },
+  MODELS: {
+    GET_ALL: 'models',
+  },
   CALENDAR: {
     GET_STATUS: 'chatbot/:chatbotId/calendar',
     AUTHORIZE_GOOGLE: 'chatbot/:chatbotId/calendar/google/authorize',
