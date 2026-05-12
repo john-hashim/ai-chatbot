@@ -87,6 +87,7 @@ export interface Appointment {
   phone: string | null
   date: string
   timeslot: string
+  duration: number | null
   status: 'PENDING' | 'CONFIRMED' | 'UPCOMING' | 'PAST' | 'CANCELLED'
   timezone: string | null
   locationType: LocationType | null

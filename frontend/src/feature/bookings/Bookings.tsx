@@ -34,7 +34,7 @@ export const Bookings: React.FC = () => {
 
   return (
     <div className="flex h-full">
-      <div className="flex-1 border-r border-r-border-week w-full h-full flex flex-col">
+      <div className="flex-1 min-w-0 border-r border-r-border-week w-full h-full flex flex-col">
         <div className="flex items-center">
           <p className="pt-8 pb-2 px-6 font-semibold text-2xl">Appointments</p>
           <Tooltip

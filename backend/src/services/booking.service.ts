@@ -144,6 +144,7 @@ export async function confirmBooking(input: ConfirmBookingInput): Promise<Confir
         timeslot,
         status: 'UPCOMING',
         timezone: bookingConfig?.timezone ?? null,
+        duration: bookingConfig?.appointmentDuration ?? 30,
         locationType: bookingConfig?.locationType ?? null,
         locationAddress: bookingConfig?.locationAddress ?? null,
         locationPhone: bookingConfig?.locationPhone ?? null,

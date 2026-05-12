@@ -1,8 +1,16 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { Avatar, Button, Loader, Text } from '@mantine/core'
+import {
+  Avatar,
+  Button,
+  Center,
+  Loader,
+  SegmentedControl,
+  Table,
+  Text,
+} from '@mantine/core'
 import { modals } from '@mantine/modals'
-import { Calendar, MapPin, Phone, Video } from 'lucide-react'
+import { Calendar, List, MapPin, Phone, Table as TableIcon, Video } from 'lucide-react'
 import { useBookingStore } from '@/store'
 import { showLoadingNotification } from '@/utils/notifications'
 import type { Appointment, LocationType } from '@/types/bookings'
@@ -14,88 +22,24 @@ dayjs.extend(utc)
 dayjs.extend(timezone)
 
 type AppointmentTab = 'upcoming' | 'past'
+type AppointmentView = 'list' | 'table'
 
 const TABS: { key: AppointmentTab; label: string }[] = [
   { key: 'upcoming', label: 'Upcoming' },
   { key: 'past', label: 'Past' },
 ]
 
-export const Appointments: React.FC = () => {
-  const { chatbotId } = useParams<{ chatbotId: string }>()
-  const {
-    upcomingAppointments,
-    pastAppointments,
-    fetchingAppointments,
-    appointmentsError,
-    fetchAppointments,
-  } = useBookingStore()
-  const [activeTab, setActiveTab] = useState<AppointmentTab>('upcoming')
-
-  useEffect(() => {
-    if (chatbotId) {
-      fetchAppointments(chatbotId, activeTab === 'upcoming' ? 'UPCOMING' : 'PAST')
-    }
-  }, [chatbotId, activeTab, fetchAppointments])
-
-  const items = activeTab === 'upcoming' ? upcomingAppointments : pastAppointments
-
-  return (
-    <div className="lg:m-5 m-2 min-h-[calc(100%-40px)] border border-border-week bg-white rounded-xl">
-      <div className="flex border-b border-border-week px-4">
-        {TABS.map(tab => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className="px-4 py-3 font-medium"
-          >
-            <span
-              className={`pb-2 border-b-2 text-sm cursor-pointer transition-colors duration-350 ${
-                activeTab === tab.key
-                  ? 'border-primary text-primary'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              {tab.label}
-            </span>
-          </button>
-        ))}
-      </div>
-
-      <div className="p-4">
-        {fetchingAppointments ? (
-          <div className="flex items-center justify-center py-16">
-            <Loader size="sm" />
-          </div>
-        ) : appointmentsError ? (
-          <div className="flex flex-col items-center justify-center py-16 text-sm text-red-500">
-            {appointmentsError}
-          </div>
-        ) : items.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-sm text-gray-400">
-            <Calendar size={32} className="mb-2 opacity-50" />
-            {activeTab === 'upcoming' ? 'No upcoming appointments' : 'No past appointments'}
-          </div>
-        ) : (
-          <ul className="flex flex-col gap-3">
-            {items.map(appt => (
-              <AppointmentRow
-                key={appt.id}
-                appointment={appt}
-                showCancel={activeTab === 'upcoming'}
-              />
-            ))}
-          </ul>
-        )}
-      </div>
-    </div>
-  )
-}
-
 const LOCATION_LABELS: Record<LocationType, string> = {
   GOOGLE_MEET: 'Google Meet',
   ZOOM: 'Zoom',
   IN_PERSON: 'In person',
   PHONE: 'Phone call',
+}
+
+const formatTimeRange = (date: string, timeslot: string, duration: number | null): string => {
+  const start = dayjs(`${date}T${timeslot}`)
+  const end = start.add(duration ?? 30, 'minute')
+  return `${start.format('h:mm A')} - ${end.format('h:mm A')}`
 }
 
 const deriveName = (email: string): string => {
@@ -116,6 +60,220 @@ const getInitials = (name: string): string =>
     .slice(0, 2)
     .map(part => part.charAt(0).toUpperCase())
     .join('')
+
+export const Appointments: React.FC = () => {
+  const { chatbotId } = useParams<{ chatbotId: string }>()
+  const {
+    upcomingAppointments,
+    pastAppointments,
+    fetchingAppointments,
+    appointmentsError,
+    fetchAppointments,
+  } = useBookingStore()
+  const [activeTab, setActiveTab] = useState<AppointmentTab>('upcoming')
+  const [view, setView] = useState<AppointmentView>('list')
+
+  useEffect(() => {
+    if (chatbotId) {
+      fetchAppointments(chatbotId, activeTab === 'upcoming' ? 'UPCOMING' : 'PAST')
+    }
+  }, [chatbotId, activeTab, fetchAppointments])
+
+  const items = activeTab === 'upcoming' ? upcomingAppointments : pastAppointments
+  const showCancel = activeTab === 'upcoming'
+
+  return (
+    <div className="lg:m-5 m-2 min-h-[calc(100%-40px)] border border-border-week bg-white rounded-xl">
+      <div className="flex justify-between items-center border-b border-border-week px-4">
+        <div className="flex">
+          {TABS.map(tab => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className="px-4 py-3 font-medium"
+            >
+              <span
+                className={`pb-2 border-b-2 text-sm cursor-pointer transition-colors duration-350 ${
+                  activeTab === tab.key
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                {tab.label}
+              </span>
+            </button>
+          ))}
+        </div>
+        <SegmentedControl
+          size="xs"
+          value={view}
+          onChange={v => setView(v as AppointmentView)}
+          data={[
+            {
+              value: 'list',
+              label: (
+                <Center style={{ gap: 10 }}>
+                  <List size={16} />
+                </Center>
+              ),
+            },
+            {
+              value: 'table',
+              label: (
+                <Center style={{ gap: 10 }}>
+                  <TableIcon size={16} />
+                </Center>
+              ),
+            },
+          ]}
+        />
+      </div>
+
+      <div className="p-4">
+        {fetchingAppointments ? (
+          <div className="flex items-center justify-center py-16">
+            <Loader size="sm" />
+          </div>
+        ) : appointmentsError ? (
+          <div className="flex flex-col items-center justify-center py-16 text-sm text-red-500">
+            {appointmentsError}
+          </div>
+        ) : items.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 text-sm text-gray-400">
+            <Calendar size={32} className="mb-2 opacity-50" />
+            {activeTab === 'upcoming' ? 'No upcoming appointments' : 'No past appointments'}
+          </div>
+        ) : view === 'list' ? (
+          <ul className="flex flex-col gap-3">
+            {items.map(appt => (
+              <AppointmentRow key={appt.id} appointment={appt} showCancel={showCancel} />
+            ))}
+          </ul>
+        ) : (
+          <AppointmentsTable items={items} showCancel={showCancel} />
+        )}
+      </div>
+    </div>
+  )
+}
+
+const AppointmentsTable: React.FC<{ items: Appointment[]; showCancel: boolean }> = ({
+  items,
+  showCancel,
+}) => (
+  <Table.ScrollContainer minWidth={900} type="native">
+    <Table
+      verticalSpacing="md"
+      horizontalSpacing="md"
+      withTableBorder
+      withColumnBorders
+      highlightOnHover
+    >
+      <Table.Thead>
+        <Table.Tr>
+          <Table.Th>Name</Table.Th>
+          <Table.Th>Email</Table.Th>
+          <Table.Th>Date</Table.Th>
+          <Table.Th>Time</Table.Th>
+          <Table.Th>Meeting Type</Table.Th>
+          <Table.Th>Location</Table.Th>
+          {showCancel && <Table.Th>Action</Table.Th>}
+        </Table.Tr>
+      </Table.Thead>
+      <Table.Tbody>
+        {items.map(appt => (
+          <AppointmentTableRow key={appt.id} appointment={appt} showCancel={showCancel} />
+        ))}
+      </Table.Tbody>
+    </Table>
+  </Table.ScrollContainer>
+)
+
+const AppointmentTableRow: React.FC<{ appointment: Appointment; showCancel: boolean }> = ({
+  appointment,
+  showCancel,
+}) => {
+  const { chatbotId } = useParams<{ chatbotId: string }>()
+  const { cancelAppointment, cancellingAppointmentId } = useBookingStore()
+  const name = appointment.name ?? deriveName(appointment.email)
+  const isCancelling = cancellingAppointmentId === appointment.id
+  const { locationType, locationAddress, locationPhone, meetLink } = appointment
+  const meetingType = locationType ? LOCATION_LABELS[locationType] : '—'
+
+  const locationDisplay =
+    locationType === 'GOOGLE_MEET' && meetLink ? (
+      <a
+        href={meetLink}
+        target="_blank"
+        rel="noreferrer"
+        className="text-primary hover:underline"
+      >
+        {meetLink}
+      </a>
+    ) : locationType === 'PHONE' && locationPhone ? (
+      locationPhone
+    ) : locationType === 'IN_PERSON' && locationAddress ? (
+      locationAddress
+    ) : (
+      '—'
+    )
+
+  const handleCancel = () => {
+    if (!chatbotId) return
+    modals.openConfirmModal({
+      title: 'Cancel appointment',
+      centered: true,
+      children: (
+        <Text size="sm">
+          {`Cancel the appointment with ${name} on ${dayjs(appointment.date).format('MMM D, YYYY')} at ${dayjs(
+            `${appointment.date}T${appointment.timeslot}`
+          ).format('h:mm A')}? This will remove it from Google Calendar and notify the invitee.`}
+        </Text>
+      ),
+      labels: { confirm: 'Cancel appointment', cancel: 'Keep' },
+      confirmProps: { color: 'red', variant: 'filled' },
+      onConfirm: async () => {
+        const notification = showLoadingNotification('Cancelling', 'Please wait...')
+        try {
+          await cancelAppointment(chatbotId, appointment.id)
+          notification.success('Appointment cancelled')
+        } catch (e) {
+          notification.error(`Failed to cancel: ${e instanceof Error ? e.message : e}`)
+        }
+      },
+    })
+  }
+
+  return (
+    <Table.Tr>
+      <Table.Td className="text-sm font-medium whitespace-nowrap">{name}</Table.Td>
+      <Table.Td className="text-sm text-gray-600 whitespace-nowrap">{appointment.email}</Table.Td>
+      <Table.Td className="text-sm whitespace-nowrap">
+        {dayjs(appointment.date).format('MMM D, YYYY')}
+      </Table.Td>
+      <Table.Td className="text-sm whitespace-nowrap">
+        {formatTimeRange(appointment.date, appointment.timeslot, appointment.duration)}
+      </Table.Td>
+      <Table.Td className="text-sm whitespace-nowrap">{meetingType}</Table.Td>
+      <Table.Td className="text-sm text-gray-600 max-w-[280px] truncate">
+        {locationDisplay}
+      </Table.Td>
+      {showCancel && (
+        <Table.Td>
+          <Button
+            variant="outline"
+            color="red"
+            size="xs"
+            onClick={handleCancel}
+            loading={isCancelling}
+          >
+            Cancel
+          </Button>
+        </Table.Td>
+      )}
+    </Table.Tr>
+  )
+}
 
 const AppointmentRow: React.FC<{ appointment: Appointment; showCancel: boolean }> = ({
   appointment,

@@ -274,6 +274,7 @@ model Appointment {
     interestedTopics String?
     date       String            // "YYYY-MM-DD"
     timeslot   String            // "HH:mm"
+    duration   Int?              // minutes, snapshot from BookingConfig at confirmation
     status     AppointmentStatus @default(UPCOMING)
     // Snapshot of booking config at confirmation time so display/cancel logic
     // stays stable if the chatbot owner edits config later.
