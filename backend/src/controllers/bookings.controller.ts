@@ -498,20 +498,67 @@ export const getTimeSlotsForDate = async (req: Request, res: Response, next: Nex
   }
 }
 
+const PRESET_DATE_FILTERS = [
+  'today',
+  'tomorrow',
+  'yesterday',
+  'next7',
+  'next30',
+  'last7',
+  'last30',
+  'all-upcoming',
+  'all-past',
+] as const
+type PresetDateFilter = (typeof PRESET_DATE_FILTERS)[number]
+
+function resolveDateFilter(
+  filter: string,
+  tz: string
+):
+  | { date: string }
+  | { date: { gte: string; lte: string } }
+  | { date: { gte: string } }
+  | { date: { lt: string } }
+  | null {
+  const todayLocal = dayjs().tz(tz)
+  const today = todayLocal.format('YYYY-MM-DD')
+
+  if ((PRESET_DATE_FILTERS as readonly string[]).includes(filter)) {
+    const preset = filter as PresetDateFilter
+    switch (preset) {
+      case 'today':
+        return { date: today }
+      case 'tomorrow':
+        return { date: todayLocal.add(1, 'day').format('YYYY-MM-DD') }
+      case 'yesterday':
+        return { date: todayLocal.subtract(1, 'day').format('YYYY-MM-DD') }
+      case 'next7':
+        return { date: { gte: today, lte: todayLocal.add(7, 'day').format('YYYY-MM-DD') } }
+      case 'next30':
+        return { date: { gte: today, lte: todayLocal.add(30, 'day').format('YYYY-MM-DD') } }
+      case 'last7':
+        return { date: { gte: todayLocal.subtract(7, 'day').format('YYYY-MM-DD'), lte: today } }
+      case 'last30':
+        return { date: { gte: todayLocal.subtract(30, 'day').format('YYYY-MM-DD'), lte: today } }
+      case 'all-upcoming':
+        return { date: { gte: today } }
+      case 'all-past':
+        return { date: { lt: today } }
+    }
+  }
+
+  const parsed = dayjs(filter, 'YYYY-MM-DD', true)
+  if (!parsed.isValid()) return null
+  return { date: filter }
+}
+
 export const getAppointments = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { chatbotId } = req.params
-    const statusParam =
-      typeof req.query.status === 'string' ? req.query.status.toUpperCase() : 'UPCOMING'
-    const allowedStatuses = ['UPCOMING', 'PAST', 'CANCELLED'] as const
-    type AllowedStatus = (typeof allowedStatuses)[number]
-    if (!allowedStatuses.includes(statusParam as AllowedStatus)) {
-      return res.status(400).json({
-        status: ApiStatus.FAILURE,
-        message: `status must be one of: ${allowedStatuses.join(', ')}`,
-      } satisfies ApiResponse)
-    }
-    const requestedStatus = statusParam as AllowedStatus
+    const dateFilterParam =
+      typeof req.query.dateFilter === 'string' && req.query.dateFilter.length > 0
+        ? req.query.dateFilter
+        : null
 
     if (!chatbotId) {
       return res.status(400).json({
@@ -548,12 +595,21 @@ export const getAppointments = async (req: Request, res: Response, next: NextFun
       })
     }
 
+    let dateWhere: Prisma.AppointmentWhereInput = {}
+    if (dateFilterParam) {
+      const resolved = resolveDateFilter(dateFilterParam, fallbackTz)
+      if (!resolved) {
+        return res.status(400).json({
+          status: ApiStatus.FAILURE,
+          message: `dateFilter must be one of: ${PRESET_DATE_FILTERS.join(', ')}, or a date in YYYY-MM-DD format`,
+        } satisfies ApiResponse)
+      }
+      dateWhere = resolved
+    }
+
     const appointments = await prisma.appointment.findMany({
-      where: { chatbotId, status: requestedStatus },
-      orderBy:
-        requestedStatus === 'PAST'
-          ? [{ date: 'desc' }, { timeslot: 'desc' }]
-          : [{ date: 'asc' }, { timeslot: 'asc' }],
+      where: { chatbotId, ...dateWhere },
+      orderBy: [{ date: 'asc' }, { timeslot: 'asc' }],
     })
 
     return res.status(200).json({

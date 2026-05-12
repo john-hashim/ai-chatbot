@@ -264,9 +264,8 @@ export const BookingSettings: React.FC = () => {
   const selectedDuration = DURATION_OPTIONS.find(opt => opt.value === localDuration)
 
   return (
-    <div className="h-screen bg-white border border-border-week rounded-xl overflow-y-auto">
+    <div className="h-full bg-white border border-border-week rounded-xl overflow-y-auto">
       <div className="flex flex-col gap-5 p-6 text-sm text-text-primary">
-        <p className="font-bold text-lg text-text-primary">Settings</p>
           {fetchingAvailabilities ? (
             <>
               {[150, 320, 320].map((w, i) => (

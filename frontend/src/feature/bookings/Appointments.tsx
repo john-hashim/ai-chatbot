@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import {
   Avatar,
@@ -6,14 +6,17 @@ import {
   Center,
   Loader,
   SegmentedControl,
+  Select,
   Table,
   Text,
+  Tooltip,
 } from '@mantine/core'
+import { DateInput } from '@mantine/dates'
 import { modals } from '@mantine/modals'
 import { Calendar, List, MapPin, Phone, Table as TableIcon, Video } from 'lucide-react'
 import { useBookingStore } from '@/store'
 import { showLoadingNotification } from '@/utils/notifications'
-import type { Appointment, LocationType } from '@/types/bookings'
+import type { Appointment, AppointmentDatePreset, LocationType } from '@/types/bookings'
 import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc'
 import timezone from 'dayjs/plugin/timezone'
@@ -21,12 +24,20 @@ import timezone from 'dayjs/plugin/timezone'
 dayjs.extend(utc)
 dayjs.extend(timezone)
 
-type AppointmentTab = 'upcoming' | 'past'
 type AppointmentView = 'list' | 'table'
+type DateFilterOption = AppointmentDatePreset | 'custom'
 
-const TABS: { key: AppointmentTab; label: string }[] = [
-  { key: 'upcoming', label: 'Upcoming' },
-  { key: 'past', label: 'Past' },
+const DATE_FILTER_OPTIONS: { value: DateFilterOption; label: string }[] = [
+  { value: 'all-upcoming', label: 'All upcoming' },
+  { value: 'all-past', label: 'All past' },
+  { value: 'today', label: 'Today' },
+  { value: 'tomorrow', label: 'Tomorrow' },
+  { value: 'yesterday', label: 'Yesterday' },
+  { value: 'next7', label: 'Next 7 days' },
+  { value: 'next30', label: 'Next 30 days' },
+  { value: 'last7', label: 'Last 7 days' },
+  { value: 'last30', label: 'Last 30 days' },
+  { value: 'custom', label: 'Custom date' },
 ]
 
 const LOCATION_LABELS: Record<LocationType, string> = {
@@ -63,70 +74,123 @@ const getInitials = (name: string): string =>
 
 export const Appointments: React.FC = () => {
   const { chatbotId } = useParams<{ chatbotId: string }>()
-  const {
-    upcomingAppointments,
-    pastAppointments,
-    fetchingAppointments,
-    appointmentsError,
-    fetchAppointments,
-  } = useBookingStore()
-  const [activeTab, setActiveTab] = useState<AppointmentTab>('upcoming')
+  const { appointments, fetchingAppointments, appointmentsError, fetchAppointments } =
+    useBookingStore()
+  const [filterOption, setFilterOption] = useState<DateFilterOption>('next7')
+  const [customDate, setCustomDate] = useState<Date | null>(null)
   const [view, setView] = useState<AppointmentView>('list')
 
-  useEffect(() => {
-    if (chatbotId) {
-      fetchAppointments(chatbotId, activeTab === 'upcoming' ? 'UPCOMING' : 'PAST')
+  const dateFilterParam = useMemo<string | null>(() => {
+    if (filterOption === 'custom') {
+      return customDate ? dayjs(customDate).format('YYYY-MM-DD') : null
     }
-  }, [chatbotId, activeTab, fetchAppointments])
+    return filterOption
+  }, [filterOption, customDate])
 
-  const items = activeTab === 'upcoming' ? upcomingAppointments : pastAppointments
-  const showCancel = activeTab === 'upcoming'
+  const filterDescription = useMemo<string | null>(() => {
+    switch (filterOption) {
+      case 'all-upcoming':
+        return 'all upcoming'
+      case 'all-past':
+        return 'all past'
+      case 'today':
+        return 'today'
+      case 'tomorrow':
+        return 'tomorrow'
+      case 'yesterday':
+        return 'yesterday'
+      case 'next7':
+        return 'in next 7 days'
+      case 'next30':
+        return 'in next 30 days'
+      case 'last7':
+        return 'in last 7 days'
+      case 'last30':
+        return 'in last 30 days'
+      case 'custom':
+        return customDate ? `on ${dayjs(customDate).format('MMM D, YYYY')}` : null
+    }
+  }, [filterOption, customDate])
+
+  const emptyStateText = useMemo<string>(() => {
+    switch (filterOption) {
+      case 'all-upcoming':
+        return 'No upcoming appointments'
+      case 'all-past':
+        return 'No past appointments'
+      default:
+        return filterDescription ? `No appointments ${filterDescription}` : 'No appointments'
+    }
+  }, [filterOption, filterDescription])
+
+  useEffect(() => {
+    if (!chatbotId) return
+    if (filterOption === 'custom' && !customDate) return
+    fetchAppointments(chatbotId, dateFilterParam)
+  }, [chatbotId, filterOption, dateFilterParam, customDate, fetchAppointments])
 
   return (
     <div className="lg:m-5 m-2 min-h-[calc(100%-40px)] border border-border-week bg-white rounded-xl">
-      <div className="flex justify-between items-center border-b border-border-week px-4">
-        <div className="flex">
-          {TABS.map(tab => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className="px-4 py-3 font-medium"
-            >
-              <span
-                className={`pb-2 border-b-2 text-sm cursor-pointer transition-colors duration-350 ${
-                  activeTab === tab.key
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                {tab.label}
-              </span>
-            </button>
-          ))}
+      <div className="flex flex-wrap gap-3 justify-between items-center border-b border-border-week px-4 py-3">
+        <div className="flex flex-col">
+          <h2 className="text-base font-semibold text-gray-900">Appointments</h2>
+          <p className="text-xs text-gray-500">
+            Meetings booked by users with your chatbot
+            {filterDescription ? ` (${filterDescription})` : ''}
+          </p>
         </div>
-        <SegmentedControl
-          size="xs"
-          value={view}
-          onChange={v => setView(v as AppointmentView)}
-          data={[
-            {
-              value: 'list',
-              label: (
-                <Center style={{ gap: 10 }}>
-                  <List size={16} />
-                </Center>
-              ),
-            },
-            {
-              value: 'table',
-              label: (
-                <Center style={{ gap: 10 }}>
-                  <TableIcon size={16} />
-                </Center>
-              ),
-            },
-          ]}
-        />
+        <div className="flex items-center gap-2 ml-auto">
+          <SegmentedControl
+            size="xs"
+            value={view}
+            onChange={v => setView(v as AppointmentView)}
+            data={[
+              {
+                value: 'list',
+                label: (
+                  <Tooltip label="List view" position="top" withArrow>
+                    <Center style={{ gap: 10 }}>
+                      <List size={16} />
+                    </Center>
+                  </Tooltip>
+                ),
+              },
+              {
+                value: 'table',
+                label: (
+                  <Tooltip label="Table view" position="top" withArrow>
+                    <Center style={{ gap: 10 }}>
+                      <TableIcon size={16} />
+                    </Center>
+                  </Tooltip>
+                ),
+              },
+            ]}
+          />
+          {filterOption === 'custom' && (
+            <DateInput
+              size="xs"
+              value={customDate}
+              onChange={value => setCustomDate(value ? new Date(value) : null)}
+              placeholder="Pick a date"
+              valueFormat="MMM D, YYYY"
+              clearable
+              w={170}
+            />
+          )}
+          <Select
+            size="xs"
+            value={filterOption}
+            onChange={v => {
+              if (!v) return
+              setFilterOption(v as DateFilterOption)
+              if (v !== 'custom') setCustomDate(null)
+            }}
+            data={DATE_FILTER_OPTIONS}
+            allowDeselect={false}
+            w={160}
+          />
+        </div>
       </div>
 
       <div className="p-4">
@@ -138,61 +202,71 @@ export const Appointments: React.FC = () => {
           <div className="flex flex-col items-center justify-center py-16 text-sm text-red-500">
             {appointmentsError}
           </div>
-        ) : items.length === 0 ? (
+        ) : filterOption === 'custom' && !customDate ? (
           <div className="flex flex-col items-center justify-center py-16 text-sm text-gray-400">
             <Calendar size={32} className="mb-2 opacity-50" />
-            {activeTab === 'upcoming' ? 'No upcoming appointments' : 'No past appointments'}
+            Pick a date to view appointments
+          </div>
+        ) : appointments.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 text-sm text-gray-400">
+            <Calendar size={32} className="mb-2 opacity-50" />
+            {emptyStateText}
           </div>
         ) : view === 'list' ? (
           <ul className="flex flex-col gap-3">
-            {items.map(appt => (
-              <AppointmentRow key={appt.id} appointment={appt} showCancel={showCancel} />
+            {appointments.map(appt => (
+              <AppointmentRow key={appt.id} appointment={appt} />
             ))}
           </ul>
         ) : (
-          <AppointmentsTable items={items} showCancel={showCancel} />
+          <AppointmentsTable items={appointments} />
         )}
       </div>
     </div>
   )
 }
 
-const AppointmentsTable: React.FC<{ items: Appointment[]; showCancel: boolean }> = ({
-  items,
-  showCancel,
-}) => (
-  <Table.ScrollContainer minWidth={900} type="native">
-    <Table
-      verticalSpacing="md"
-      horizontalSpacing="md"
-      withTableBorder
-      withColumnBorders
-      highlightOnHover
-    >
-      <Table.Thead>
-        <Table.Tr>
-          <Table.Th>Name</Table.Th>
-          <Table.Th>Email</Table.Th>
-          <Table.Th>Date</Table.Th>
-          <Table.Th>Time</Table.Th>
-          <Table.Th>Meeting Type</Table.Th>
-          <Table.Th>Location</Table.Th>
-          {showCancel && <Table.Th>Action</Table.Th>}
-        </Table.Tr>
-      </Table.Thead>
-      <Table.Tbody>
-        {items.map(appt => (
-          <AppointmentTableRow key={appt.id} appointment={appt} showCancel={showCancel} />
-        ))}
-      </Table.Tbody>
-    </Table>
-  </Table.ScrollContainer>
-)
+const AppointmentsTable: React.FC<{ items: Appointment[] }> = ({ items }) => {
+  const hasAnyCancellable = items.some(a => a.status === 'UPCOMING')
+  return (
+    <Table.ScrollContainer minWidth={900} type="native">
+      <Table
+        verticalSpacing="md"
+        horizontalSpacing="md"
+        withTableBorder
+        withColumnBorders
+        highlightOnHover
+      >
+        <Table.Thead>
+          <Table.Tr>
+            <Table.Th>Name</Table.Th>
+            <Table.Th>Email</Table.Th>
+            <Table.Th>Date</Table.Th>
+            <Table.Th>Time</Table.Th>
+            <Table.Th>Meeting Type</Table.Th>
+            <Table.Th>Location</Table.Th>
+            {hasAnyCancellable && <Table.Th>Action</Table.Th>}
+          </Table.Tr>
+        </Table.Thead>
+        <Table.Tbody>
+          {items.map(appt => (
+            <AppointmentTableRow
+              key={appt.id}
+              appointment={appt}
+              showActionCol={hasAnyCancellable}
+            />
+          ))}
+        </Table.Tbody>
+      </Table>
+    </Table.ScrollContainer>
+  )
+}
 
-const AppointmentTableRow: React.FC<{ appointment: Appointment; showCancel: boolean }> = ({
+const AppointmentTableRow: React.FC<{ appointment: Appointment; showActionCol: boolean }> = ({
   appointment,
-  showCancel,
+  showActionCol,
 }) => {
+  const showCancel = appointment.status === 'UPCOMING'
   const { chatbotId } = useParams<{ chatbotId: string }>()
   const { cancelAppointment, cancellingAppointmentId } = useBookingStore()
   const name = appointment.name ?? deriveName(appointment.email)
@@ -258,27 +332,27 @@ const AppointmentTableRow: React.FC<{ appointment: Appointment; showCancel: bool
       <Table.Td className="text-sm text-gray-600 max-w-[280px] truncate">
         {locationDisplay}
       </Table.Td>
-      {showCancel && (
+      {showActionCol && (
         <Table.Td>
-          <Button
-            variant="outline"
-            color="red"
-            size="xs"
-            onClick={handleCancel}
-            loading={isCancelling}
-          >
-            Cancel
-          </Button>
+          {showCancel ? (
+            <Button
+              variant="outline"
+              color="red"
+              size="xs"
+              onClick={handleCancel}
+              loading={isCancelling}
+            >
+              Cancel
+            </Button>
+          ) : null}
         </Table.Td>
       )}
     </Table.Tr>
   )
 }
 
-const AppointmentRow: React.FC<{ appointment: Appointment; showCancel: boolean }> = ({
-  appointment,
-  showCancel,
-}) => {
+const AppointmentRow: React.FC<{ appointment: Appointment }> = ({ appointment }) => {
+  const showCancel = appointment.status === 'UPCOMING'
   const { chatbotId } = useParams<{ chatbotId: string }>()
   const { cancelAppointment, cancellingAppointmentId } = useBookingStore()
   const name = appointment.name ?? deriveName(appointment.email)

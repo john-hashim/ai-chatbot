@@ -72,10 +72,10 @@ export const bookingsService = {
 
   getAppointments: (
     chatbotId: string,
-    status: 'UPCOMING' | 'PAST' = 'UPCOMING'
+    dateFilter?: string | null
   ): Promise<AxiosResponse<ApiResponse<Appointment[]>>> => {
     return apiClient.get(ENDPOINTS.BOOKINGS.GET_APPOINTMENTS.replace(':chatbotId', chatbotId), {
-      params: { status },
+      params: dateFilter ? { dateFilter } : undefined,
     })
   },
 

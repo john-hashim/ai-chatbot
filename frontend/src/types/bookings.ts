@@ -78,6 +78,20 @@ export interface GetTimeSlotsResponse {
   message: ChatMessage
 }
 
+export type AppointmentDatePreset =
+  | 'today'
+  | 'tomorrow'
+  | 'yesterday'
+  | 'next7'
+  | 'next30'
+  | 'last7'
+  | 'last30'
+  | 'all-upcoming'
+  | 'all-past'
+
+// Either a preset key or a YYYY-MM-DD date.
+export type AppointmentDateFilter = AppointmentDatePreset | string
+
 export interface Appointment {
   id: string
   chatbotId: string

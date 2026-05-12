@@ -2,6 +2,7 @@ import { bookingsService } from '@/api/services/bookings'
 import { calendarService } from '@/api/services/calendar'
 import type {
   Appointment,
+  AppointmentDateFilter,
   AvailabilitySchedule,
   CalendarIntegration,
   CreateAvailabilityRequest,
@@ -21,8 +22,7 @@ export interface BookingSlice {
   locationAddress: string | null
   locationPhone: string | null
   availabilities: AvailabilitySchedule[]
-  upcomingAppointments: Appointment[]
-  pastAppointments: Appointment[]
+  appointments: Appointment[]
   appointmentsError: string | null
   calendarIntegration: CalendarIntegration | null
 
@@ -52,7 +52,7 @@ export interface BookingSlice {
     data: UpdateTimeSlotsRequest
   ) => Promise<void>
   deleteAvailability: (chatbotId: string, slotId: string) => Promise<void>
-  fetchAppointments: (chatbotId: string, status?: 'UPCOMING' | 'PAST') => Promise<void>
+  fetchAppointments: (chatbotId: string, dateFilter?: AppointmentDateFilter | null) => Promise<void>
   cancelAppointment: (chatbotId: string, appointmentId: string) => Promise<void>
   clearAppointments: () => void
   connectGoogleCalendar: (chatbotId: string) => Promise<void>
@@ -71,8 +71,7 @@ export const createBookingSlice: StateCreator<BookingSlice, [['zustand/devtools'
   locationAddress: null,
   locationPhone: null,
   availabilities: [],
-  upcomingAppointments: [],
-  pastAppointments: [],
+  appointments: [],
   appointmentsError: null,
   calendarIntegration: null,
   fetchingAvailabilities: false,
@@ -104,7 +103,7 @@ export const createBookingSlice: StateCreator<BookingSlice, [['zustand/devtools'
 
   clearAppointments: () => {
     set(
-      { upcomingAppointments: [], pastAppointments: [], appointmentsError: null },
+      { appointments: [], appointmentsError: null },
       undefined,
       '[Booking] Clear Appointments'
     )
@@ -116,7 +115,7 @@ export const createBookingSlice: StateCreator<BookingSlice, [['zustand/devtools'
       await bookingsService.cancelAppointment(chatbotId, appointmentId)
       set(
         state => ({
-          upcomingAppointments: state.upcomingAppointments.filter(a => a.id !== appointmentId),
+          appointments: state.appointments.filter(a => a.id !== appointmentId),
         }),
         undefined,
         '[Booking] Appointment Cancelled'
@@ -126,20 +125,19 @@ export const createBookingSlice: StateCreator<BookingSlice, [['zustand/devtools'
     }
   },
 
-  fetchAppointments: async (chatbotId: string, status: 'UPCOMING' | 'PAST' = 'UPCOMING') => {
+  fetchAppointments: async (
+    chatbotId: string,
+    dateFilter: AppointmentDateFilter | null = null
+  ) => {
     set(
       { fetchingAppointments: true, appointmentsError: null },
       undefined,
       '[Booking] Fetching Appointments'
     )
     try {
-      const res = await bookingsService.getAppointments(chatbotId, status)
+      const res = await bookingsService.getAppointments(chatbotId, dateFilter)
       const list = res.data.data ?? []
-      set(
-        status === 'UPCOMING' ? { upcomingAppointments: list } : { pastAppointments: list },
-        undefined,
-        '[Booking] Fetch Appointments'
-      )
+      set({ appointments: list }, undefined, '[Booking] Fetch Appointments')
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to load appointments'
       set({ appointmentsError: message }, undefined, '[Booking] Fetch Appointments Error')
