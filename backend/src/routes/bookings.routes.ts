@@ -35,6 +35,11 @@ router.patch(
 router.post('/:chatbotId/booking/timeslots', bookingsController.getTimeSlotsForDate)
 
 router.get(
+  '/:chatbotId/appointments/export/pdf',
+  authMiddleware.authenticateToken,
+  bookingsController.exportAppointmentsAsPDF
+)
+router.get(
   '/:chatbotId/appointments',
   authMiddleware.authenticateToken,
   bookingsController.getAppointments

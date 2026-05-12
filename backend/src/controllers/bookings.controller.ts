@@ -4,6 +4,7 @@ import utc from 'dayjs/plugin/utc.js'
 import timezone from 'dayjs/plugin/timezone.js'
 import customParseFormat from 'dayjs/plugin/customParseFormat.js'
 import { Prisma } from '@prisma/client'
+import PDFDocument from 'pdfkit'
 import { ApiStatus, type ApiResponse } from '../types/api.js'
 import { prisma } from '../prisma/client.js'
 import { cancelAppointment as cancelAppointmentService } from '../services/booking.service.js'
@@ -617,6 +618,205 @@ export const getAppointments = async (req: Request, res: Response, next: NextFun
       message: 'Appointments fetched successfully',
       data: appointments,
     } satisfies ApiResponse)
+  } catch (error) {
+    next(error)
+  }
+}
+
+const LOCATION_LABELS: Record<string, string> = {
+  GOOGLE_MEET: 'Google Meet',
+  ZOOM: 'Zoom',
+  IN_PERSON: 'In person',
+  PHONE: 'Phone call',
+}
+
+function describeDateFilter(filter: string | null): string {
+  if (!filter) return 'All appointments'
+  switch (filter) {
+    case 'today':
+      return 'Today'
+    case 'tomorrow':
+      return 'Tomorrow'
+    case 'yesterday':
+      return 'Yesterday'
+    case 'next7':
+      return 'Next 7 days'
+    case 'next30':
+      return 'Next 30 days'
+    case 'last7':
+      return 'Last 7 days'
+    case 'last30':
+      return 'Last 30 days'
+    case 'all-upcoming':
+      return 'All upcoming'
+    case 'all-past':
+      return 'All past'
+    default: {
+      const parsed = dayjs(filter, 'YYYY-MM-DD', true)
+      return parsed.isValid() ? parsed.format('MMM D, YYYY') : filter
+    }
+  }
+}
+
+export const exportAppointmentsAsPDF = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { chatbotId } = req.params
+    if (!chatbotId) {
+      return res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'Chatbot ID is required',
+      } satisfies ApiResponse)
+    }
+
+    const chatbot = await prisma.chatbot.findFirst({
+      where: { id: chatbotId, userId: req.user.id },
+      select: { id: true, name: true },
+    })
+    if (!chatbot) {
+      return res.status(404).json({
+        status: ApiStatus.FAILURE,
+        message: 'Chatbot not found',
+      } satisfies ApiResponse)
+    }
+
+    const dateFilterParam =
+      typeof req.query.dateFilter === 'string' && req.query.dateFilter.length > 0
+        ? req.query.dateFilter
+        : null
+
+    const config = await prisma.bookingConfig.findUnique({ where: { chatbotId } })
+    const fallbackTz = config?.timezone || 'UTC'
+
+    let dateWhere: Prisma.AppointmentWhereInput = {}
+    if (dateFilterParam) {
+      const resolved = resolveDateFilter(dateFilterParam, fallbackTz)
+      if (!resolved) {
+        return res.status(400).json({
+          status: ApiStatus.FAILURE,
+          message: `dateFilter must be one of: ${PRESET_DATE_FILTERS.join(', ')}, or a date in YYYY-MM-DD format`,
+        } satisfies ApiResponse)
+      }
+      dateWhere = resolved
+    }
+
+    const appointments = await prisma.appointment.findMany({
+      where: { chatbotId, ...dateWhere },
+      orderBy: [{ date: 'asc' }, { timeslot: 'asc' }],
+    })
+
+    const filename = `appointments-${chatbot.name.replace(/[^a-z0-9-_]+/gi, '_')}.pdf`
+    res.setHeader('Content-Type', 'application/pdf')
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`)
+
+    const doc = new PDFDocument({ margin: 40, size: 'A4', layout: 'landscape' })
+    doc.pipe(res)
+
+    doc.fontSize(20).font('Helvetica-Bold').text(chatbot.name, { align: 'center' })
+    doc.moveDown(0.3)
+    doc
+      .fontSize(11)
+      .font('Helvetica')
+      .fillColor('#555')
+      .text(`Appointments — ${describeDateFilter(dateFilterParam)}`, { align: 'center' })
+    doc
+      .fontSize(9)
+      .fillColor('#888')
+      .text(`Generated ${dayjs().format('MMM D, YYYY h:mm A')}`, { align: 'center' })
+    doc.fillColor('black')
+    doc.moveDown(1)
+
+    const pageLeft = doc.page.margins.left
+    const pageRight = doc.page.width - doc.page.margins.right
+    const usableWidth = pageRight - pageLeft
+
+    // Column ratios: Name, Email, Date, Time, Meeting Type, Location
+    const ratios = [0.14, 0.2, 0.12, 0.14, 0.13, 0.27]
+    const colWidths = ratios.map(r => Math.floor(usableWidth * r))
+    const headers = ['Name', 'Email', 'Date', 'Time', 'Meeting Type', 'Location']
+    const rowPaddingY = 6
+    const cellPadX = 6
+
+    const drawRow = (
+      cells: string[],
+      opts: { bold?: boolean; fill?: string; fontSize?: number } = {}
+    ) => {
+      const fontSize = opts.fontSize ?? 9
+      doc.font(opts.bold ? 'Helvetica-Bold' : 'Helvetica').fontSize(fontSize)
+
+      const heights = cells.map((text, i) =>
+        doc.heightOfString(text || '-', { width: colWidths[i]! - cellPadX * 2 })
+      )
+      const rowHeight = Math.max(...heights) + rowPaddingY * 2
+
+      if (doc.y + rowHeight > doc.page.height - doc.page.margins.bottom) {
+        doc.addPage()
+      }
+
+      const top = doc.y
+      let x = pageLeft
+
+      if (opts.fill) {
+        doc.save().rect(pageLeft, top, usableWidth, rowHeight).fill(opts.fill).restore()
+      }
+
+      doc.strokeColor('#d0d0d0').lineWidth(0.5)
+      cells.forEach((text, i) => {
+        const w = colWidths[i]!
+        doc.rect(x, top, w, rowHeight).stroke()
+        doc
+          .fillColor('black')
+          .text(text || '-', x + cellPadX, top + rowPaddingY, {
+            width: w - cellPadX * 2,
+          })
+        x += w
+      })
+
+      doc.y = top + rowHeight
+      doc.x = pageLeft
+    }
+
+    drawRow(headers, { bold: true, fill: '#f1f3f5', fontSize: 10 })
+
+    if (appointments.length === 0) {
+      doc.moveDown(1)
+      doc
+        .font('Helvetica-Oblique')
+        .fontSize(11)
+        .fillColor('#888')
+        .text('No appointments for the selected filter.', { align: 'center' })
+    } else {
+      for (const appt of appointments) {
+        const name = appt.name ?? appt.email.split('@')[0] ?? appt.email
+        const meetingType = appt.locationType ? LOCATION_LABELS[appt.locationType] ?? '-' : '-'
+        const location =
+          appt.locationType === 'GOOGLE_MEET' && appt.meetLink
+            ? appt.meetLink
+            : appt.locationType === 'PHONE' && appt.locationPhone
+              ? appt.locationPhone
+              : appt.locationType === 'IN_PERSON' && appt.locationAddress
+                ? appt.locationAddress
+                : '-'
+
+        const start = dayjs(`${appt.date}T${appt.timeslot}`)
+        const end = start.add(appt.duration ?? 30, 'minute')
+        const timeRange = `${start.format('h:mm A')} - ${end.format('h:mm A')}`
+
+        drawRow([
+          name,
+          appt.email,
+          dayjs(appt.date).format('MMM D, YYYY'),
+          timeRange,
+          meetingType,
+          location,
+        ])
+      }
+    }
+
+    doc.end()
   } catch (error) {
     next(error)
   }

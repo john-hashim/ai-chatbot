@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import {
   Avatar,
@@ -13,9 +13,11 @@ import {
 } from '@mantine/core'
 import { DateInput } from '@mantine/dates'
 import { modals } from '@mantine/modals'
-import { Calendar, List, MapPin, Phone, Table as TableIcon, Video } from 'lucide-react'
+import { Calendar, Download, List, MapPin, Phone, Table as TableIcon, Video } from 'lucide-react'
 import { useBookingStore } from '@/store'
-import { showLoadingNotification } from '@/utils/notifications'
+import { useApi } from '@/hooks/useApi'
+import { bookingsService } from '@/api/services/bookings'
+import { showLoadingNotification, showNotification } from '@/utils/notifications'
 import type { Appointment, AppointmentDatePreset, LocationType } from '@/types/bookings'
 import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc'
@@ -79,6 +81,7 @@ export const Appointments: React.FC = () => {
   const [filterOption, setFilterOption] = useState<DateFilterOption>('next7')
   const [customDate, setCustomDate] = useState<Date | null>(null)
   const [view, setView] = useState<AppointmentView>('list')
+  const { execute: exportPDF, loading: pdfLoading } = useApi(bookingsService.exportAppointmentsAsPDF)
 
   const dateFilterParam = useMemo<string | null>(() => {
     if (filterOption === 'custom') {
@@ -128,6 +131,24 @@ export const Appointments: React.FC = () => {
     if (filterOption === 'custom' && !customDate) return
     fetchAppointments(chatbotId, dateFilterParam)
   }, [chatbotId, filterOption, dateFilterParam, customDate, fetchAppointments])
+
+  const handleExportPDF = useCallback(async () => {
+    if (!chatbotId) return
+    try {
+      const blob = (await exportPDF(chatbotId, dateFilterParam)) as unknown as Blob
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `appointments-${dateFilterParam ?? 'all'}.pdf`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      showNotification('error', `Failed to export: ${err instanceof Error ? err.message : err}`)
+    }
+  }, [chatbotId, dateFilterParam, exportPDF])
+
+  const canExport =
+    appointments.length > 0 && !(filterOption === 'custom' && !customDate)
 
   return (
     <div className="lg:m-5 m-2 min-h-[calc(100%-40px)] border border-border-week bg-white rounded-xl">
@@ -190,6 +211,18 @@ export const Appointments: React.FC = () => {
             allowDeselect={false}
             w={160}
           />
+          <Tooltip label="Export as PDF">
+            <Button
+              variant="default"
+              size="compact-sm"
+              radius="md"
+              onClick={handleExportPDF}
+              loading={pdfLoading}
+              disabled={!canExport}
+            >
+              <Download size={16} strokeWidth={1.5} />
+            </Button>
+          </Tooltip>
         </div>
       </div>
 

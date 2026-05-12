@@ -30,14 +30,14 @@ export const CHAT_MODELS: ChatModel[] = [
     vendor: 'OpenAI',
   },
   {
-    id: 'openai/gpt-5-nano',
-    label: 'GPT-5 Nano',
+    id: 'openai/gpt-5.4-nano',
+    label: 'GPT-5.4 Nano',
     tier: 'standard',
     vendor: 'OpenAI',
   },
   {
-    id: 'openai/gpt-5-mini',
-    label: 'GPT-5 Mini',
+    id: 'openai/gpt-5.4-mini',
+    label: 'GPT-5.4 Mini',
     tier: 'standard',
     vendor: 'OpenAI',
   },

@@ -79,6 +79,19 @@ export const bookingsService = {
     })
   },
 
+  exportAppointmentsAsPDF: (
+    chatbotId: string,
+    dateFilter?: string | null
+  ): Promise<AxiosResponse<Blob>> => {
+    return apiClient.get(
+      ENDPOINTS.BOOKINGS.EXPORT_APPOINTMENTS_PDF.replace(':chatbotId', chatbotId),
+      {
+        params: dateFilter ? { dateFilter } : undefined,
+        responseType: 'blob',
+      }
+    )
+  },
+
   cancelAppointment: (
     chatbotId: string,
     appointmentId: string

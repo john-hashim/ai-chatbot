@@ -58,6 +58,7 @@ export const ENDPOINTS = {
     UPDATE_CONFIG: 'chatbot/:chatbotId/booking-config',
     GET_TIMESLOTS: 'chatbot/:chatbotId/booking/timeslots',
     GET_APPOINTMENTS: 'chatbot/:chatbotId/appointments',
+    EXPORT_APPOINTMENTS_PDF: 'chatbot/:chatbotId/appointments/export/pdf',
     CANCEL_APPOINTMENT: 'chatbot/:chatbotId/appointments/:appointmentId/cancel',
   },
   MODELS: {
