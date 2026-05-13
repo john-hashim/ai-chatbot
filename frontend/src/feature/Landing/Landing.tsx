@@ -58,10 +58,13 @@ export const Landing: React.FC = () => {
     greeting = 'Good afternoon'
   }
 
-  const handleDeleteChatbot = async (id: string, name: string) => {
+  const handleDeleteChatbot = (id: string, name: string) => {
+    const modalId = `delete-chatbot-${id}`
     modals.openConfirmModal({
+      modalId,
       title: 'Delete Chatbot',
       centered: true,
+      closeOnConfirm: false,
       children: (
         <Text size="sm">
           Are you sure you want to delete "{name}"? This action will permanently delete the chatbot
@@ -71,21 +74,28 @@ export const Landing: React.FC = () => {
       labels: { confirm: 'Delete Chatbot', cancel: 'Cancel' },
       confirmProps: { color: 'red', variant: 'filled' },
       onConfirm: async () => {
+        modals.updateModal({
+          modalId,
+          confirmProps: { color: 'red', variant: 'filled', loading: true },
+          cancelProps: { disabled: true },
+          closeOnClickOutside: false,
+          closeOnEscape: false,
+          withCloseButton: false,
+        })
         try {
-          deleteChatbot(id)
           const response = await excuteDeleteChatbot(id)
           if (response?.status === 'success') {
             if (currentChatbot?.id === id) {
               clearCurrentChatbot()
             }
-            getChatbots()
+            deleteChatbot(id)
           } else {
             showNotification('error', 'Failed to delete chatbot')
-            getChatbots()
           }
         } catch (error) {
           showNotification('error', `Failed to delete chatbot: ${error}`)
-          getChatbots()
+        } finally {
+          modals.close(modalId)
         }
       },
     })
