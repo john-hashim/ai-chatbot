@@ -28,7 +28,7 @@ export interface ChatbotSlice {
   clearCurrentChatbot: () => void
   updateChatbot: (data: Partial<Chatbot>) => Promise<Chatbot>
   upsertChatbot: (chatbot: Chatbot) => void
-  deleteChatbot: (id: string) => void
+  deleteChatbot: (id: string) => Promise<void>
   clearChatbots: () => void
 
   // Chat session actions
@@ -181,12 +181,20 @@ export const createChatbotSlice: StateCreator<ChatbotSlice, [['zustand/devtools'
       '[Chat Bot] Clear Current Chat Bot'
     ),
 
-  deleteChatbot: id =>
+  deleteChatbot: async (id: string) => {
+    const response = await chatbotService.deleteChatbot(id)
+    if (response.data.status !== 'success') {
+      throw new Error('Failed to delete chatbot')
+    }
     set(
-      state => ({ chatbots: state.chatbots.filter(bot => bot.id !== id) }),
+      state => ({
+        chatbots: state.chatbots.filter(bot => bot.id !== id),
+        currentChatbot: state.currentChatbot?.id === id ? null : state.currentChatbot,
+      }),
       undefined,
       '[Chat Bot] Delete Chat Bot'
-    ),
+    )
+  },
 
   clearChatbots: () => set({ chatbots: [] }, undefined, '[Chat Bot] Clear Chat Bots'),
 

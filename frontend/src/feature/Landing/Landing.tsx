@@ -5,11 +5,8 @@ import { format, getHours } from 'date-fns'
 import { Plus, TrendingUp, Ellipsis, Trash } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useEffect } from 'react'
-import { useApi } from '@/hooks/useApi'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import { formatRelativeDate } from '@/hooks/useRelativeDate'
-import type { ApiResponse } from '@/types/api'
-import { chatbotService } from '@/api/services/chatbot'
 import { modals } from '@mantine/modals'
 import { showNotification } from '@/utils/notifications'
 import { Outline } from '@/components/layout/Outline'
@@ -21,8 +18,6 @@ export const Landing: React.FC = () => {
   const {
     getChatbots,
     setCurrentChatbot,
-    clearCurrentChatbot,
-    currentChatbot,
     chatbots,
     deleteChatbot,
     clearChatbotState,
@@ -32,10 +27,6 @@ export const Landing: React.FC = () => {
   const { clearModels } = useModelsStore()
   const { user } = useUserStore()
   const navigate = useNavigate()
-
-  const { execute: excuteDeleteChatbot } = useApi<ApiResponse<null>, [string]>(
-    chatbotService.deleteChatbot
-  )
 
   useEffect(() => {
     clearChatbotState()
@@ -83,15 +74,7 @@ export const Landing: React.FC = () => {
           withCloseButton: false,
         })
         try {
-          const response = await excuteDeleteChatbot(id)
-          if (response?.status === 'success') {
-            if (currentChatbot?.id === id) {
-              clearCurrentChatbot()
-            }
-            deleteChatbot(id)
-          } else {
-            showNotification('error', 'Failed to delete chatbot')
-          }
+          await deleteChatbot(id)
         } catch (error) {
           showNotification('error', `Failed to delete chatbot: ${error}`)
         } finally {
