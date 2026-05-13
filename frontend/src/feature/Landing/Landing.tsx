@@ -2,7 +2,7 @@ import { ChatbotSkeleton } from '@/components/common/ChatbotSkeleton'
 import { Button, Menu, Text } from '@mantine/core'
 import { useBookingStore, useChatbotStore, useModelsStore, useUserStore } from '@/store'
 import { format, getHours } from 'date-fns'
-import { Plus, TrendingUp, Ellipsis, Trash } from 'lucide-react'
+import { Plus, TrendingUp, Ellipsis, Trash, AlertTriangle } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useEffect } from 'react'
 import { usePageTitle } from '@/hooks/usePageTitle'
@@ -60,29 +60,49 @@ export const Landing: React.FC = () => {
     const modalId = `delete-chatbot-${id}`
     modals.openConfirmModal({
       modalId,
-      title: 'Delete Chatbot',
+      title: (
+        <span
+          className="flex items-center gap-2 text-xl font-semibold"
+          style={{ color: 'var(--color-notification-red)' }}
+        >
+          <AlertTriangle size={22} strokeWidth={2.5} aria-hidden />
+          Delete chatbot {name} ?
+        </span>
+      ),
       centered: true,
       closeOnConfirm: false,
+      withCloseButton: false,
+      padding: 'xl',
+      styles: {
+        header: { paddingBottom: 16 },
+        body: { paddingTop: 0 },
+      },
       children: (
-        <Text size="sm">
+        <Text size="sm" mb="xl" style={{ color: 'var(--color-text-weak)' }}>
           Are you sure you want to delete "{name}"? This action will permanently delete the chatbot
           and all its documents. This cannot be undone.
         </Text>
       ),
       labels: { confirm: 'Delete Chatbot', cancel: 'Cancel' },
-      confirmProps: { color: 'red', variant: 'filled' },
+      confirmProps: { color: 'var(--color-notification-red)', variant: 'filled' },
+      cancelProps: { variant: 'secondary' },
+      groupProps: { gap: 'sm' },
       onConfirm: async () => {
         modals.updateModal({
           modalId,
-          confirmProps: { color: 'red', variant: 'filled', loading: true },
-          cancelProps: { disabled: true },
+          confirmProps: {
+            color: 'var(--color-notification-red)',
+            variant: 'filled',
+            loading: true,
+          },
+          cancelProps: { variant: 'secondary', disabled: true },
           closeOnClickOutside: false,
           closeOnEscape: false,
           withCloseButton: false,
         })
         try {
           await deleteChatbot(id)
-          showNotification('success', `"${name}" was deleted.`)
+          showNotification('success', `Chatbot deleted successfully.`)
         } catch (error) {
           if (isAxiosError(error) && error.response?.status === 404) {
             showNotification('error', 'This chatbot no longer exists.')
@@ -209,7 +229,7 @@ export const Landing: React.FC = () => {
             {greeting}, {formattedFirstName}
           </h1>
           <div className="h-[50vh] mt-6 flex flex-wrap">
-            <article className="border border-purple-strong bg-purple-week cursor-pointer hover:bg-purple-strong sm:w-full lg:w-1/4 lg:mr-6 h-full rounded-2xl flex items-center justify-center flex-col p-6 overflow-visible">
+            <article className="border border-purple-strong bg-purple-week cursor-pointer hover:bg-purple-strong lg:w-1/4 lg:mr-6 h-full rounded-2xl hidden lg:flex items-center justify-center flex-col p-6 overflow-visible">
               <div className="w-32 aspect-375/667 mb-4 shadow-[0_0_18px_0_var(--color-purple-glow)] rounded-2xl overflow-hidden bg-[#F8F9FA]">
                 <ChatbotSkeleton />
               </div>

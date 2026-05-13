@@ -62,11 +62,11 @@ export const CropperComponent = ({ image, onSave, onCancel }: CropperComponentPr
         />
       </div>
       <Group justify="flex-end" mt="md">
-        <Button variant="default" onClick={onCancel} disabled={isProcessing}>
+        <Button variant="secondary" onClick={onCancel} disabled={isProcessing}>
           Cancel
         </Button>
         <Button onClick={handleSave} loading={isProcessing}>
-          Save
+          Attach Image
         </Button>
       </Group>
     </Stack>

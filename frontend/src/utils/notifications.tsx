@@ -2,14 +2,16 @@ import { notifications } from '@mantine/notifications'
 import { CircleAlert, CircleCheck } from 'lucide-react'
 
 export const showNotification = (type: 'success' | 'error', message: string) => {
+  const color = type === 'success' ? '#007D3E' : '#CC071E'
   notifications.show({
     message,
     className: type,
+    styles: { description: { fontWeight: 600, color } },
     icon:
       type === 'success' ? (
-        <CircleCheck color="#58a182" size={18} />
+        <CircleCheck color="#007D3E" size={18} strokeWidth={2.5} />
       ) : (
-        <CircleAlert color="#c72027" size={18} />
+        <CircleAlert color="#CC071E" size={18} strokeWidth={2.5} />
       ),
   })
 }
@@ -39,7 +41,11 @@ export const showLoadingNotification = (
         color: 'teal',
         title: successTitle,
         message: successMessage,
-        icon: <CircleCheck color="#58a182" size={24} />,
+        icon: <CircleCheck color="#007D3E" size={24} strokeWidth={2.5} />,
+        styles: {
+          description: { fontWeight: 600, color: '#007D3E' },
+          title: { color: '#007D3E' },
+        },
         loading: false,
         autoClose: 4000,
       })
@@ -50,7 +56,11 @@ export const showLoadingNotification = (
         color: 'red',
         title: errorTitle,
         message: errorMessage,
-        icon: <CircleAlert color="#c72027" size={24} />,
+        icon: <CircleAlert color="#CC071E" size={24} strokeWidth={2.5} />,
+        styles: {
+          description: { fontWeight: 600, color: '#CC071E' },
+          title: { color: '#CC071E' },
+        },
         loading: false,
         autoClose: 4000,
       })

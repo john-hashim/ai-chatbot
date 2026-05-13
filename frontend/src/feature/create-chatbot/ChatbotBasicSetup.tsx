@@ -76,8 +76,11 @@ export const ChatbotBasicSetup: React.FC = () => {
 
   const openCropperModal = (imageFile: File) => {
     modals.open({
-      title: 'Crop Profile Picture',
+      title: (
+        <span className="flex items-center gap-2 text-xl font-semibold">Add a Profile picture</span>
+      ),
       size: 'lg',
+      withCloseButton: false,
       children: (
         <CropperComponent
           image={imageFile}
@@ -134,7 +137,6 @@ export const ChatbotBasicSetup: React.FC = () => {
 
       const chatbot = await createChatbot(chatbotData)
       navigate(`/chatbot/${chatbot.id}/setup-knowledgebase`)
-      showNotification('success', 'Chatbot created successfully!')
     } catch (err) {
       if (isAxiosError(err) && err.response?.status === 409) {
         showNotification(

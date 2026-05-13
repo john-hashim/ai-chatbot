@@ -45,16 +45,7 @@ export const ChatbotKnowledgeBaseSetup: React.FC = () => {
 
     setIsTraining(true)
     try {
-      const result = await trainChatbotDocuments(chatbotId)
-
-      if (result.documentsProcessed > 0) {
-        showNotification(
-          'success',
-          `Training complete! Processed ${result.documentsProcessed} document(s) into ${result.chunksCreated} chunks.`
-        )
-      } else {
-        showNotification('success', 'All documents are already trained!')
-      }
+      await trainChatbotDocuments(chatbotId)
       navigate(`/chatbot/${chatbotId}`)
     } catch (error) {
       if (isAxiosError(error) && error.response?.status === 404) {
@@ -142,8 +133,8 @@ export const ChatbotKnowledgeBaseSetup: React.FC = () => {
           >
             <p className="text-3xl font-semibold text-center sm:text-left">Train your Agent</p>
             <p className="text-xs font-light text-center mt-1 sm:text-left">
-              Provide documents or URLs to help your Agent learn and answer accurately.
-              You can always add more later.
+              Provide documents or URLs to help your Agent learn and answer accurately. You can
+              always add more later.
             </p>
             <ul className="mt-6 list-none">
               {sources.map((source, index) => {

@@ -20,19 +20,21 @@
 }
 
 .error .mantine-Notification-title {
-  color: #c72027 !important;
+  color: var(--color-notification-red) !important;
   font-weight: 600;
 }
 
 .error .mantine-Notification-description {
-  color: #c72027 !important;
+  color: var(--color-notification-red) !important;
+  font-weight: 600;
 }
 
 .success .mantine-Notification-title {
-  color: #58a182 !important;
+  color: var(--color-notification-green) !important;
   font-weight: 600;
 }
 
 .success .mantine-Notification-description {
-  color: #58a182 !important;
+  color: var(--color-notification-green) !important;
+  font-weight: 600;
 }
