@@ -1,7 +1,13 @@
 import { chatbotService } from '@/api/services/chatbot'
 import { documentService } from '@/api/services/document'
 import { chatService } from '@/api/services/chat'
-import type { Chatbot, ChatMessage, ChatSession, ChatSessionState } from '@/types/chatbot'
+import type {
+  Chatbot,
+  ChatbotFormData,
+  ChatMessage,
+  ChatSession,
+  ChatSessionState,
+} from '@/types/chatbot'
 import type { ChatSessionSortOption, Filter } from '@/types/common'
 import type { StateCreator } from 'zustand'
 
@@ -26,6 +32,10 @@ export interface ChatbotSlice {
   getChatbot: (chatbotId?: string) => Promise<void>
   setCurrentChatbot: (chatbotId: string) => void
   clearCurrentChatbot: () => void
+  createChatbot: (data: ChatbotFormData) => Promise<Chatbot>
+  trainChatbotDocuments: (
+    chatbotId: string
+  ) => Promise<{ documentsProcessed: number; chunksCreated: number }>
   updateChatbot: (data: Partial<Chatbot>) => Promise<Chatbot>
   upsertChatbot: (chatbot: Chatbot) => void
   deleteChatbot: (id: string) => Promise<void>
@@ -137,6 +147,30 @@ export const createChatbotSlice: StateCreator<ChatbotSlice, [['zustand/devtools'
 
   clearCurrentChatbot: () =>
     set({ currentChatbot: null }, undefined, '[Chat Bot] Clear Current Chat Bot'),
+
+  createChatbot: async (data: ChatbotFormData) => {
+    const response = await chatbotService.createChatbot(data)
+    const chatbot = response.data.data
+
+    if (!chatbot) {
+      throw new Error('Failed to create chatbot')
+    }
+
+    get().upsertChatbot(chatbot)
+
+    return chatbot
+  },
+
+  trainChatbotDocuments: async (chatbotId: string) => {
+    const response = await documentService.trainDocuments(chatbotId)
+    const data = response.data.data
+
+    if (!data) {
+      throw new Error('Training did not return a result')
+    }
+
+    return data
+  },
 
   updateChatbot: async (data: Partial<Chatbot>) => {
     const state = get()

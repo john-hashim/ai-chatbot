@@ -16,25 +16,18 @@ import { useNavigate } from 'react-router-dom'
 import { modals } from '@mantine/modals'
 import { CropperComponent } from '@/components/common/Cropper'
 import { useForm, Controller } from 'react-hook-form'
-import { type Chatbot, type ChatbotFormData } from '@/types/chatbot'
-import { chatbotService } from '@/api/services/chatbot'
-import { useApi } from '@/hooks/useApi'
+import { type ChatbotFormData } from '@/types/chatbot'
 import { usePageTitle } from '@/hooks/usePageTitle'
-import { AxiosError } from 'axios'
+import { isAxiosError } from 'axios'
 import { useChatbotStore } from '@/store'
 import { showNotification } from '@/utils/notifications'
 import { uploadImageToR2 } from '@/api/services/upload'
-import type { ApiResponse } from '@/types/api'
 import { Outline } from '@/components/layout/Outline'
 
 export const ChatbotBasicSetup: React.FC = () => {
   usePageTitle('Create Chatbot')
   const navigate = useNavigate()
-  const { upsertChatbot } = useChatbotStore()
-
-  const { execute: excuteCreateChatbot, loading } = useApi<ApiResponse<Chatbot>, [ChatbotFormData]>(
-    chatbotService.createChatbot
-  )
+  const { createChatbot } = useChatbotStore()
 
   const [file, setFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
@@ -126,8 +119,10 @@ export const ChatbotBasicSetup: React.FC = () => {
         try {
           profilePictureUrl = await uploadImageToR2(file, 'profile-pictures')
         } catch (error) {
-          console.error('Error uploading to R2:', error)
-          showNotification('error', 'Failed to upload profile picture. Please try again.')
+          // 5xx / network already surfaced by the interceptor — stay silent in that case.
+          if (!isAxiosError(error) || !error.response || error.response.status < 500) {
+            showNotification('error', 'Failed to upload profile picture. Please try again.')
+          }
           return
         }
       }
@@ -137,23 +132,19 @@ export const ChatbotBasicSetup: React.FC = () => {
         profilePicture: profilePictureUrl,
       }
 
-      const response = await excuteCreateChatbot(chatbotData)
-
-      if (response?.data) {
-        upsertChatbot(response.data)
-        navigate(`/chatbot/${response.data.id}/setup-knowledgebase`)
-        showNotification('success', 'Chatbot created successfully!')
-      }
+      const chatbot = await createChatbot(chatbotData)
+      navigate(`/chatbot/${chatbot.id}/setup-knowledgebase`)
+      showNotification('success', 'Chatbot created successfully!')
     } catch (err) {
-      const axiosError = err as AxiosError<{ message?: string; code?: string }>
-      if (axiosError.response?.status === 409) {
+      if (isAxiosError(err) && err.response?.status === 409) {
         showNotification(
           'error',
           'A chatbot with this name already exists. Please choose a different name.'
         )
-      } else {
+      } else if (isAxiosError(err) && err.response && err.response.status < 500) {
         showNotification('error', 'Failed to create chatbot. Please try again.')
       }
+      // 5xx / network already surfaced by the interceptor — stay silent here.
     }
   }
 
@@ -327,10 +318,10 @@ export const ChatbotBasicSetup: React.FC = () => {
                   type="submit"
                   variant="default"
                   style={{ width: '75%' }}
-                  disabled={!!errors.name || isSubmitting || loading}
+                  disabled={!!errors.name || isSubmitting}
                   leftSection={isSubmitting ? <Loader2 size={16} className="animate-spin" /> : null}
                 >
-                  {isSubmitting || loading ? 'Creating...' : 'Save And Continue'}
+                  {isSubmitting ? 'Creating...' : 'Save And Continue'}
                 </Button>
               </div>
             </form>

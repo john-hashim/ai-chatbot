@@ -20,11 +20,9 @@ import { UploadText } from '../sources/Text'
 import { UploadQandA } from '../sources/QandA'
 import { useChatbotStore } from '@/store'
 import { useFormat } from '@/hooks/useFormats'
-import { useApi } from '@/hooks/useApi'
 import { usePageTitle } from '@/hooks/usePageTitle'
-import { documentService } from '@/api/services/document'
-import type { ApiResponse } from '@/types/api'
 import { showNotification } from '@/utils/notifications'
+import { isAxiosError } from 'axios'
 
 export const ChatbotKnowledgeBaseSetup: React.FC = () => {
   usePageTitle('Setup Knowledge Base')
@@ -36,46 +34,49 @@ export const ChatbotKnowledgeBaseSetup: React.FC = () => {
     { name: 'Links', icon: Link, count: 0, isSelected: false },
   ])
   const { chatbotId } = useParams()
-  const { getChatbot, currentChatbot } = useChatbotStore()
+  const { getChatbot, currentChatbot, trainChatbotDocuments } = useChatbotStore()
   const { formatFileSize } = useFormat()
   const MAX_STORAGE_MB = 400
 
-  // Training API hook
-  const {
-    execute: executeTraining,
-    loading: isTraining,
-  } = useApi<
-    ApiResponse<{ documentsProcessed: number; chunksCreated: number }>,
-    [string]
-  >(documentService.trainDocuments)
+  const [isTraining, setIsTraining] = useState(false)
 
   const handleTrainAndContinue = async () => {
     if (!chatbotId) return
 
+    setIsTraining(true)
     try {
-      const result = await executeTraining(chatbotId)
-      if (result.data) {
-        const { documentsProcessed, chunksCreated } = result.data
-        if (documentsProcessed > 0) {
-          showNotification(
-            'success',
-            `Training complete! Processed ${documentsProcessed} document(s) into ${chunksCreated} chunks.`
-          )
-        } else {
-          showNotification('success', 'All documents are already trained!')
-        }
-        // Navigate to chatbot dashboard after successful training
-        navigate(`/chatbot/${chatbotId}`)
+      const result = await trainChatbotDocuments(chatbotId)
+
+      if (result.documentsProcessed > 0) {
+        showNotification(
+          'success',
+          `Training complete! Processed ${result.documentsProcessed} document(s) into ${result.chunksCreated} chunks.`
+        )
+      } else {
+        showNotification('success', 'All documents are already trained!')
       }
-    } catch {
-      showNotification('error', 'Training failed. Please try again.')
+      navigate(`/chatbot/${chatbotId}`)
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.status === 404) {
+        showNotification('error', 'This chatbot no longer exists.')
+      } else if (isAxiosError(error) && error.response && error.response.status < 500) {
+        showNotification('error', 'Training failed. Please try again.')
+      }
+      // 5xx / network already surfaced by the interceptor — stay silent here.
+    } finally {
+      setIsTraining(false)
     }
   }
 
   useEffect(() => {
-    if (chatbotId) {
-      getChatbot(chatbotId)
-    }
+    if (!chatbotId) return
+    getChatbot(chatbotId).catch(error => {
+      if (isAxiosError(error) && error.response?.status === 404) {
+        showNotification('error', 'This chatbot no longer exists.')
+      } else if (isAxiosError(error) && error.response && error.response.status < 500) {
+        showNotification('error', 'Could not load chatbot. Please try again.')
+      }
+    })
   }, [chatbotId, getChatbot])
 
   useEffect(() => {

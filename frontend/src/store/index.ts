@@ -98,6 +98,8 @@ export const useChatbotStore = () =>
       getChatbot: state.getChatbot,
       setCurrentChatbot: state.setCurrentChatbot,
       clearCurrentChatbot: state.clearCurrentChatbot,
+      createChatbot: state.createChatbot,
+      trainChatbotDocuments: state.trainChatbotDocuments,
       updateChatbot: state.updateChatbot,
       upsertChatbot: state.upsertChatbot,
       deleteChatbot: state.deleteChatbot,
