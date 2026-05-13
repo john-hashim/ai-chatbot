@@ -10,6 +10,7 @@ import { formatRelativeDate } from '@/hooks/useRelativeDate'
 import { modals } from '@mantine/modals'
 import { showNotification } from '@/utils/notifications'
 import { Outline } from '@/components/layout/Outline'
+import { isAxiosError } from 'axios'
 
 export const Landing: React.FC = () => {
   usePageTitle('Chatbots')
@@ -33,7 +34,13 @@ export const Landing: React.FC = () => {
     clearAvailabilities()
     clearAppointments()
     clearModels()
-    getChatbots()
+    getChatbots().catch(error => {
+      // 401 / 5xx are handled by the axios interceptor.
+      // Anything else here is unexpected (e.g. malformed payload).
+      if (isAxiosError(error) && error.response && error.response.status < 500) {
+        showNotification('error', 'Could not load chatbots. Please refresh.')
+      }
+    })
   }, [clearChatbotState, clearAvailabilities, clearAppointments, clearModels, getChatbots])
 
   const firstName = user?.name.split(' ')[0]
@@ -75,8 +82,14 @@ export const Landing: React.FC = () => {
         })
         try {
           await deleteChatbot(id)
+          showNotification('success', `"${name}" was deleted.`)
         } catch (error) {
-          showNotification('error', `Failed to delete chatbot: ${error}`)
+          if (isAxiosError(error) && error.response?.status === 404) {
+            showNotification('error', 'This chatbot no longer exists.')
+          } else if (isAxiosError(error) && error.response && error.response.status < 500) {
+            showNotification('error', 'Could not delete chatbot. Please try again.')
+          }
+          // 5xx / network already surfaced by the interceptor — stay silent here.
         } finally {
           modals.close(modalId)
         }
