@@ -1,7 +1,20 @@
 import { useState } from 'react'
+import { isAxiosError } from 'axios'
 import { uploadImageToR2, deleteImageFromR2 } from '@/api/services/upload'
 import { useChatbotStore } from '@/store'
 import { showNotification } from '@/utils/notifications'
+
+const notifyError = (error: unknown, fallback: string) => {
+  if (isAxiosError(error)) {
+    const status = error.response?.status
+    if (status && status >= 500) return
+    if (status === 404) {
+      showNotification('error', 'Chatbot not found.')
+      return
+    }
+  }
+  showNotification('error', fallback)
+}
 
 type ChatbotImageField = 'profilePicture' | 'chatIcon'
 
@@ -44,7 +57,7 @@ export const useChatbotImageUpload = ({
       showNotification('success', 'Image updated successfully')
     } catch (error) {
       console.error(`Error uploading ${field}:`, error)
-      showNotification('error', 'Failed to upload image. Please try again.')
+      notifyError(error, 'Failed to upload image. Please try again.')
       throw error
     } finally {
       setIsUploading(false)
@@ -69,7 +82,7 @@ export const useChatbotImageUpload = ({
       showNotification('success', 'Image removed successfully')
     } catch (error) {
       console.error(`Error removing ${field}:`, error)
-      showNotification('error', 'Failed to remove image. Please try again.')
+      notifyError(error, 'Failed to remove image. Please try again.')
       throw error
     } finally {
       setIsUploading(false)

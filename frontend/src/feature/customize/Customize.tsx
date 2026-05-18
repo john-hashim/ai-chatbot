@@ -8,6 +8,7 @@ import type { Chatbot } from '@/types/chatbot'
 import { useChatbotStore } from '@/store'
 import { FormProvider, useForm } from 'react-hook-form'
 import { showLoadingNotification } from '@/utils/notifications'
+import { isAxiosError } from 'axios'
 
 export type ChatbotFormValues = Pick<
   Chatbot,
@@ -108,7 +109,18 @@ export const Customize: React.FC = () => {
       notification.success('Chatbot saved successfully')
     } catch (error) {
       console.error('Failed to update chatbot:', error)
-      notification.error('Failed to save chatbot. Please try again.')
+      if (isAxiosError(error)) {
+        const status = error.response?.status
+        if (status && status >= 500) {
+          notification.update({ loading: false, autoClose: 1, message: '' })
+        } else if (status === 404) {
+          notification.error('Chatbot not found.')
+        } else {
+          notification.error('Failed to save chatbot. Please try again.')
+        }
+      } else {
+        notification.error('Failed to save chatbot. Please try again.')
+      }
     } finally {
       setIsSaving(false)
     }
