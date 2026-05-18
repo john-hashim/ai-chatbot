@@ -51,6 +51,8 @@ export interface ChatbotSlice {
   resetChatSessionFilters: () => void
   getChatSessionsByEndUser: (chatbotId: string, identifier: string) => Promise<void>
   clearChatSessionsByEndUser: () => void
+  deleteChatSession: (chatbotId: string, sessionId: string) => Promise<void>
+  exportChats: (chatbotId: string, format: 'json' | 'csv' | 'pdf') => Promise<Blob>
 
   // Document actions
   addDocument: () => Promise<void>
@@ -340,6 +342,23 @@ export const createChatbotSlice: StateCreator<ChatbotSlice, [['zustand/devtools'
 
   clearChatSessionsByEndUser: () =>
     set({ chatSessionsByEndUser: [] }, undefined, '[Chat Bot] Clear Chat Sessions By End User'),
+
+  deleteChatSession: async (chatbotId: string, sessionId: string) => {
+    const response = await chatService.deleteChatSession(chatbotId, sessionId)
+    if (response.data.status !== 'success') {
+      throw new Error('Failed to delete chat session')
+    }
+  },
+
+  exportChats: async (chatbotId: string, format: 'json' | 'csv' | 'pdf') => {
+    const fn = {
+      json: chatService.exportChatsAsJSON,
+      csv: chatService.exportChatsAsCSV,
+      pdf: chatService.exportChatsAsPDF,
+    }[format]
+    const response = await fn(chatbotId)
+    return response.data
+  },
 
   // Document actions
 

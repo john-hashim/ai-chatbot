@@ -3,21 +3,27 @@ import { useCallback, useEffect, useState } from 'react'
 import { useMediaQuery } from '@mantine/hooks'
 import { Button, Menu, Modal, Select, Text, Tooltip } from '@mantine/core'
 import { ChevronDown, Download, FileJson, FileSpreadsheet, FileText, RefreshCw } from 'lucide-react'
+import { isAxiosError } from 'axios'
 import { ChatsList } from './ChatsList'
 import { ChatDetails } from './ChatDetails'
 import { useChatbotStore } from '@/store'
-import { useApi } from '@/hooks/useApi'
-import { chatService } from '@/api/services/chat'
 import { type ChatSession } from '@/types/chatbot'
-import type { ApiResponse } from '@/types/api'
 import { showNotification } from '@/utils/notifications'
 import classes from '@/theme.module.css'
 import type { ChatSessionSortOption } from '@/types/common'
+
+type ExportFormat = 'json' | 'csv' | 'pdf'
 
 export const Chats: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'chatslist' | 'chatdetails'>('chatslist')
   const [selectedSession, setSelectedSession] = useState<ChatSession | null>(null)
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+  const [sessionDeleting, setSessionDeleting] = useState(false)
+  const [exportLoading, setExportLoading] = useState<Record<ExportFormat, boolean>>({
+    json: false,
+    csv: false,
+    pdf: false,
+  })
   const isLargeScreen = useMediaQuery('(min-width: 1024px)')
   const {
     currentChatbot,
@@ -27,19 +33,29 @@ export const Chats: React.FC = () => {
     getChatSessions,
     getSessionDetails,
     setChatSessionFilters,
+    deleteChatSession,
+    exportChats,
   } = useChatbotStore()
-  const { execute: exportJSON, loading: jsonLoading } = useApi(chatService.exportChatsAsJSON)
-  const { execute: exportCSV, loading: csvLoading } = useApi(chatService.exportChatsAsCSV)
-  const { execute: exportPDF, loading: pdfLoading } = useApi(chatService.exportChatsAsPDF)
-  const { execute: excuteDeleteChatSession, loading: sessionDeleting } = useApi<
-    ApiResponse<null>,
-    [string, string]
-  >(chatService.deleteChatSession)
+
+  const notifyFetchError = useCallback((error: unknown, fallback: string) => {
+    if (isAxiosError(error) && error.response && error.response.status < 500) {
+      showNotification('error', fallback)
+    }
+  }, [])
+
+  const fetchSessions = useCallback(
+    (chatbotId: string) => {
+      getChatSessions(chatbotId).catch(error =>
+        notifyFetchError(error, 'Could not load chat sessions. Please try again.')
+      )
+    },
+    [getChatSessions, notifyFetchError]
+  )
 
   const handleRefresh = useCallback(() => {
     if (!currentChatbot?.id) return
-    getChatSessions(currentChatbot.id)
-  }, [currentChatbot?.id, getChatSessions])
+    fetchSessions(currentChatbot.id)
+  }, [currentChatbot?.id, fetchSessions])
 
   const downloadBlob = useCallback((blob: Blob, filename: string) => {
     const url = URL.createObjectURL(blob)
@@ -51,21 +67,31 @@ export const Chats: React.FC = () => {
   }, [])
 
   const handleExport = useCallback(
-    async (format: 'json' | 'csv' | 'pdf') => {
+    async (format: ExportFormat) => {
       if (!currentChatbot?.id) return
-      const exportFn = { json: exportJSON, csv: exportCSV, pdf: exportPDF }[format]
-      const ext = { json: 'json', csv: 'csv', pdf: 'pdf' }[format]
-      const blob = await exportFn(currentChatbot.id)
-      downloadBlob(blob as unknown as Blob, `chats-export.${ext}`)
+      setExportLoading(prev => ({ ...prev, [format]: true }))
+      try {
+        const blob = await exportChats(currentChatbot.id, format)
+        downloadBlob(blob, `chats-export.${format}`)
+        showNotification('success', `Chats exported as ${format.toUpperCase()}.`)
+      } catch (error) {
+        if (isAxiosError(error) && error.response?.status === 404) {
+          showNotification('error', 'No chats available to export.')
+        } else if (isAxiosError(error) && error.response && error.response.status < 500) {
+          showNotification('error', `Could not export chats as ${format.toUpperCase()}.`)
+        }
+      } finally {
+        setExportLoading(prev => ({ ...prev, [format]: false }))
+      }
     },
-    [currentChatbot?.id, exportJSON, exportCSV, exportPDF, downloadBlob]
+    [currentChatbot?.id, exportChats, downloadBlob]
   )
 
   useEffect(() => {
     if (currentChatbot?.id) {
-      getChatSessions(currentChatbot.id)
+      fetchSessions(currentChatbot.id)
     }
-  }, [currentChatbot?.id, getChatSessions])
+  }, [currentChatbot?.id, fetchSessions])
 
   useEffect(() => {
     if (chatSession.chatSessions.length > 0 && !selectedSession) {
@@ -73,14 +99,14 @@ export const Chats: React.FC = () => {
     }
   }, [chatSession.chatSessions, selectedSession])
 
-  // Fetch full messages when selected session changes
   useEffect(() => {
     if (selectedSession?.id && currentChatbot?.id) {
-      getSessionDetails(currentChatbot.id, selectedSession.id)
+      getSessionDetails(currentChatbot.id, selectedSession.id).catch(error =>
+        notifyFetchError(error, 'Could not load conversation details.')
+      )
     }
-  }, [selectedSession?.id, currentChatbot?.id, getSessionDetails])
+  }, [selectedSession?.id, currentChatbot?.id, getSessionDetails, notifyFetchError])
 
-  // Sync selectedSession with store after messages are fetched
   useEffect(() => {
     if (selectedSession) {
       const updated = chatSession.chatSessions.find(s => s.id === selectedSession.id)
@@ -103,25 +129,30 @@ export const Chats: React.FC = () => {
   }, [currentChatbot, selectedSession])
 
   const confirmDelete = async () => {
-    if (currentChatbot && selectedSession) {
-      try {
-        const result = await excuteDeleteChatSession(currentChatbot.id, selectedSession.id)
-        if (result.status === 'success') {
-          showNotification('success', `Conversation deleted successfully`)
-          setDeleteModalOpen(false)
-          await getChatSessions(currentChatbot.id)
-          setSelectedSession(null)
-        }
-      } catch (error) {
-        showNotification('error', `Failed to delete Conversation: ${error}`)
+    if (!currentChatbot || !selectedSession) return
+    setSessionDeleting(true)
+    try {
+      await deleteChatSession(currentChatbot.id, selectedSession.id)
+      showNotification('success', 'Conversation deleted successfully.')
+      setDeleteModalOpen(false)
+      setSelectedSession(null)
+      fetchSessions(currentChatbot.id)
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.status === 404) {
+        showNotification('error', 'This conversation no longer exists.')
+        setDeleteModalOpen(false)
+      } else if (isAxiosError(error) && error.response && error.response.status < 500) {
+        showNotification('error', 'Could not delete conversation. Please try again.')
       }
+    } finally {
+      setSessionDeleting(false)
     }
   }
 
   const handleSortChange = (value: string | null) => {
-    if (value && !!currentChatbot?.id ) {
+    if (value && !!currentChatbot?.id) {
       setChatSessionFilters({ ...chatSession.filters, sortBy: value as ChatSessionSortOption })
-      getChatSessions(currentChatbot?.id)
+      fetchSessions(currentChatbot.id)
     }
   }
 
@@ -131,13 +162,6 @@ export const Chats: React.FC = () => {
         <div className="py-5 px-6 flex items-center justify-between">
           <p className="font-semibold text-2xl">Chat Logs</p>
           <div className="flex gap-2">
-            {/* TODO: Add filter button in phase 2
-            <Tooltip label="Filter">
-              <Button variant="secondary" size="compact-sm" radius="md">
-                <SlidersHorizontal size={16} strokeWidth={1.5} />
-              </Button>
-            </Tooltip>
-            */}
             <Tooltip label="Refresh">
               <Button variant="secondary" size="compact-sm" radius="md" onClick={handleRefresh}>
                 <RefreshCw
@@ -159,21 +183,21 @@ export const Chats: React.FC = () => {
                 <Menu.Dropdown>
                   <Menu.Item
                     leftSection={<FileSpreadsheet size={14} />}
-                    disabled={csvLoading}
+                    disabled={exportLoading.csv}
                     onClick={() => handleExport('csv')}
                   >
                     Export as CSV
                   </Menu.Item>
                   <Menu.Item
                     leftSection={<FileText size={14} />}
-                    disabled={pdfLoading}
+                    disabled={exportLoading.pdf}
                     onClick={() => handleExport('pdf')}
                   >
                     Export as PDF
                   </Menu.Item>
                   <Menu.Item
                     leftSection={<FileJson size={14} />}
-                    disabled={jsonLoading}
+                    disabled={exportLoading.json}
                     onClick={() => handleExport('json')}
                   >
                     Export as JSON
@@ -188,11 +212,7 @@ export const Chats: React.FC = () => {
           <div style={{ width: 'fit-content', minWidth: '100px' }}>
             <Select
               placeholder="Sort"
-              data={[
-                'Default',
-                'Oldest',
-                'Newest',
-              ]}
+              data={['Default', 'Oldest', 'Newest']}
               checkIconPosition="right"
               classNames={{ input: classes.selectInputBorderless }}
               rightSection={<ChevronDown size={16} />}
@@ -253,7 +273,11 @@ export const Chats: React.FC = () => {
         </div>
       </div>
       <div className="flex-1 h-full hidden lg:block">
-        <ChatDetails session={selectedSession} handleSessionDelete={handleSessionDelete} loading={isLoadingSessionDetails} />
+        <ChatDetails
+          session={selectedSession}
+          handleSessionDelete={handleSessionDelete}
+          loading={isLoadingSessionDetails}
+        />
       </div>
 
       <Modal

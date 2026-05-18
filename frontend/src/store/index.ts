@@ -113,6 +113,8 @@ export const useChatbotStore = () =>
       resetChatSessionFilters: state.resetChatSessionFilters,
       getChatSessionsByEndUser: state.getChatSessionsByEndUser,
       clearChatSessionsByEndUser: state.clearChatSessionsByEndUser,
+      deleteChatSession: state.deleteChatSession,
+      exportChats: state.exportChats,
       addDocument: state.addDocument,
       deleteDocument: state.deleteDocument,
       deleteMultipleDocuments: state.deleteMultipleDocuments,
