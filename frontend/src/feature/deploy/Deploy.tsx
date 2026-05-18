@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState } from 'react'
 import { Switch, Button, Textarea, Skeleton, Tooltip } from '@mantine/core'
 import {
   Copy,
@@ -10,9 +10,8 @@ import {
   RefreshCw,
   Loader2,
 } from 'lucide-react'
-import { useChatbotStore } from '@/store'
-import { embedService, type EmbedConfig } from '@/api/services/embed'
-import { useApi } from '@/hooks/useApi'
+import { isAxiosError } from 'axios'
+import { useChatbotStore, useEmbedStore } from '@/store'
 import { showNotification } from '@/utils/notifications'
 
 type EmbedType = 'widget' | 'iframe'
@@ -20,82 +19,116 @@ type EmbedType = 'widget' | 'iframe'
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001/api/'
 const EMBED_BASE = API_BASE.replace('/api/', '')
 
+const notifyOnError = (err: unknown, on404: string, fallback: string) => {
+  if (!isAxiosError(err)) return
+  const status = err.response?.status
+  if (status === undefined || status >= 500) return
+  if (status === 404) {
+    showNotification('error', on404)
+  } else {
+    showNotification('error', fallback)
+  }
+}
+
 export const Deploy: React.FC = () => {
   const { currentChatbot } = useChatbotStore()
-  const [embedConfig, setEmbedConfig] = useState<EmbedConfig | null>(null)
+  const {
+    embedConfig,
+    isLoadingEmbedConfig: fetchLoading,
+    isMutatingEmbedConfig: mutating,
+    fetchEmbedConfig,
+    createEmbedConfig,
+    updateEmbedConfig,
+  } = useEmbedStore()
   const [embedType, setEmbedType] = useState<EmbedType>('widget')
   const [copiedField, setCopiedField] = useState<string | null>(null)
   const [domains, setDomains] = useState('')
+  const [generating, setGenerating] = useState(false)
+  const [updating, setUpdating] = useState(false)
 
   const chatbotId = currentChatbot?.id
 
-  const { loading: fetchLoading, execute: fetchEmbedConfig } = useApi(embedService.getEmbedConfig)
-  const { loading: generating, execute: createEmbedConfig } = useApi(embedService.createEmbedConfig)
-  const { loading: updating, execute: updateEmbedConfig } = useApi(embedService.updateEmbedConfig)
-
-  // Fetch existing embed config on mount
-  const loadEmbedConfig = useCallback(async () => {
+  useEffect(() => {
     if (!chatbotId) return
-    try {
-      const res = await fetchEmbedConfig(chatbotId)
-      const config = res.data ?? null
-      setEmbedConfig(config)
-      setDomains(config?.allowedDomains?.join('\n') ?? '')
-    } catch {
-      setEmbedConfig(null)
-    }
+    fetchEmbedConfig(chatbotId).catch(err => {
+      if (!isAxiosError(err)) return
+      const status = err.response?.status
+      if (status === undefined || status >= 500) return
+      if (status === 404) {
+        showNotification('error', 'Chatbot not found.')
+      } else {
+        showNotification('error', 'Could not load embed configuration. Please refresh.')
+      }
+    })
   }, [chatbotId, fetchEmbedConfig])
 
   useEffect(() => {
-    loadEmbedConfig()
-  }, [loadEmbedConfig])
+    setDomains(embedConfig?.allowedDomains?.join('\n') ?? '')
+  }, [embedConfig])
 
   const handleGenerate = async () => {
     if (!chatbotId) return
+    setGenerating(true)
     try {
-      const res = await createEmbedConfig(chatbotId)
-      setEmbedConfig(res.data ?? null)
+      await createEmbedConfig(chatbotId)
       showNotification('success', 'Embed key generated successfully')
-    } catch {
-      // Error handled by axios interceptor
+    } catch (err) {
+      if (isAxiosError(err)) {
+        const status = err.response?.status
+        if (status === 404) {
+          showNotification('error', 'Chatbot not found.')
+        } else if (status === 409) {
+          showNotification('error', 'An embed key already exists for this chatbot.')
+        } else if (status !== undefined && status < 500) {
+          showNotification('error', 'Could not generate embed key. Please try again.')
+        }
+      }
+    } finally {
+      setGenerating(false)
     }
   }
 
-  const handleRegenerate = async () => {
+  const runUpdate = async (
+    payload: Parameters<typeof updateEmbedConfig>[1],
+    successMessage: string,
+    fallback: string
+  ) => {
     if (!chatbotId) return
+    setUpdating(true)
     try {
-      const res = await updateEmbedConfig(chatbotId, { regenerateKey: true })
-      setEmbedConfig(res.data ?? null)
-      showNotification('success', 'Embed key regenerated. Old key is now invalid.')
-    } catch {
-      // Error handled by axios interceptor
+      await updateEmbedConfig(chatbotId, payload)
+      showNotification('success', successMessage)
+    } catch (err) {
+      notifyOnError(err, 'Embed configuration no longer exists.', fallback)
+    } finally {
+      setUpdating(false)
     }
   }
 
-  const handleToggleActive = async (active: boolean) => {
-    if (!chatbotId) return
-    try {
-      const res = await updateEmbedConfig(chatbotId, { isActive: active })
-      setEmbedConfig(res.data ?? null)
-      showNotification('success', active ? 'Embed activated' : 'Embed deactivated')
-    } catch {
-      // Error handled by axios interceptor
-    }
-  }
+  const handleRegenerate = () =>
+    runUpdate(
+      { regenerateKey: true },
+      'Embed key regenerated. Old key is now invalid.',
+      'Could not regenerate embed key. Please try again.'
+    )
 
-  const handleSaveDomains = async () => {
-    if (!chatbotId) return
-    try {
-      const allowedDomains = domains
-        .split('\n')
-        .map(d => d.trim())
-        .filter(Boolean)
-      const res = await updateEmbedConfig(chatbotId, { allowedDomains })
-      setEmbedConfig(res.data ?? null)
-      showNotification('success', 'Domain restrictions updated')
-    } catch {
-      // Error handled by axios interceptor
-    }
+  const handleToggleActive = (active: boolean) =>
+    runUpdate(
+      { isActive: active },
+      active ? 'Embed activated' : 'Embed deactivated',
+      'Could not update embed status. Please try again.'
+    )
+
+  const handleSaveDomains = () => {
+    const allowedDomains = domains
+      .split('\n')
+      .map(d => d.trim())
+      .filter(Boolean)
+    return runUpdate(
+      { allowedDomains },
+      'Domain restrictions updated',
+      'Could not update domain restrictions. Please try again.'
+    )
   }
 
   const copyToClipboard = (text: string, field: string) => {
@@ -125,6 +158,8 @@ export const Deploy: React.FC = () => {
     ? `${EMBED_BASE}/embed/${embedConfig.embedKey}`
     : ''
 
+  const anyMutating = mutating || updating || generating
+
   return (
     <div className="flex justify-center items-start p-6 h-full overflow-y-auto">
       <div className="w-full max-w-[640px]">
@@ -146,7 +181,7 @@ export const Deploy: React.FC = () => {
                   checked={embedConfig.isActive}
                   onChange={e => handleToggleActive(e.currentTarget.checked)}
                   color="teal"
-                  disabled={updating}
+                  disabled={anyMutating}
                 />
               </div>
             )}

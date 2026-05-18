@@ -5,8 +5,10 @@ import { createUserSlice, type UserSlice } from './slices/userSlice'
 import { createChatbotSlice, type ChatbotSlice } from './slices/chatbotSlice'
 import { createBookingSlice, type BookingSlice } from './slices/bookingSlice'
 import { createModelsSlice, type ModelsSlice } from './slices/modelsSlice'
+import { createAnalyticsSlice, type AnalyticsSlice } from './slices/analyticsSlice'
+import { createEmbedSlice, type EmbedSlice } from './slices/embedSlice'
 
-type StoreState = UserSlice & ChatbotSlice & BookingSlice & ModelsSlice
+type StoreState = UserSlice & ChatbotSlice & BookingSlice & ModelsSlice & AnalyticsSlice & EmbedSlice
 
 export const useStore = create<StoreState>()(
   devtools(
@@ -16,6 +18,8 @@ export const useStore = create<StoreState>()(
         ...createChatbotSlice(...a),
         ...createBookingSlice(...a),
         ...createModelsSlice(...a),
+        ...createAnalyticsSlice(...a),
+        ...createEmbedSlice(...a),
       }),
       {
         name: 'app-storage',
@@ -136,5 +140,28 @@ export const useModelsStore = () =>
       modelsError: state.modelsError,
       fetchModels: state.fetchModels,
       clearModels: state.clearModels,
+    }))
+  )
+
+export const useAnalyticsStore = () =>
+  useStore(
+    useShallow(state => ({
+      analytics: state.analytics,
+      isLoadingAnalytics: state.isLoadingAnalytics,
+      fetchAnalytics: state.fetchAnalytics,
+      clearAnalytics: state.clearAnalytics,
+    }))
+  )
+
+export const useEmbedStore = () =>
+  useStore(
+    useShallow(state => ({
+      embedConfig: state.embedConfig,
+      isLoadingEmbedConfig: state.isLoadingEmbedConfig,
+      isMutatingEmbedConfig: state.isMutatingEmbedConfig,
+      fetchEmbedConfig: state.fetchEmbedConfig,
+      createEmbedConfig: state.createEmbedConfig,
+      updateEmbedConfig: state.updateEmbedConfig,
+      clearEmbedConfig: state.clearEmbedConfig,
     }))
   )

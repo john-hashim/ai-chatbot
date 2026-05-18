@@ -16,11 +16,10 @@ import {
   TrendingUp,
   Globe,
 } from 'lucide-react'
-import { useChatbotStore } from '@/store'
-import { useApi } from '@/hooks/useApi'
-import { analyticsService } from '@/api/services/analytics'
-import type { AnalyticsData, AnalyticsPeriod } from '@/types/analytics'
-import type { ApiResponse } from '@/types/api'
+import { isAxiosError } from 'axios'
+import { useChatbotStore, useAnalyticsStore } from '@/store'
+import { showNotification } from '@/utils/notifications'
+import type { AnalyticsPeriod } from '@/types/analytics'
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
@@ -52,19 +51,23 @@ const StatCard = ({ title, value, icon, loading }: StatCardProps) => (
 
 export const Analytics = () => {
   const { currentChatbot } = useChatbotStore()
-  const { execute: fetchAnalytics, data, loading } = useApi<
-    ApiResponse<AnalyticsData>,
-    [string, AnalyticsPeriod]
-  >(analyticsService.getAnalytics)
+  const { analytics, isLoadingAnalytics: loading, fetchAnalytics } = useAnalyticsStore()
   const [period, setPeriod] = useState<AnalyticsPeriod>('30d')
 
   useEffect(() => {
-    if (currentChatbot?.id) {
-      fetchAnalytics(currentChatbot.id, period).catch(() => {})
-    }
+    if (!currentChatbot?.id) return
+    fetchAnalytics(currentChatbot.id, period).catch(err => {
+      if (!isAxiosError(err)) return
+      const status = err.response?.status
+      if (status === undefined || status >= 500) return
+      if (status === 404) {
+        showNotification('error', 'Chatbot not found.')
+      } else {
+        showNotification('error', 'Could not load analytics. Please try again.')
+      }
+    })
   }, [currentChatbot?.id, period, fetchAnalytics])
 
-  const analytics = data?.data
   const summary = analytics?.summary
 
   return (
