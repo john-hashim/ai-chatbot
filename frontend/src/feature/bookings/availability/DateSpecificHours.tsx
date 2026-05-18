@@ -5,7 +5,9 @@ import { modals } from '@mantine/modals'
 import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc'
 import timezone from 'dayjs/plugin/timezone'
+import { isAxiosError } from 'axios'
 import { useBookingStore, useChatbotStore } from '@/store'
+import { showNotification } from '@/utils/notifications'
 
 dayjs.extend(utc)
 dayjs.extend(timezone)
@@ -32,7 +34,17 @@ export const DateSpecificHours = memo<DateSpecificHoursProps>(
 
     const handleDelete = (scheduleId: string) => {
       if (!currentChatbot) return
-      deleteAvailability(currentChatbot.id, scheduleId).catch(console.error)
+      deleteAvailability(currentChatbot.id, scheduleId)
+        .then(() => showNotification('success', 'Availability removed.'))
+        .catch(err => {
+          if (!isAxiosError(err) || !err.response) return
+          const status = err.response.status
+          if (status === 404) {
+            showNotification('error', 'This availability no longer exists.')
+          } else if (status < 500) {
+            showNotification('error', 'Could not delete availability. Please try again.')
+          }
+        })
     }
 
     const selectDateAndTime = () => {

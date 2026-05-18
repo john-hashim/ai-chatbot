@@ -3,8 +3,20 @@ import { Clock, Plus, X } from 'lucide-react'
 import { Avatar, Loader, Select, Tooltip } from '@mantine/core'
 import dayjs from 'dayjs'
 import customParseFormat from 'dayjs/plugin/customParseFormat'
+import { isAxiosError } from 'axios'
 import { useBookingStore, useChatbotStore } from '@/store'
+import { showNotification } from '@/utils/notifications'
 import type { UpdateTimeSlotsRequest } from '@/types/bookings'
+
+const handleSlotError = (err: unknown, fallback: string) => {
+  if (!isAxiosError(err) || !err.response) return
+  const status = err.response.status
+  if (status === 404) {
+    showNotification('error', 'This availability no longer exists.')
+  } else if (status < 500) {
+    showNotification('error', fallback)
+  }
+}
 
 dayjs.extend(customParseFormat)
 
@@ -55,7 +67,9 @@ export const WeeklyAvailability = memo<WeeklyAvailabilityProps>(({ createWeeklyA
     const data: UpdateTimeSlotsRequest = {
       timeSlots: current.timeSlots.map((s, i) => (i === slotIndex ? { ...s, [field]: value } : s)),
     }
-    updateAvailability(currentChatbot.id, scheduleId, data).catch(console.error)
+    updateAvailability(currentChatbot.id, scheduleId, data).catch(err =>
+      handleSlotError(err, 'Could not update availability. Please try again.')
+    )
   }
 
   const handleDelete = (scheduleId: string, slotIndex: number) => {
@@ -63,12 +77,16 @@ export const WeeklyAvailability = memo<WeeklyAvailabilityProps>(({ createWeeklyA
     const current = availabilities.find(a => a.id === scheduleId)
     if (!current) return
     if (current.timeSlots.length === 1) {
-      deleteAvailability(currentChatbot.id, scheduleId).catch(console.error)
+      deleteAvailability(currentChatbot.id, scheduleId).catch(err =>
+        handleSlotError(err, 'Could not delete availability. Please try again.')
+      )
     } else {
       const data: UpdateTimeSlotsRequest = {
         timeSlots: current.timeSlots.filter((_, i) => i !== slotIndex),
       }
-      updateAvailability(currentChatbot.id, scheduleId, data).catch(console.error)
+      updateAvailability(currentChatbot.id, scheduleId, data).catch(err =>
+        handleSlotError(err, 'Could not update availability. Please try again.')
+      )
     }
   }
 

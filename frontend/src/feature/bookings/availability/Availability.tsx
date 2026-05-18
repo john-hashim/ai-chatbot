@@ -13,6 +13,8 @@ import type {
 import { useBookingStore, useChatbotStore } from '@/store'
 import { useCallback } from 'react'
 import { Loader } from '@mantine/core'
+import { isAxiosError } from 'axios'
+import { showNotification } from '@/utils/notifications'
 
 export const Availability: React.FC = () => {
   // const [view, setView] = useState<'List' | 'Calendar'>('List')
@@ -33,8 +35,11 @@ export const Availability: React.FC = () => {
       }
       try {
         await createAvailability(currentChatbot.id, payload)
+        showNotification('success', 'Availability added.')
       } catch (error) {
-        console.error('Failed to create availability:', error)
+        if (isAxiosError(error) && error.response && error.response.status < 500) {
+          showNotification('error', 'Could not add availability. Please try again.')
+        }
       }
     },
     [currentChatbot, timezone, createAvailability]
@@ -52,8 +57,11 @@ export const Availability: React.FC = () => {
       }
       try {
         await createAvailability(currentChatbot.id, payload)
+        showNotification('success', 'Availability added.')
       } catch (error) {
-        console.error('Failed to create availability:', error)
+        if (isAxiosError(error) && error.response && error.response.status < 500) {
+          showNotification('error', 'Could not add availability. Please try again.')
+        }
       }
     },
     [currentChatbot, timezone, createAvailability]

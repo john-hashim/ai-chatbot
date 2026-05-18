@@ -35,6 +35,7 @@ export interface BookingSlice {
   cancellingAppointmentId: string | null
   connectingCalendar: boolean
   disconnectingCalendar: boolean
+  exportingAppointmentsPdf: boolean
 
   // Actions
   fetchBookingData: (chatbotId: string) => Promise<void>
@@ -53,6 +54,7 @@ export interface BookingSlice {
   ) => Promise<void>
   deleteAvailability: (chatbotId: string, slotId: string) => Promise<void>
   fetchAppointments: (chatbotId: string, dateFilter?: AppointmentDateFilter | null) => Promise<void>
+  exportAppointmentsAsPDF: (chatbotId: string, dateFilter?: string | null) => Promise<Blob>
   cancelAppointment: (chatbotId: string, appointmentId: string) => Promise<void>
   clearAppointments: () => void
   connectGoogleCalendar: (chatbotId: string) => Promise<void>
@@ -82,6 +84,7 @@ export const createBookingSlice: StateCreator<BookingSlice, [['zustand/devtools'
   cancellingAppointmentId: null,
   connectingCalendar: false,
   disconnectingCalendar: false,
+  exportingAppointmentsPdf: false,
 
   clearAvailabilities: () => {
     set(
@@ -201,7 +204,21 @@ export const createBookingSlice: StateCreator<BookingSlice, [['zustand/devtools'
       )
     } catch (err) {
       set({ appointmentIsEnabled: prev }, undefined, '[Booking] Update is (revert)')
-      console.error(err)
+      throw err
+    }
+  },
+
+  exportAppointmentsAsPDF: async (chatbotId: string, dateFilter: string | null = null) => {
+    set({ exportingAppointmentsPdf: true }, undefined, '[Booking] Exporting Appointments PDF')
+    try {
+      const res = await bookingsService.exportAppointmentsAsPDF(chatbotId, dateFilter)
+      return res.data
+    } finally {
+      set(
+        { exportingAppointmentsPdf: false },
+        undefined,
+        '[Booking] Exporting Appointments PDF Done'
+      )
     }
   },
 

@@ -4,8 +4,9 @@ import { Button, Loader, Select, Skeleton, Tooltip } from '@mantine/core'
 import { useParams } from 'react-router-dom'
 import { rawTimeZones } from '@vvo/tzdb'
 import { Check, MapPin, Pencil, Phone, X } from 'lucide-react'
-import { notifications } from '@mantine/notifications'
+import { isAxiosError } from 'axios'
 import { useBookingStore } from '@/store'
+import { showNotification } from '@/utils/notifications'
 import googleCalendarIcon from '@/assets/icons/google-calendar.svg'
 import googleMeetIcon from '@/assets/icons/google-meet.svg'
 // import zoomIcon from '@/assets/icons/zoom-icon.svg'
@@ -116,6 +117,17 @@ export const BookingSettings: React.FC = () => {
   useEffect(() => setDraftAddress(locationAddress ?? ''), [locationAddress])
   useEffect(() => setDraftPhone(locationPhone ?? ''), [locationPhone])
 
+  const notifyAxios4xx = (err: unknown, fallback: string) => {
+    if (isAxiosError(err) && err.response) {
+      const status = err.response.status
+      if (status === 404) {
+        showNotification('error', 'This chatbot no longer exists.')
+      } else if (status < 500) {
+        showNotification('error', fallback)
+      }
+    }
+  }
+
   const handleDurationChange = async (val: string | null) => {
     if (!val || !chatbotId || updatingDuration) return
     const prev = localDuration
@@ -123,8 +135,10 @@ export const BookingSettings: React.FC = () => {
     setUpdatingDuration(true)
     try {
       await updateDuration(chatbotId, Number(val))
-    } catch {
+      showNotification('success', 'Duration updated.')
+    } catch (err) {
       setLocalDuration(prev)
+      notifyAxios4xx(err, 'Could not update duration. Please try again.')
     } finally {
       setUpdatingDuration(false)
     }
@@ -137,8 +151,10 @@ export const BookingSettings: React.FC = () => {
     setUpdatingTimezone(true)
     try {
       await updateTimezone(chatbotId, val)
-    } catch {
+      showNotification('success', 'Timezone updated.')
+    } catch (err) {
       setLocalTimezone(prev)
+      notifyAxios4xx(err, 'Could not update timezone. Please try again.')
     } finally {
       setUpdatingTimezone(false)
     }
@@ -175,8 +191,10 @@ export const BookingSettings: React.FC = () => {
       await updateNotificationEmail(chatbotId, trimmed)
       setIsEditingEmail(false)
       setEmailError('')
-    } catch {
+      showNotification('success', 'Notification email saved.')
+    } catch (err) {
       setEmailError('Failed to save. Please try again.')
+      notifyAxios4xx(err, 'Could not save notification email. Please try again.')
     } finally {
       setSavingEmail(false)
     }
@@ -194,9 +212,13 @@ export const BookingSettings: React.FC = () => {
     if (!chatbotId || type === effectiveType) return
     setOptimisticType(type)
     updateLocation(chatbotId, { locationType: type })
-      .catch(() =>
-        notifications.show({ message: 'Could not update location.', className: 'error' })
-      )
+      .then(() => {
+        showNotification(
+          'success',
+          type ? 'Location updated.' : 'Location removed.'
+        )
+      })
+      .catch(err => notifyAxios4xx(err, 'Could not update location. Please try again.'))
       .finally(() => setOptimisticType(undefined))
   }
 
@@ -208,9 +230,11 @@ export const BookingSettings: React.FC = () => {
     const t = setTimeout(() => {
       setAutosaving(true)
       updateLocation(chatbotId, { locationAddress: draftAddress || null })
-        .catch(() =>
-          notifications.show({ message: 'Could not save address.', className: 'error' })
-        )
+        .catch(err => {
+          if (isAxiosError(err) && err.response && err.response.status < 500) {
+            showNotification('error', 'Could not save address. Please try again.')
+          }
+        })
         .finally(() => setAutosaving(false))
     }, AUTOSAVE_DELAY_MS)
     return () => clearTimeout(t)
@@ -223,9 +247,11 @@ export const BookingSettings: React.FC = () => {
     const t = setTimeout(() => {
       setAutosaving(true)
       updateLocation(chatbotId, { locationPhone: trimmed || null })
-        .catch(() =>
-          notifications.show({ message: 'Could not save phone number.', className: 'error' })
-        )
+        .catch(err => {
+          if (isAxiosError(err) && err.response && err.response.status < 500) {
+            showNotification('error', 'Could not save phone number. Please try again.')
+          }
+        })
         .finally(() => setAutosaving(false))
     }, AUTOSAVE_DELAY_MS)
     return () => clearTimeout(t)
@@ -235,16 +261,25 @@ export const BookingSettings: React.FC = () => {
     if (!chatbotId || connectingCalendar) return
     try {
       await connectGoogleCalendar(chatbotId)
-      notifications.show({ message: 'Calendar connected.', className: 'success' })
+      showNotification('success', 'Calendar connected.')
     } catch (err) {
       console.error('[Calendar connect] failed:', err)
+      if (isAxiosError(err) && err.response) {
+        const status = err.response.status
+        if (status === 404) {
+          showNotification('error', 'This chatbot no longer exists.')
+        } else if (status < 500) {
+          showNotification('error', 'Could not connect calendar. Please try again.')
+        }
+        return
+      }
       const reason = err instanceof Error ? err.message : 'connect_failed'
       if (reason === 'popup_closed') return
       const message =
         reason === 'popup_blocked'
           ? 'Pop-up blocked. Please allow pop-ups for this site and try again.'
           : `Could not connect calendar (${reason}).`
-      notifications.show({ message, className: 'error' })
+      showNotification('error', message)
     }
   }
 
@@ -252,12 +287,9 @@ export const BookingSettings: React.FC = () => {
     if (!chatbotId || disconnectingCalendar) return
     try {
       await disconnectCalendar(chatbotId)
-      notifications.show({ message: 'Calendar disconnected.', className: 'success' })
-    } catch {
-      notifications.show({
-        message: 'Could not disconnect calendar.',
-        className: 'error',
-      })
+      showNotification('success', 'Calendar disconnected.')
+    } catch (err) {
+      notifyAxios4xx(err, 'Could not disconnect calendar. Please try again.')
     }
   }
 

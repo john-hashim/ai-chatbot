@@ -13,11 +13,10 @@ import {
 } from '@mantine/core'
 import { DateInput } from '@mantine/dates'
 import { modals } from '@mantine/modals'
+import { isAxiosError } from 'axios'
 import { Calendar, Download, List, MapPin, Phone, Table as TableIcon, Video } from 'lucide-react'
 import { useBookingStore } from '@/store'
-import { useApi } from '@/hooks/useApi'
-import { bookingsService } from '@/api/services/bookings'
-import { showLoadingNotification, showNotification } from '@/utils/notifications'
+import { showNotification } from '@/utils/notifications'
 import type { Appointment, AppointmentDatePreset, LocationType } from '@/types/bookings'
 import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc'
@@ -76,12 +75,17 @@ const getInitials = (name: string): string =>
 
 export const Appointments: React.FC = () => {
   const { chatbotId } = useParams<{ chatbotId: string }>()
-  const { appointments, fetchingAppointments, appointmentsError, fetchAppointments } =
-    useBookingStore()
+  const {
+    appointments,
+    fetchingAppointments,
+    appointmentsError,
+    fetchAppointments,
+    exportAppointmentsAsPDF,
+    exportingAppointmentsPdf,
+  } = useBookingStore()
   const [filterOption, setFilterOption] = useState<DateFilterOption>('next7')
   const [customDate, setCustomDate] = useState<Date | null>(null)
   const [view, setView] = useState<AppointmentView>('list')
-  const { execute: exportPDF, loading: pdfLoading } = useApi(bookingsService.exportAppointmentsAsPDF)
 
   const dateFilterParam = useMemo<string | null>(() => {
     if (filterOption === 'custom') {
@@ -129,23 +133,35 @@ export const Appointments: React.FC = () => {
   useEffect(() => {
     if (!chatbotId) return
     if (filterOption === 'custom' && !customDate) return
-    fetchAppointments(chatbotId, dateFilterParam)
+    fetchAppointments(chatbotId, dateFilterParam).catch(err => {
+      if (isAxiosError(err) && err.response && err.response.status < 500) {
+        showNotification('error', 'Could not load appointments. Please try again.')
+      }
+    })
   }, [chatbotId, filterOption, dateFilterParam, customDate, fetchAppointments])
 
   const handleExportPDF = useCallback(async () => {
     if (!chatbotId) return
     try {
-      const blob = (await exportPDF(chatbotId, dateFilterParam)) as unknown as Blob
+      const blob = await exportAppointmentsAsPDF(chatbotId, dateFilterParam)
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
       a.download = `appointments-${dateFilterParam ?? 'all'}.pdf`
       a.click()
       URL.revokeObjectURL(url)
+      showNotification('success', 'Appointments exported.')
     } catch (err) {
-      showNotification('error', `Failed to export: ${err instanceof Error ? err.message : err}`)
+      if (isAxiosError(err) && err.response) {
+        const status = err.response.status
+        if (status === 404) {
+          showNotification('error', 'This chatbot no longer exists.')
+        } else if (status < 500) {
+          showNotification('error', 'Could not export appointments. Please try again.')
+        }
+      }
     }
-  }, [chatbotId, dateFilterParam, exportPDF])
+  }, [chatbotId, dateFilterParam, exportAppointmentsAsPDF])
 
   const canExport =
     appointments.length > 0 && !(filterOption === 'custom' && !customDate)
@@ -217,7 +233,7 @@ export const Appointments: React.FC = () => {
               size="compact-sm"
               radius="md"
               onClick={handleExportPDF}
-              loading={pdfLoading}
+              loading={exportingAppointmentsPdf}
               disabled={!canExport}
             >
               <Download size={16} strokeWidth={1.5} />
@@ -340,12 +356,20 @@ const AppointmentTableRow: React.FC<{ appointment: Appointment; showActionCol: b
       labels: { confirm: 'Cancel appointment', cancel: 'Keep' },
       confirmProps: { color: 'red', variant: 'filled' },
       onConfirm: async () => {
-        const notification = showLoadingNotification('Cancelling', 'Please wait...')
         try {
           await cancelAppointment(chatbotId, appointment.id)
-          notification.success('Appointment cancelled')
+          showNotification('success', 'Appointment cancelled.')
         } catch (e) {
-          notification.error(`Failed to cancel: ${e instanceof Error ? e.message : e}`)
+          if (isAxiosError(e) && e.response) {
+            const status = e.response.status
+            if (status === 404) {
+              showNotification('error', 'This appointment no longer exists.')
+            } else if (status === 400) {
+              showNotification('error', 'This appointment is already cancelled.')
+            } else if (status < 500) {
+              showNotification('error', 'Could not cancel appointment. Please try again.')
+            }
+          }
         }
       },
     })
@@ -410,12 +434,20 @@ const AppointmentRow: React.FC<{ appointment: Appointment }> = ({ appointment })
       labels: { confirm: 'Cancel appointment', cancel: 'Keep' },
       confirmProps: { color: 'red', variant: 'filled' },
       onConfirm: async () => {
-        const notification = showLoadingNotification('Cancelling', 'Please wait...')
         try {
           await cancelAppointment(chatbotId, appointment.id)
-          notification.success('Appointment cancelled')
+          showNotification('success', 'Appointment cancelled.')
         } catch (e) {
-          notification.error(`Failed to cancel: ${e instanceof Error ? e.message : e}`)
+          if (isAxiosError(e) && e.response) {
+            const status = e.response.status
+            if (status === 404) {
+              showNotification('error', 'This appointment no longer exists.')
+            } else if (status === 400) {
+              showNotification('error', 'This appointment is already cancelled.')
+            } else if (status < 500) {
+              showNotification('error', 'Could not cancel appointment. Please try again.')
+            }
+          }
         }
       },
     })

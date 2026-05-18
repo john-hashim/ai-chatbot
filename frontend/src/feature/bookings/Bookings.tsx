@@ -3,10 +3,12 @@ import { useParams } from 'react-router-dom'
 import { useMediaQuery } from '@mantine/hooks'
 import { ActionIcon, Switch, Tooltip } from '@mantine/core'
 import { ChevronLeft, ChevronRight, Settings } from 'lucide-react'
+import { isAxiosError } from 'axios'
 import { Availability } from './availability/Availability'
 import { Appointments } from './Appointments'
 import { BookingSettings } from './BookingSettings'
 import { useBookingStore } from '@/store'
+import { showNotification } from '@/utils/notifications'
 
 type Tab = 'availability' | 'appointments' | 'settings'
 
@@ -23,14 +25,31 @@ export const Bookings: React.FC = () => {
   const isLargeScreen = useMediaQuery('(min-width: 1024px)')
 
   useEffect(() => {
-    if (chatbotId) {
-      fetchBookingData(chatbotId)
-    }
+    if (!chatbotId) return
+    fetchBookingData(chatbotId).catch(err => {
+      if (isAxiosError(err) && err.response && err.response.status < 500) {
+        showNotification('error', 'Could not load booking settings. Please refresh.')
+      }
+    })
   }, [chatbotId, fetchBookingData])
 
-  const toggleAppointmentFeature = (isEnabled: boolean) => {
-    if (chatbotId) {
-      updateAppointmentIsEnabled(chatbotId, isEnabled)
+  const toggleAppointmentFeature = async (isEnabled: boolean) => {
+    if (!chatbotId) return
+    try {
+      await updateAppointmentIsEnabled(chatbotId, isEnabled)
+      showNotification(
+        'success',
+        isEnabled ? 'Appointments enabled.' : 'Appointments disabled.'
+      )
+    } catch (err) {
+      if (isAxiosError(err) && err.response) {
+        const status = err.response.status
+        if (status === 404) {
+          showNotification('error', 'This chatbot no longer exists.')
+        } else if (status < 500) {
+          showNotification('error', 'Could not update appointments setting. Please try again.')
+        }
+      }
     }
   }
 
