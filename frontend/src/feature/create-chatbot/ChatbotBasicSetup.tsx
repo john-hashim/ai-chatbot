@@ -123,7 +123,9 @@ export const ChatbotBasicSetup: React.FC = () => {
           profilePictureUrl = await uploadImageToR2(file, 'profile-pictures')
         } catch (error) {
           // 5xx / network already surfaced by the interceptor — stay silent in that case.
-          if (!isAxiosError(error) || !error.response || error.response.status < 500) {
+          const status = isAxiosError(error) ? error.response?.status : undefined
+          const handledByInterceptor = isAxiosError(error) && (!status || status >= 500)
+          if (!handledByInterceptor) {
             showNotification('error', 'Failed to upload profile picture. Please try again.')
           }
           return

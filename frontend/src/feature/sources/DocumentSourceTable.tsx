@@ -1,10 +1,11 @@
 import { forwardRef, useImperativeHandle, useRef, useState } from 'react'
 import { Button, Checkbox, Select, TextInput, Text, Tooltip, Menu } from '@mantine/core'
 import { ChevronDown, Ellipsis, Loader2, Search, SearchX, Trash } from 'lucide-react'
+import { isAxiosError } from 'axios'
 import { useChatbotStore } from '@/store'
 import type { SortOption } from '@/types/common'
 import { useFormat } from '@/hooks/useFormats'
-import { showLoadingNotification } from '@/utils/notifications'
+import { showLoadingNotification, showNotification } from '@/utils/notifications'
 import classes from '@/theme.module.css'
 import { modals } from '@mantine/modals'
 import { TagComponent } from '@/components/common/tag'
@@ -65,18 +66,30 @@ export const DocumentSourceTable = forwardRef<DocumentSourceTableRef, DocumentSo
       }
     }
 
+    const handleRefreshError = (error: unknown) => {
+      if (isAxiosError(error)) {
+        const status = error.response?.status
+        if (!status || status >= 500) return
+        if (status === 404) {
+          showNotification('error', 'This chatbot no longer exists.')
+          return
+        }
+        showNotification('error', 'Could not refresh sources. Please try again.')
+      }
+    }
+
     const handleSearch = (query: string) => {
       setDocumentFilters({ ...documentFilters, searchParam: query })
       if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current)
       searchTimeoutRef.current = setTimeout(() => {
-        getChatbot()
+        getChatbot().catch(handleRefreshError)
       }, 300)
     }
 
     const handleSortChange = (value: string | null) => {
       if (value) {
         setDocumentFilters({ ...documentFilters, sortBy: value as SortOption })
-        getChatbot()
+        getChatbot().catch(handleRefreshError)
       }
     }
 
@@ -97,9 +110,24 @@ export const DocumentSourceTable = forwardRef<DocumentSourceTableRef, DocumentSo
             await deleteDocument(documentId)
             notification.success('Source deleted successfully')
             setDocumentsToDelete([])
-          } catch (e) {
-            notification.error(`Failed to delete: ${e}`)
+          } catch (error) {
             setDocumentsToDelete([])
+            if (isAxiosError(error)) {
+              const status = error.response?.status
+              if (!status || status >= 500) {
+                notification.update({ loading: false, message: '', autoClose: 1 })
+                return
+              }
+              if (status === 404) {
+                notification.error('This source no longer exists.')
+                return
+              }
+              if (status === 400) {
+                notification.error('Invalid request. Please refresh and try again.')
+                return
+              }
+            }
+            notification.error('Could not delete source. Please try again.')
           }
         },
       })
@@ -126,8 +154,23 @@ export const DocumentSourceTable = forwardRef<DocumentSourceTableRef, DocumentSo
             setDocumentsToDelete([])
             setSelectAll(false)
             notification.success(`Successfully deleted ${deletedCount} source(s)`)
-          } catch (e) {
-            notification.error(`Failed to delete: ${e}`)
+          } catch (error) {
+            if (isAxiosError(error)) {
+              const status = error.response?.status
+              if (!status || status >= 500) {
+                notification.update({ loading: false, message: '', autoClose: 1 })
+                return
+              }
+              if (status === 400) {
+                notification.error('Invalid request. Please refresh and try again.')
+                return
+              }
+              if (status === 404) {
+                notification.error('Those sources no longer exist.')
+                return
+              }
+            }
+            notification.error('Could not delete sources. Please try again.')
           }
         },
       })

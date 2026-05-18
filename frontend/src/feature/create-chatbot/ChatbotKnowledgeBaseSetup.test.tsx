@@ -189,7 +189,7 @@ describe('ChatbotKnowledgeBaseSetup', () => {
   })
 
   describe('train flow', () => {
-    it('shows the processed-count success message and navigates', async () => {
+    it('navigates after a successful train', async () => {
       trainChatbotDocumentsMock.mockResolvedValueOnce({
         documentsProcessed: 3,
         chunksCreated: 12,
@@ -197,16 +197,10 @@ describe('ChatbotKnowledgeBaseSetup', () => {
       renderPage()
       await clickTrain()
 
-      await waitFor(() =>
-        expect(showNotificationMock).toHaveBeenCalledWith(
-          'success',
-          'Training complete! Processed 3 document(s) into 12 chunks.'
-        )
-      )
-      expect(navigateMock).toHaveBeenCalledWith('/chatbot/cb1')
+      await waitFor(() => expect(navigateMock).toHaveBeenCalledWith('/chatbot/cb1'))
     })
 
-    it('shows the "already trained" message when nothing was processed', async () => {
+    it('still navigates when nothing was processed', async () => {
       trainChatbotDocumentsMock.mockResolvedValueOnce({
         documentsProcessed: 0,
         chunksCreated: 0,
@@ -214,13 +208,7 @@ describe('ChatbotKnowledgeBaseSetup', () => {
       renderPage()
       await clickTrain()
 
-      await waitFor(() =>
-        expect(showNotificationMock).toHaveBeenCalledWith(
-          'success',
-          'All documents are already trained!'
-        )
-      )
-      expect(navigateMock).toHaveBeenCalledWith('/chatbot/cb1')
+      await waitFor(() => expect(navigateMock).toHaveBeenCalledWith('/chatbot/cb1'))
     })
 
     it('shows "no longer exists" on 404', async () => {

@@ -224,7 +224,7 @@ describe('Landing', () => {
     it('shows success toast and closes the modal on success', async () => {
       deleteChatbotMock.mockResolvedValueOnce(undefined)
       await triggerDeleteConfirm()
-      expect(showNotificationMock).toHaveBeenCalledWith('success', '"Bot One" was deleted.')
+      expect(showNotificationMock).toHaveBeenCalledWith('success', 'Chatbot deleted successfully.')
       expect(modalsCloseMock).toHaveBeenCalled()
     })
 

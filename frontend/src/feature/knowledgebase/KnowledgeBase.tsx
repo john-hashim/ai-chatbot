@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Button } from '@mantine/core'
 import { useMediaQuery } from '@mantine/hooks'
+import { isAxiosError } from 'axios'
 import { File, HelpCircle, Link, Loader2, Type } from 'lucide-react'
 import { UploadFile } from '../sources/File'
 import { UploadQandA } from '../sources/QandA'
@@ -8,9 +9,6 @@ import { UploadText } from '../sources/Text'
 import { UploadLinks } from '../sources/Links'
 import { useChatbotStore } from '@/store'
 import { useFormat } from '@/hooks/useFormats'
-import { useApi } from '@/hooks/useApi'
-import { documentService } from '@/api/services/document'
-import type { ApiResponse } from '@/types/api'
 import { showNotification } from '@/utils/notifications'
 
 type Tab = 'files' | 'qa' | 'text' | 'links' | 'details'
@@ -89,32 +87,29 @@ const DataSourcesPanel: React.FC<{
 export const KnowledgeBase: React.FC = () => {
   const [activeTab, setActiveTab] = useState<Tab>('files')
   const isLargeScreen = useMediaQuery('(min-width: 1024px)')
-  const { currentChatbot, getChatbot } = useChatbotStore()
+  const { currentChatbot, getChatbot, trainChatbotDocuments } = useChatbotStore()
   const { formatFileSize } = useFormat()
-
-  const { execute: executeTraining, loading: isTraining } = useApi<
-    ApiResponse<{ documentsProcessed: number; chunksCreated: number }>,
-    [string]
-  >(documentService.trainDocuments)
+  const [isTraining, setIsTraining] = useState(false)
 
   const handleRetrain = async () => {
     if (!currentChatbot?.id) return
+    setIsTraining(true)
     try {
-      const result = await executeTraining(currentChatbot.id)
-      if (result.data) {
-        const { documentsProcessed, chunksCreated } = result.data
-        if (documentsProcessed > 0) {
-          showNotification(
-            'success',
-            `Training complete! Processed ${documentsProcessed} document(s) into ${chunksCreated} chunks.`
-          )
-        } else {
-          showNotification('success', 'All documents are already trained!')
+      await trainChatbotDocuments(currentChatbot.id)
+      showNotification('success', 'Training complete.')
+      getChatbot(currentChatbot.id).catch(error => {
+        if (isAxiosError(error) && error.response && error.response.status < 500) {
+          showNotification('error', 'Could not refresh chatbot. Please try again.')
         }
-        getChatbot(currentChatbot.id)
+      })
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.status === 404) {
+        showNotification('error', 'This chatbot no longer exists.')
+      } else if (isAxiosError(error) && error.response && error.response.status < 500) {
+        showNotification('error', 'Training failed. Please try again.')
       }
-    } catch {
-      showNotification('error', 'Training failed. Please try again.')
+    } finally {
+      setIsTraining(false)
     }
   }
 

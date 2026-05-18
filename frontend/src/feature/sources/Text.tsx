@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { TextEditor } from '../../components/common/TextEditor'
 import { Button, TextInput } from '@mantine/core'
+import { isAxiosError } from 'axios'
 import type { ApiResponse } from '@/types/api'
 import { useApi } from '@/hooks/useApi'
 import { documentService } from '@/api/services/document'
@@ -47,21 +48,36 @@ ${plainText}`
       metadata,
     }
 
-    if (currentChatbot) {
-      const notification = showLoadingNotification(
-        'Uploading File',
-        'Please wait while we upload your file'
-      )
-      const resp = await excuteTextSnippetCreate(textData, currentChatbot?.id)
-      if (resp.status === 'success' && resp.data) {
-        await addDocument()
-        tableRef.current?.reset()
-        notification.success('File Uploaded Successfully')
-        setTitle('')
-        setValue('')
-      } else {
-        notification.error('Failed to upload file')
+    if (!currentChatbot) return
+
+    const notification = showLoadingNotification(
+      'Uploading File',
+      'Please wait while we upload your file'
+    )
+    try {
+      await excuteTextSnippetCreate(textData, currentChatbot.id)
+      await addDocument()
+      tableRef.current?.reset()
+      notification.success('File Uploaded Successfully')
+      setTitle('')
+      setValue('')
+    } catch (error) {
+      if (isAxiosError(error)) {
+        const status = error.response?.status
+        if (!status || status >= 500) {
+          notification.update({ loading: false, message: '', autoClose: 1 })
+          return
+        }
+        if (status === 400) {
+          notification.error('Missing or invalid fields. Please check and try again.')
+          return
+        }
+        if (status === 404) {
+          notification.error('This chatbot no longer exists.')
+          return
+        }
       }
+      notification.error('Could not save text snippet. Please try again.')
     }
   }
 

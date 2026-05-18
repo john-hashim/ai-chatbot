@@ -46,6 +46,7 @@ export const ChatbotKnowledgeBaseSetup: React.FC = () => {
     setIsTraining(true)
     try {
       await trainChatbotDocuments(chatbotId)
+      showNotification('success', 'Training complete.')
       navigate(`/chatbot/${chatbotId}`)
     } catch (error) {
       if (isAxiosError(error) && error.response?.status === 404) {

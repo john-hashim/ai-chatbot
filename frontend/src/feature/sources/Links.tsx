@@ -2,6 +2,7 @@ import { Button, TextInput } from '@mantine/core'
 import { useRef, useState } from 'react'
 import { Tabs } from '@mantine/core'
 import { Info, Link, Loader2 } from 'lucide-react'
+import { isAxiosError } from 'axios'
 import { useApi } from '@/hooks/useApi'
 import type { ApiResponse } from '@/types/api'
 import { documentService } from '@/api/services/document'
@@ -23,32 +24,39 @@ export const UploadLinks: React.FC = () => {
   >(documentService.uploadWebsiteUrl)
 
   const handleSubmit = async () => {
-    if (!url.trim()) return
+    if (!url.trim() || !currentChatbot) return
 
     const notification = showLoadingNotification(
       activeTab === 'url' ? 'Crawling Website' : 'Loading Sitemap',
       'Please wait while we fetch and process the content'
     )
-    try {
-      if (currentChatbot) {
-        const data = {
-          url: url.trim(),
-          subtype: activeTab,
-        }
 
-        const resp = await executeWebsiteCrawl(data, currentChatbot.id)
-        if (resp.status === 'success' && resp.data) {
-          await addDocument()
-          tableRef.current?.reset()
-          setUrl('')
-          notification.success('Website content added successfully')
-        } else {
-          notification.error('Failed to fetch website content')
+    try {
+      await executeWebsiteCrawl({ url: url.trim(), subtype: activeTab }, currentChatbot.id)
+      await addDocument()
+      tableRef.current?.reset()
+      setUrl('')
+      notification.success('Website content added successfully')
+    } catch (error) {
+      if (isAxiosError(error)) {
+        const status = error.response?.status
+        // No response (network error) or 5xx — interceptor already toasted; stay silent.
+        if (!status || status >= 500) {
+          notification.update({ loading: false, message: '', autoClose: 1 })
+          return
+        }
+        if (status === 400) {
+          notification.error(
+            error.response?.data?.message ?? 'Invalid URL. Please check and try again.'
+          )
+          return
+        }
+        if (status === 404) {
+          notification.error('This chatbot no longer exists.')
+          return
         }
       }
-    } catch (e) {
-      console.log(e)
-      notification.error('Failed to fetch website content')
+      notification.error('Could not fetch website content. Please try again.')
     }
   }
 

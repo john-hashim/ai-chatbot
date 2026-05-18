@@ -19,7 +19,13 @@ export const showNotification = (type: 'success' | 'error', message: string) => 
 interface LoadingNotificationController {
   success: (message: string, title?: string) => void
   error: (message: string, title?: string) => void
-  update: (props: { loading?: boolean; message: string; title?: string; color?: string }) => void
+  update: (props: {
+    loading?: boolean
+    message: string
+    title?: string
+    color?: string
+    autoClose?: number | false
+  }) => void
 }
 
 export const showLoadingNotification = (

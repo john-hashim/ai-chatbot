@@ -1,6 +1,7 @@
 import { DropzoneUpload } from '../../components/common/DropzoneUpload'
 import { useRef } from 'react'
 import type { FileWithPath } from '@mantine/dropzone'
+import { isAxiosError } from 'axios'
 import { showLoadingNotification } from '@/utils/notifications'
 import { useApi } from '@/hooks/useApi'
 import type { ApiResponse } from '@/types/api'
@@ -19,19 +20,37 @@ export const UploadFile: React.FC = () => {
   )
 
   const onFileDrop = async (files: FileWithPath[]) => {
+    if (!currentChatbot) return
     const notification = showLoadingNotification(
       'Uploading File',
       'Please wait while we upload your file'
     )
-    if (currentChatbot) {
-      const resp = await excuteUploadDocument(files, currentChatbot.id)
-      if (resp.status === 'success' && resp.data) {
-        await addDocument()
-        tableRef.current?.reset()
-        notification.success('File Uploaded Successfully')
-      } else {
-        notification.error('Failed to upload file')
+    try {
+      await excuteUploadDocument(files, currentChatbot.id)
+      await addDocument()
+      tableRef.current?.reset()
+      notification.success('File Uploaded Successfully')
+    } catch (error) {
+      if (isAxiosError(error)) {
+        const status = error.response?.status
+        if (!status || status >= 500) {
+          notification.update({ loading: false, message: '', autoClose: 1 })
+          return
+        }
+        if (status === 400) {
+          notification.error('Invalid file or missing data. Please check and try again.')
+          return
+        }
+        if (status === 403) {
+          notification.error('You do not have permission to upload to this chatbot.')
+          return
+        }
+        if (status === 404) {
+          notification.error('This chatbot no longer exists.')
+          return
+        }
       }
+      notification.error('Could not upload file. Please try again.')
     }
   }
 

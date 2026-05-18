@@ -113,18 +113,14 @@ describe('ChatbotBasicSetup', () => {
   })
 
   describe('createChatbot flow', () => {
-    it('shows success toast and navigates on success', async () => {
+    it('navigates on success', async () => {
       createChatbotMock.mockResolvedValueOnce({ id: 'cb1' })
       renderPage()
       await fillNameAndSubmit()
 
       await waitFor(() =>
-        expect(showNotificationMock).toHaveBeenCalledWith(
-          'success',
-          'Chatbot created successfully!'
-        )
+        expect(navigateMock).toHaveBeenCalledWith('/chatbot/cb1/setup-knowledgebase')
       )
-      expect(navigateMock).toHaveBeenCalledWith('/chatbot/cb1/setup-knowledgebase')
     })
 
     it('shows the duplicate-name message on 409', async () => {

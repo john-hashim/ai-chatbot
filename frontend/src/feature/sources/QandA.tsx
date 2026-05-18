@@ -7,6 +7,7 @@ import type { Document, TextDocumentUploadParams } from '@/types/document'
 import { showLoadingNotification } from '@/utils/notifications'
 import { htmlToPlainText, calculateTextSize } from '@/utils/textFormatting'
 import { Button, TextInput } from '@mantine/core'
+import { isAxiosError } from 'axios'
 import { Loader2, Plus, X } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { DocumentSourceTable } from './DocumentSourceTable'
@@ -72,22 +73,37 @@ ${answerPlain}`
       metadata,
     }
 
-    if (currentChatbot) {
-      const notification = showLoadingNotification(
-        'Uploading File',
-        'Please wait while we upload your file'
-      )
-      const resp = await excuteTextSnippetCreate(textData, currentChatbot?.id)
-      if (resp.status === 'success' && resp.data) {
-        await addDocument()
-        tableRef.current?.reset()
-        notification.success('File Uploaded Successfully')
-        setTitle('')
-        setQuestions([''])
-        setValue('')
-      } else {
-        notification.error('Failed to upload file')
+    if (!currentChatbot) return
+
+    const notification = showLoadingNotification(
+      'Uploading File',
+      'Please wait while we upload your file'
+    )
+    try {
+      await excuteTextSnippetCreate(textData, currentChatbot.id)
+      await addDocument()
+      tableRef.current?.reset()
+      notification.success('File Uploaded Successfully')
+      setTitle('')
+      setQuestions([''])
+      setValue('')
+    } catch (error) {
+      if (isAxiosError(error)) {
+        const status = error.response?.status
+        if (!status || status >= 500) {
+          notification.update({ loading: false, message: '', autoClose: 1 })
+          return
+        }
+        if (status === 400) {
+          notification.error('Missing or invalid fields. Please check and try again.')
+          return
+        }
+        if (status === 404) {
+          notification.error('This chatbot no longer exists.')
+          return
+        }
       }
+      notification.error('Could not save Q&A. Please try again.')
     }
   }
 
