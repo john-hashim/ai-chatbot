@@ -32,6 +32,7 @@ export const createChatbot = async (req: Request, res: Response, next: NextFunct
         initialMessages: ['Hi! What can I help you with?'],
         instructionType: instructionType || 'base',
         customInstruction: instructionType === 'manual' ? customInstruction || null : null,
+        selectedModel: 'openai/gpt-5.4-mini',
         bookingConfig: {
           create: {
             timezone: timezone || 'UTC',

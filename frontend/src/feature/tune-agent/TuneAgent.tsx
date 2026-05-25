@@ -2,32 +2,54 @@ import { useEffect, useMemo, useState } from 'react'
 import { Logo } from '@/components/common/logo'
 import { Tooltip } from '@mantine/core'
 import { ArrowLeft, X } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { usePageTitle } from '@/hooks/usePageTitle'
-import { useModelsStore } from '@/store'
+import { useChatbotStore, useModelsStore } from '@/store'
 import { TuneAgentForm } from './TuneAgentForm'
 import { TuneAgentTips } from './TuneAgentTips'
 
 export const TuneAgent: React.FC = () => {
   usePageTitle('Tune Your Agent')
   const navigate = useNavigate()
+  const { chatbotId } = useParams()
 
   const { models, groupedModels, defaultModelId, isLoadingModels, fetchModels } = useModelsStore()
+  const { currentChatbot, getChatbot, updateChatbot } = useChatbotStore()
   const [model, setModel] = useState<string | null>(null)
 
   useEffect(() => {
     fetchModels()
   }, [fetchModels])
 
-  // Default to the API-provided default once models load (unless already chosen).
+  // Ensure the chatbot we're tuning is loaded (this route lives outside the
+  // dashboard layout that normally sets currentChatbot).
   useEffect(() => {
-    if (!model && defaultModelId) setModel(defaultModelId)
-  }, [defaultModelId, model])
+    if (chatbotId && currentChatbot?.id !== chatbotId) getChatbot(chatbotId)
+  }, [chatbotId, currentChatbot?.id, getChatbot])
+
+  // Default to the chatbot's saved model, falling back to the API default.
+  useEffect(() => {
+    if (model) return
+    const initial = currentChatbot?.selectedModel ?? defaultModelId
+    if (initial) setModel(initial)
+  }, [currentChatbot?.selectedModel, defaultModelId, model])
 
   const modelLabel = useMemo(
     () => models.find(m => m.id === model)?.label ?? 'your model',
-    [models, model],
+    [models, model]
   )
+
+  // Persist the model selection to the chatbot immediately on change.
+  const handleModelChange = async (id: string | null) => {
+    const previous = model
+    setModel(id)
+    try {
+      await updateChatbot({ selectedModel: id })
+    } catch (error) {
+      console.error('Failed to update model:', error)
+      setModel(previous)
+    }
+  }
 
   return (
     <div className="flex flex-col h-screen min-h-0">
@@ -55,7 +77,7 @@ export const TuneAgent: React.FC = () => {
           <div className="lg:w-3/5 w-full border-r border-border-week min-h-0 flex">
             <TuneAgentForm
               model={model}
-              onModelChange={setModel}
+              onModelChange={handleModelChange}
               models={models}
               groupedModels={groupedModels}
               isLoadingModels={isLoadingModels}

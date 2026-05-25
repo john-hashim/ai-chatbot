@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Button, CheckIcon, Select } from '@mantine/core'
 import { ArrowRight, ChevronRight } from 'lucide-react'
-import { showNotification } from '@/utils/notifications'
 import { Tick } from '@/components/common/Tick'
 import type { ModelGroup } from '@/store/slices/modelsSlice'
 import type { ChatModel } from '@/types/chatbot'
@@ -120,7 +119,6 @@ export const TuneAgentForm: React.FC<TuneAgentFormProps> = ({
       setAnswers(prev => prev.map((row, i) => (i === editingIdx ? { ...row, a: val } : row)))
       setEditingIdx(null)
       setDraft('')
-      showNotification('success', 'Answer updated')
       return
     }
     const next = [...answers, { q: currentQ.q, a: val }]
@@ -150,7 +148,6 @@ export const TuneAgentForm: React.FC<TuneAgentFormProps> = ({
       setEditingIdx(null)
       setDraft('')
     }
-    showNotification('success', 'Removed')
   }
 
   function resetAll() {
@@ -167,7 +164,8 @@ export const TuneAgentForm: React.FC<TuneAgentFormProps> = ({
   }
 
   function handleKey(e: React.KeyboardEvent<HTMLTextAreaElement>) {
-    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+    // Enter submits the answer; Shift+Enter inserts a newline.
+    if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       submit()
     }
@@ -216,7 +214,9 @@ export const TuneAgentForm: React.FC<TuneAgentFormProps> = ({
                 placeholder={isLoadingModels ? 'Loading models...' : 'Select a model'}
                 disabled={groupedModels.length === 0}
                 leftSection={
-                  iconForModelId(model) ? <ModelIcon src={iconForModelId(model)} alt="" /> : undefined
+                  iconForModelId(model) ? (
+                    <ModelIcon src={iconForModelId(model)} alt="" />
+                  ) : undefined
                 }
                 renderOption={({ option, checked }) => (
                   <div className="flex w-full items-center gap-2">
@@ -238,15 +238,12 @@ export const TuneAgentForm: React.FC<TuneAgentFormProps> = ({
             />
           ) : (
             <div className="flex flex-col gap-2.5">
-              {answers.length === 0 ? (
-                <div className="flex flex-col gap-2 py-[18px] text-left text-text-weak">
-                  <p className="m-0 max-w-[46ch] text-[12.5px] leading-normal">
-                    Answer the questions below about your product and what you're trying to achieve
-                    with this agent. Once you've answered them all, we'll generate a tailored agent
-                    tuning prompt for you.
-                  </p>
-                </div>
-              ) : (
+              <p className="m-0 text-left text-[12.5px] leading-normal text-text-weak">
+                Answer the questions below about your product and what you're trying to achieve with
+                this agent. Once you've answered them all, we'll generate a tailored agent tuning
+                prompt for you.
+              </p>
+              {answers.length > 0 && (
                 <div className="text-[11px] font-medium uppercase tracking-[0.08em] text-text-weak">
                   Answered questions
                 </div>
