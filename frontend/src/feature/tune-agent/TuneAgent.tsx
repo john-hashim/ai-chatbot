@@ -5,6 +5,7 @@ import { ArrowLeft, X } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import { useChatbotStore, useModelsStore } from '@/store'
+import { type InstructionType } from '@/constants/instructions'
 import { TuneAgentForm } from './TuneAgentForm'
 import { TuneAgentTips } from './TuneAgentTips'
 
@@ -16,6 +17,7 @@ export const TuneAgent: React.FC = () => {
   const { models, groupedModels, defaultModelId, isLoadingModels, fetchModels } = useModelsStore()
   const { currentChatbot, getChatbot, updateChatbot } = useChatbotStore()
   const [model, setModel] = useState<string | null>(null)
+  const [instructionType, setInstructionType] = useState<InstructionType | null>(null)
 
   useEffect(() => {
     fetchModels()
@@ -34,6 +36,12 @@ export const TuneAgent: React.FC = () => {
     if (initial) setModel(initial)
   }, [currentChatbot?.selectedModel, defaultModelId, model])
 
+  // Seed the instruction type from the chatbot's saved value once it loads.
+  useEffect(() => {
+    if (instructionType) return
+    setInstructionType((currentChatbot?.instructionType as InstructionType) ?? 'manual')
+  }, [currentChatbot?.instructionType, instructionType])
+
   const modelLabel = useMemo(
     () => models.find(m => m.id === model)?.label ?? 'your model',
     [models, model]
@@ -48,6 +56,32 @@ export const TuneAgent: React.FC = () => {
     } catch (error) {
       console.error('Failed to update model:', error)
       setModel(previous)
+    }
+  }
+
+  // Persist the instruction type the same way the model is saved. Switching to a
+  // preset (non-custom) clears any previously generated custom prompt.
+  const handleInstructionTypeChange = async (type: InstructionType) => {
+    const previous = instructionType
+    setInstructionType(type)
+    try {
+      await updateChatbot(
+        type === 'manual'
+          ? { instructionType: type }
+          : { instructionType: type, customInstruction: null }
+      )
+    } catch (error) {
+      console.error('Failed to update instruction type:', error)
+      setInstructionType(previous)
+    }
+  }
+
+  // Save the generated custom prompt to the chatbot (null clears it on reset).
+  const handleCustomInstructionChange = async (prompt: string | null) => {
+    try {
+      await updateChatbot({ customInstruction: prompt })
+    } catch (error) {
+      console.error('Failed to save custom instruction:', error)
     }
   }
 
@@ -78,6 +112,10 @@ export const TuneAgent: React.FC = () => {
             <TuneAgentForm
               model={model}
               onModelChange={handleModelChange}
+              instructionType={instructionType ?? 'manual'}
+              onInstructionTypeChange={handleInstructionTypeChange}
+              savedCustomInstruction={currentChatbot?.customInstruction ?? null}
+              onCustomInstructionChange={handleCustomInstructionChange}
               models={models}
               groupedModels={groupedModels}
               isLoadingModels={isLoadingModels}

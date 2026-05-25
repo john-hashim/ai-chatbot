@@ -81,7 +81,7 @@ export interface Chatbot extends ChatbotFormData {
   chatBubbleButtonColor: string
   chatBubbleButtonPosition: 'left' | 'right'
   instructionType: string
-  customInstruction?: string
+  customInstruction?: string | null
   selectedModel: string | null
 }
 

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Button, CheckIcon, Select } from '@mantine/core'
-import { ArrowRight, ChevronRight } from 'lucide-react'
+import { Button, CheckIcon, HoverCard, Select } from '@mantine/core'
+import { ArrowRight, ChevronRight, Info, RotateCcw } from 'lucide-react'
 import { Tick } from '@/components/common/Tick'
 import type { ModelGroup } from '@/store/slices/modelsSlice'
 import type { ChatModel } from '@/types/chatbot'
@@ -10,12 +10,21 @@ import deepseekIcon from '@/assets/icons/deepseek.svg'
 import geminiIcon from '@/assets/icons/gemini.svg'
 import metaIcon from '@/assets/icons/meta.svg'
 import openaiIcon from '@/assets/icons/openai.svg'
+import {
+  INSTRUCTION_OPTIONS,
+  getInstructionByType,
+  type InstructionType,
+} from '@/constants/instructions'
 import { AnimatedQuestion } from './AnimatedQuestion'
 import { AnsweredQuestion } from './AnsweredQuestion'
-import { PromptView } from './PromptView'
 import { TUNE_QUESTIONS, buildPrompt, type TuneAnswer } from './constants'
 
 type Stage = 'asking' | 'generating' | 'done'
+
+const instructionSelectData = INSTRUCTION_OPTIONS.map(opt => ({
+  value: opt.value,
+  label: opt.label,
+}))
 
 const VENDOR_ICONS: Record<string, string> = {
   Anthropic: claudeIcon,
@@ -31,6 +40,10 @@ const ModelIcon: React.FC<{ src?: string; alt: string }> = ({ src, alt }) =>
 interface TuneAgentFormProps {
   model: string | null
   onModelChange: (id: string | null) => void
+  instructionType: InstructionType
+  onInstructionTypeChange: (type: InstructionType) => void
+  savedCustomInstruction: string | null
+  onCustomInstructionChange: (prompt: string | null) => void
   models: ChatModel[]
   groupedModels: ModelGroup[]
   isLoadingModels: boolean
@@ -55,6 +68,10 @@ function smoothScrollTo(el: HTMLElement, target: number, duration = 700) {
 export const TuneAgentForm: React.FC<TuneAgentFormProps> = ({
   model,
   onModelChange,
+  instructionType,
+  onInstructionTypeChange,
+  savedCustomInstruction,
+  onCustomInstructionChange,
   models,
   groupedModels,
   isLoadingModels,
@@ -78,6 +95,15 @@ export const TuneAgentForm: React.FC<TuneAgentFormProps> = ({
   const [stage, setStage] = useState<Stage>('asking')
   const [prompt, setPrompt] = useState('')
 
+  const selectedInstruction = getInstructionByType(instructionType)
+  const isManual = instructionType === 'manual'
+
+  // The prompt box is shown for every preset, and for the custom flow once the
+  // generated prompt is ready. While the custom flow is still gathering answers
+  // we show the question flow instead.
+  const showPrompt = !isManual || stage === 'done'
+  const promptText = isManual ? prompt : (selectedInstruction?.instruction ?? '')
+
   const formScrollRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -91,6 +117,33 @@ export const TuneAgentForm: React.FC<TuneAgentFormProps> = ({
             'Add another constraint, capability, example, or context detail — or skip to finalize.',
         }
 
+  // If the chatbot already has a saved custom prompt, skip the question flow on
+  // load and show that prompt directly. Seeds only once.
+  const seededRef = useRef(false)
+  useEffect(() => {
+    if (seededRef.current) return
+    if (savedCustomInstruction) {
+      setPrompt(savedCustomInstruction)
+      setStage('done')
+      seededRef.current = true
+    }
+  }, [savedCustomInstruction])
+
+  // Leaving the custom flow (switching to a preset) clears the local question
+  // flow so returning to "Custom" starts fresh. The saved prompt is cleared by
+  // the parent's instruction-type handler.
+  useEffect(() => {
+    if (instructionType !== 'manual') {
+      setAnswers([])
+      setDraft('')
+      setExpandedIdx(null)
+      setEditingIdx(null)
+      setPrompt('')
+      setStage('asking')
+      seededRef.current = true
+    }
+  }, [instructionType])
+
   // Autosize the textarea to its content within bounds.
   useEffect(() => {
     const el = textareaRef.current
@@ -101,10 +154,12 @@ export const TuneAgentForm: React.FC<TuneAgentFormProps> = ({
 
   // While asking, glide to the bottom so the latest answer + next question stay
   // in view. On the transition to generating/done, glide back to the top to
-  // reveal the completion screen.
+  // reveal the completion screen. We never scroll on load: with no answers yet
+  // there's nothing to scroll to, and a seeded "done" stage is already at top.
   useEffect(() => {
     const el = formScrollRef.current
     if (!el) return
+    if (stage === 'asking' && answers.length === 0) return
     const id = requestAnimationFrame(() => {
       if (stage === 'asking') smoothScrollTo(el, el.scrollHeight, 750)
       else smoothScrollTo(el, 0, 600)
@@ -126,7 +181,12 @@ export const TuneAgentForm: React.FC<TuneAgentFormProps> = ({
     setDraft('')
     if (next.length >= TUNE_QUESTIONS.length) {
       setStage('generating')
-      setPrompt(buildPrompt(next, modelLabel).join('\n'))
+      // The custom prompt is the base instruction plus the user's tailored sections.
+      const base = getInstructionByType('base')?.instruction ?? ''
+      const custom = buildPrompt(next, modelLabel).join('\n')
+      const generated = [base, '', custom].join('\n')
+      setPrompt(generated)
+      onCustomInstructionChange(generated)
       setTimeout(() => setStage('done'), 1800)
     }
   }
@@ -157,6 +217,8 @@ export const TuneAgentForm: React.FC<TuneAgentFormProps> = ({
     setEditingIdx(null)
     setPrompt('')
     setStage('asking')
+    // Clear the saved custom prompt on the chatbot.
+    onCustomInstructionChange(null)
   }
 
   function continueToPlayground() {
@@ -173,139 +235,237 @@ export const TuneAgentForm: React.FC<TuneAgentFormProps> = ({
 
   return (
     <div className="flex min-h-0 w-full flex-1 flex-col">
-      {stage === 'generating' ? (
-        <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-[18px] p-8 text-center">
-          <Tick />
-          <h2 className="tune-fade-up m-0 text-[22px] font-semibold tracking-[-0.02em] text-text [animation-delay:0.2s]">
-            Generating your agent prompt
-          </h2>
-          <p className="tune-fade-up m-0 max-w-[38ch] text-[13.5px] leading-[1.55] text-text-weak [animation-delay:0.32s]">
-            Compiling answers into a tuned system prompt for {modelLabel}
-            <span className="tune-dots" />
+      <div
+        ref={formScrollRef}
+        className="flex min-h-0 flex-1 flex-col gap-7 overflow-y-auto px-8 pb-6 pt-10 lg:px-15"
+      >
+        <div className="flex flex-col gap-1.5">
+          <h1 className="m-0 text-[28px] font-semibold tracking-[-0.02em] text-text">
+            Tune Your Agent
+          </h1>
+          <p className="m-0 max-w-[56ch] text-[13px] font-light leading-[1.55] text-text-weak">
+            Shape how your agent talks, thinks, and responds. These settings define your agent's
+            personality and behavior across every conversation. You can refine them anytime from
+            settings.
           </p>
         </div>
-      ) : (
-        <div
-          ref={formScrollRef}
-          className="flex min-h-0 flex-1 flex-col gap-7 overflow-y-auto px-8 pb-6 pt-10 lg:px-15"
-        >
-          <div className="flex flex-col gap-1.5">
-            <h1 className="m-0 text-[28px] font-semibold tracking-[-0.02em] text-text">
-              Tune Your Agent
-            </h1>
-            <p className="m-0 max-w-[56ch] text-[13px] font-light leading-[1.55] text-text-weak">
-              Shape how your agent talks, thinks, and responds. These settings define your agent's
-              personality and behavior across every conversation. You can refine them anytime from
-              settings.
-            </p>
-          </div>
 
-          {stage === 'asking' && (
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[12.5px] font-medium text-text-secondary">
-                Select your AI model
-              </label>
-              <Select
-                data={groupedModels}
-                value={model}
-                onChange={onModelChange}
-                allowDeselect={false}
-                checkIconPosition="right"
-                placeholder={isLoadingModels ? 'Loading models...' : 'Select a model'}
-                disabled={groupedModels.length === 0}
-                leftSection={
-                  iconForModelId(model) ? (
-                    <ModelIcon src={iconForModelId(model)} alt="" />
-                  ) : undefined
-                }
-                renderOption={({ option, checked }) => (
-                  <div className="flex w-full items-center gap-2">
-                    <ModelIcon src={iconForModelId(option.value)} alt="" />
-                    <span className="flex-1 truncate">{option.label}</span>
-                    {checked && <CheckIcon size={12} />}
-                  </div>
-                )}
-              />
-            </div>
-          )}
+        {/* 1. Model */}
+        <div className="flex flex-col gap-1.5">
+          <label className="text-[12.5px] font-medium text-text-secondary">
+            Select your AI model
+          </label>
+          <Select
+            data={groupedModels}
+            value={model}
+            onChange={onModelChange}
+            allowDeselect={false}
+            checkIconPosition="right"
+            placeholder={isLoadingModels ? 'Loading models...' : 'Select a model'}
+            disabled={groupedModels.length === 0}
+            leftSection={
+              iconForModelId(model) ? <ModelIcon src={iconForModelId(model)} alt="" /> : undefined
+            }
+            renderOption={({ option, checked }) => (
+              <div className="flex w-full items-center gap-2">
+                <ModelIcon src={iconForModelId(option.value)} alt="" />
+                <span className="flex-1 truncate">{option.label}</span>
+                {checked && <CheckIcon size={12} />}
+              </div>
+            )}
+          />
+        </div>
 
-          {stage === 'done' ? (
-            <PromptView
-              prompt={prompt}
-              onPromptChange={setPrompt}
-              onReset={resetAll}
-              onContinue={continueToPlayground}
-            />
-          ) : (
-            <div className="flex flex-col gap-2.5">
-              <p className="m-0 text-left text-[12.5px] leading-normal text-text-weak">
-                Answer the questions below about your product and what you're trying to achieve with
-                this agent. Once you've answered them all, we'll generate a tailored agent tuning
-                prompt for you.
-              </p>
-              {answers.length > 0 && (
-                <div className="text-[11px] font-medium uppercase tracking-[0.08em] text-text-weak">
-                  Answered questions
+        {/* 2. Instruction type */}
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-center gap-1.5">
+            <label className="text-[12.5px] font-medium text-text-secondary">
+              System Instruction
+            </label>
+            <HoverCard
+              width={320}
+              shadow="md"
+              radius="md"
+              position="top"
+              withArrow
+              arrowSize={10}
+              openDelay={80}
+              closeDelay={80}
+              transitionProps={{ transition: 'pop', duration: 150 }}
+            >
+              <HoverCard.Target>
+                <span className="inline-flex h-[18px] w-[18px] shrink-0 cursor-help items-center justify-center rounded-full text-text-weak transition-colors hover:bg-icon-bg-hover hover:text-icon-hover">
+                  <Info size={13} strokeWidth={2} />
+                </span>
+              </HoverCard.Target>
+              <HoverCard.Dropdown className="p-3.5!">
+                <div className="flex flex-col gap-2.5 text-[12px] leading-[1.55] text-text-secondary">
+                  <p className="m-0">
+                    If you only need a knowledge-base reply bot, use the{' '}
+                    <span className="font-medium text-text">Base</span> or{' '}
+                    <span className="font-medium text-text">General AI Agent</span> instruction.
+                  </p>
+                  <p className="m-0">
+                    If you want the agent to automatically identify, qualify, and organize important
+                    leads, create a <span className="font-medium text-text">Custom</span>{' '}
+                    instruction tailored to your needs. We'll take care of lead capture and
+                    filtering for your next steps.
+                  </p>
                 </div>
+              </HoverCard.Dropdown>
+            </HoverCard>
+          </div>
+          <Select
+            data={instructionSelectData}
+            value={instructionType}
+            onChange={val => onInstructionTypeChange((val as InstructionType) ?? 'manual')}
+            allowDeselect={false}
+            checkIconPosition="right"
+          />
+          {selectedInstruction && (
+            <p className="m-0 text-[12px] leading-normal text-text-weak">
+              {selectedInstruction.description}
+            </p>
+          )}
+        </div>
+
+        {/* 3. Prompt box (presets + generated custom prompt) / question flow */}
+        {showPrompt ? (
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-center justify-between">
+              <label className="text-[12.5px] font-medium text-text-secondary">Agent Prompt</label>
+              {/* 6. Reset only for the custom flow */}
+              {isManual && (
+                <Button
+                  variant="subtle"
+                  size="compact-xs"
+                  onClick={resetAll}
+                  leftSection={<RotateCcw size={13} />}
+                >
+                  Reset
+                </Button>
               )}
-              {answers.map((row, i) => (
-                <AnsweredQuestion
-                  key={i}
-                  q={row.q}
-                  a={row.a}
-                  expanded={expandedIdx === i}
-                  onToggle={() => setExpandedIdx(x => (x === i ? null : i))}
-                  onEdit={() => startEdit(i)}
-                  onDelete={() => deleteRow(i)}
-                />
-              ))}
+            </div>
+            <div className="max-h-[60vh] overflow-auto rounded-lg border border-border-week bg-background-dark-week p-3">
+              <pre className="m-0 whitespace-pre-wrap text-[12px] leading-relaxed text-text-secondary">
+                {promptText}
+              </pre>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2.5">
+            <p className="m-0 flex items-center gap-1.5 text-left text-[12.5px] leading-normal text-text-weak">
+              We'll help you generate a custom prompt — you can edit it later. Answer the questions
+              below.
+              <HoverCard
+                width={320}
+                shadow="md"
+                radius="md"
+                position="top"
+                withArrow
+                arrowSize={10}
+                openDelay={80}
+                closeDelay={80}
+                transitionProps={{ transition: 'pop', duration: 150 }}
+              >
+                <HoverCard.Target>
+                  <span className="inline-flex h-[18px] w-[18px] shrink-0 cursor-help items-center justify-center rounded-full text-text-weak transition-colors hover:bg-icon-bg-hover hover:text-icon-hover">
+                    <Info size={13} strokeWidth={2} />
+                  </span>
+                </HoverCard.Target>
+                <HoverCard.Dropdown className="p-3.5!">
+                  <p className="m-0 text-[12px] leading-[1.55] text-text-secondary">
+                    Share details about your product and goals for this agent. Based on your
+                    answers, we'll create a customized agent tuning prompt tailored to your
+                    workflow.
+                  </p>
+                </HoverCard.Dropdown>
+              </HoverCard>
+            </p>
+            {answers.length > 0 && (
+              <div className="text-[11px] font-medium uppercase tracking-[0.08em] text-text-weak">
+                Answered questions
+              </div>
+            )}
+            {answers.map((row, i) => (
+              <AnsweredQuestion
+                key={i}
+                q={row.q}
+                a={row.a}
+                expanded={expandedIdx === i}
+                onToggle={() => setExpandedIdx(x => (x === i ? null : i))}
+                onEdit={() => startEdit(i)}
+                onDelete={() => deleteRow(i)}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Footer: the question composer while gathering custom answers, otherwise
+          the Continue button (shown for every other state). */}
+      {isManual && (stage === 'asking' || stage === 'generating') ? (
+        <div className="tune-composer-frame mx-[18px] mb-[18px] mt-3 shrink-0 rounded-xl">
+          {stage === 'generating' ? (
+            <div className="flex flex-col items-center gap-3 rounded-xl px-8 py-7 text-center lg:px-11">
+              <Tick />
+              <p className="m-0 text-[15px] font-semibold tracking-[-0.01em] text-text">
+                Generating your agent prompt
+                <span className="tune-dots" />
+              </p>
+              <p className="m-0 max-w-[38ch] text-[12.5px] leading-normal text-text-weak">
+                Compiling answers into a tuned system prompt for {modelLabel}
+              </p>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2.5 rounded-xl px-8 pb-4 pt-3.5 lg:px-11">
+              <AnimatedQuestion text={currentQ.q} />
+              <textarea
+                ref={textareaRef}
+                dir="ltr"
+                value={draft}
+                onChange={e => setDraft(e.target.value)}
+                onKeyDown={handleKey}
+                placeholder={editingIdx !== null ? 'Editing answer…' : currentQ.placeholder}
+                className="max-h-[200px] min-h-20 w-full resize-none border-0 bg-transparent py-2 text-left text-sm leading-[1.6] text-text outline-none placeholder:font-normal placeholder:text-text-weak/70"
+              />
+              <div className="flex items-center justify-end gap-2">
+                {editingIdx !== null ? (
+                  <Button
+                    variant="secondary"
+                    onClick={() => {
+                      setEditingIdx(null)
+                      setDraft('')
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                ) : (
+                  <Button
+                    variant="secondary"
+                    onClick={skipQuestion}
+                    rightSection={<ChevronRight size={14} />}
+                  >
+                    Skip
+                  </Button>
+                )}
+                <Button
+                  onClick={submit}
+                  disabled={!draft.trim()}
+                  rightSection={<ArrowRight size={14} />}
+                >
+                  {editingIdx !== null ? 'Save' : 'Submit'}
+                </Button>
+              </div>
             </div>
           )}
         </div>
-      )}
-
-      {stage === 'asking' && (
-        <div className="tune-composer-frame mx-[18px] mb-[18px] mt-3 shrink-0 rounded-xl">
-          <div className="flex flex-col gap-2.5 rounded-xl px-8 pb-4 pt-3.5 lg:px-11">
-            <AnimatedQuestion text={currentQ.q} />
-            <textarea
-              ref={textareaRef}
-              dir="ltr"
-              value={draft}
-              onChange={e => setDraft(e.target.value)}
-              onKeyDown={handleKey}
-              placeholder={editingIdx !== null ? 'Editing answer…' : currentQ.placeholder}
-              className="max-h-[200px] min-h-20 w-full resize-none border-0 bg-transparent py-2 text-left text-sm leading-[1.6] text-text outline-none placeholder:font-normal placeholder:text-text-weak/70"
-            />
-            <div className="flex items-center justify-end gap-2">
-              {editingIdx !== null ? (
-                <Button
-                  variant="secondary"
-                  onClick={() => {
-                    setEditingIdx(null)
-                    setDraft('')
-                  }}
-                >
-                  Cancel
-                </Button>
-              ) : (
-                <Button
-                  variant="secondary"
-                  onClick={skipQuestion}
-                  rightSection={<ChevronRight size={14} />}
-                >
-                  Skip
-                </Button>
-              )}
-              <Button
-                onClick={submit}
-                disabled={!draft.trim()}
-                rightSection={<ArrowRight size={14} />}
-              >
-                {editingIdx !== null ? 'Save' : 'Submit'}
-              </Button>
-            </div>
-          </div>
+      ) : (
+        // 4. Continue button — shown for every preset and the completed custom flow.
+        <div className="flex shrink-0 justify-end px-8 pb-[18px] pt-3 lg:px-15">
+          <Button onClick={continueToPlayground} rightSection={<ArrowRight size={14} />}>
+            Continue to Agent Playground
+          </Button>
         </div>
       )}
     </div>
