@@ -52,7 +52,7 @@ export const AnsweredQuestion: React.FC<AnsweredQuestionProps> = ({
                 e.stopPropagation()
                 onEdit()
               }}
-              className="inline-flex cursor-pointer items-center gap-1 rounded border-0 bg-transparent px-2 py-1 text-[11.5px] text-text-weak transition-colors hover:bg-background-dark-week hover:text-text"
+              className="inline-flex cursor-pointer items-center gap-1 rounded border-0 bg-transparent px-2 py-1 font-[inherit] text-xs text-text-weak transition-colors hover:bg-background-dark-week hover:text-text"
             >
               <Pencil className="h-3 w-3" /> Edit
             </button>
@@ -62,7 +62,7 @@ export const AnsweredQuestion: React.FC<AnsweredQuestionProps> = ({
                 e.stopPropagation()
                 onDelete()
               }}
-              className="inline-flex cursor-pointer items-center gap-1 rounded border-0 bg-transparent px-2 py-1 text-[11.5px] text-text-weak transition-colors hover:bg-background-dark-week hover:text-text"
+              className="inline-flex cursor-pointer items-center gap-1 rounded border-0 bg-transparent px-2 py-1 font-[inherit] text-xs text-text-weak transition-colors hover:bg-background-dark-week hover:text-text"
             >
               <Trash2 className="h-3 w-3" /> Remove
             </button>
