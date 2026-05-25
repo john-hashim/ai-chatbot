@@ -197,7 +197,7 @@ describe('ChatbotKnowledgeBaseSetup', () => {
       renderPage()
       await clickTrain()
 
-      await waitFor(() => expect(navigateMock).toHaveBeenCalledWith('/chatbot/cb1'))
+      await waitFor(() => expect(navigateMock).toHaveBeenCalledWith('/chatbot/cb1/tune-agent'))
     })
 
     it('still navigates when nothing was processed', async () => {
@@ -208,7 +208,7 @@ describe('ChatbotKnowledgeBaseSetup', () => {
       renderPage()
       await clickTrain()
 
-      await waitFor(() => expect(navigateMock).toHaveBeenCalledWith('/chatbot/cb1'))
+      await waitFor(() => expect(navigateMock).toHaveBeenCalledWith('/chatbot/cb1/tune-agent'))
     })
 
     it('shows "no longer exists" on 404', async () => {

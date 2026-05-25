@@ -5,6 +5,7 @@ import '@mantine/dropzone/styles.css'
 import '@mantine/notifications/styles.css'
 import '@mantine/dates/styles.css'
 import './styles/mantine-overrides.css'
+import './styles/tune-agent.css'
 import 'react-quill-new/dist/quill.snow.css'
 import classes from './theme.module.css'
 import {
@@ -36,6 +37,7 @@ const Login = lazy(() => import('@/feature/auth/Login'))
 const Landing = lazy(() => import('@/feature/Landing/Landing').then(m => ({ default: m.Landing })))
 const ChatbotBasicSetup = lazy(() => import('./feature/create-chatbot/ChatbotBasicSetup').then(m => ({ default: m.ChatbotBasicSetup })))
 const ChatbotKnowledgeBaseSetup = lazy(() => import('./feature/create-chatbot/ChatbotKnowledgeBaseSetup').then(m => ({ default: m.ChatbotKnowledgeBaseSetup })))
+const TuneAgent = lazy(() => import('./feature/tune-agent/TuneAgent').then(m => ({ default: m.TuneAgent })))
 const ChatbotDashboard = lazy(() => import('./feature/chatbot/ChatbotDashboard').then(m => ({ default: m.ChatbotDashboard })))
 const Playground = lazy(() => import('./feature/playground/Playground').then(m => ({ default: m.Playground })))
 const Customize = lazy(() => import('./feature/customize/Customize').then(m => ({ default: m.Customize })))
@@ -175,6 +177,7 @@ function AppRoutes() {
             path="/chatbot/:chatbotId/setup-knowledgebase"
             element={<ChatbotKnowledgeBaseSetup />}
           />
+          <Route path="/chatbot/:chatbotId/tune-agent" element={<TuneAgent />} />
           <Route path="/chatbot/:chatbotId" element={<ChatbotDashboard />}>
             <Route index element={<Playground />} />
             <Route path="playground" element={<Playground />} />

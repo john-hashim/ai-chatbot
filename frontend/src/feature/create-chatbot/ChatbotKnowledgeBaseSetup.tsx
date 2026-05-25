@@ -47,7 +47,7 @@ export const ChatbotKnowledgeBaseSetup: React.FC = () => {
     try {
       await trainChatbotDocuments(chatbotId)
       showNotification('success', 'Training complete.')
-      navigate(`/chatbot/${chatbotId}`)
+      navigate(`/chatbot/${chatbotId}/tune-agent`)
     } catch (error) {
       if (isAxiosError(error) && error.response?.status === 404) {
         showNotification('error', 'This chatbot no longer exists.')
