@@ -62,28 +62,8 @@
   animation: tune-spin 6s linear infinite;
   z-index: -1;
 }
-.tune-ai-frame::after {
-  content: '';
-  position: absolute;
-  inset: -10px;
-  border-radius: 28px;
-  background: conic-gradient(
-    from var(--tune-angle, 0deg),
-    rgba(254, 94, 81, 0.35),
-    rgba(255, 138, 61, 0.3),
-    rgba(192, 132, 252, 0.3),
-    rgba(110, 168, 255, 0.3),
-    rgba(86, 212, 207, 0.3),
-    rgba(254, 94, 81, 0.35)
-  );
-  filter: blur(18px);
-  opacity: 0.55;
-  animation: tune-spin 6s linear infinite;
-  z-index: -2;
-}
 @supports not (background: conic-gradient(from var(--tune-angle, 0deg), red, blue)) {
-  .tune-ai-frame::before,
-  .tune-ai-frame::after {
+  .tune-ai-frame::before {
     animation: tune-rotate 6s linear infinite;
   }
   @keyframes tune-rotate {
