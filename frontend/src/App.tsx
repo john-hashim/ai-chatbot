@@ -66,6 +66,10 @@ const Deploy = lazy(() => import('./feature/deploy/Deploy').then(m => ({ default
 const Bookings = lazy(() =>
   import('./feature/bookings/Bookings').then(m => ({ default: m.Bookings }))
 )
+const Leads = lazy(() => import('./feature/leads/Leads').then(m => ({ default: m.Leads })))
+const AgentTuning = lazy(() =>
+  import('./feature/agent-tuning/AgentTuning').then(m => ({ default: m.AgentTuning }))
+)
 const AccountSettings = lazy(() =>
   import('./feature/account/AccountSettings').then(m => ({ default: m.AccountSettings }))
 )
@@ -203,6 +207,8 @@ function AppRoutes() {
             <Route path="knowledge-base" element={<KnowledgeBase />} />
             <Route path="chats" element={<Chats />} />
             <Route path="bookings" element={<Bookings />} />
+            <Route path="leads" element={<Leads />} />
+            <Route path="agent-tuning" element={<AgentTuning />} />
             <Route path="analytics" element={<Analytics />} />
             <Route path="deploy" element={<Deploy />} />
           </Route>

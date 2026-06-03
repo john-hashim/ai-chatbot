@@ -65,11 +65,7 @@ export const TuneAgent: React.FC = () => {
     const previous = instructionType
     setInstructionType(type)
     try {
-      await updateChatbot(
-        type === 'manual'
-          ? { instructionType: type }
-          : { instructionType: type, customInstruction: null }
-      )
+      await updateChatbot({ instructionType: type })
     } catch (error) {
       console.error('Failed to update instruction type:', error)
       setInstructionType(previous)

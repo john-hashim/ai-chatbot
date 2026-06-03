@@ -10,7 +10,8 @@ import {
   Menu,
   X,
   Play,
-  // Users,
+  Users,
+  Wand2,
   // Zap,
   CalendarDays,
   ChevronRight,
@@ -45,15 +46,20 @@ const navItems = [
     path: 'bookings',
   },
   {
+    icon: Users,
+    label: 'Leads',
+    path: 'leads',
+  },
+  {
+    icon: Wand2,
+    label: 'Agent Tuning',
+    path: 'agent-tuning',
+  },
+  {
     icon: ChartLine,
     label: 'Analytics',
     path: 'analytics',
   },
-  // {
-  //   icon: Users,
-  //   label: 'Contacts',
-  //   path: 'contacts',
-  // },
   // {
   //   icon: Zap,
   //   label: 'Automations',
