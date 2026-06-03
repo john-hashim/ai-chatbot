@@ -35,21 +35,40 @@ import { useUserStore } from '@/store'
 
 const Login = lazy(() => import('@/feature/auth/Login'))
 const Landing = lazy(() => import('@/feature/Landing/Landing').then(m => ({ default: m.Landing })))
-const ChatbotBasicSetup = lazy(() => import('./feature/create-chatbot/ChatbotBasicSetup').then(m => ({ default: m.ChatbotBasicSetup })))
-const ChatbotKnowledgeBaseSetup = lazy(() => import('./feature/create-chatbot/ChatbotKnowledgeBaseSetup').then(m => ({ default: m.ChatbotKnowledgeBaseSetup })))
-const TuneAgent = lazy(() => import('./feature/tune-agent/TuneAgent').then(m => ({ default: m.TuneAgent })))
-const ChatbotDashboard = lazy(() => import('./feature/chatbot/ChatbotDashboard').then(m => ({ default: m.ChatbotDashboard })))
-const Playground = lazy(() => import('./feature/playground/Playground').then(m => ({ default: m.Playground })))
-const Customize = lazy(() => import('./feature/customize/Customize').then(m => ({ default: m.Customize })))
-const KnowledgeBase = lazy(() => import('./feature/knowledgebase/KnowledgeBase').then(m => ({ default: m.KnowledgeBase })))
+const ChatbotBasicSetup = lazy(() =>
+  import('./feature/create-chatbot/ChatbotBasicSetup').then(m => ({ default: m.ChatbotBasicSetup }))
+)
+const ChatbotKnowledgeBaseSetup = lazy(() =>
+  import('./feature/create-chatbot/ChatbotKnowledgeBaseSetup').then(m => ({
+    default: m.ChatbotKnowledgeBaseSetup,
+  }))
+)
+const TuneAgent = lazy(() =>
+  import('./feature/tune-agent/TuneAgent').then(m => ({ default: m.TuneAgent }))
+)
+const ChatbotDashboard = lazy(() =>
+  import('./feature/chatbot/ChatbotDashboard').then(m => ({ default: m.ChatbotDashboard }))
+)
+const Playground = lazy(() =>
+  import('./feature/playground/Playground').then(m => ({ default: m.Playground }))
+)
+const Customize = lazy(() =>
+  import('./feature/customize/Customize').then(m => ({ default: m.Customize }))
+)
+const KnowledgeBase = lazy(() =>
+  import('./feature/knowledgebase/KnowledgeBase').then(m => ({ default: m.KnowledgeBase }))
+)
 const Chats = lazy(() => import('./feature/chats/Chats').then(m => ({ default: m.Chats })))
-const Analytics = lazy(() => import('./feature/analytics/Analytics').then(m => ({ default: m.Analytics })))
-const Contacts = lazy(() => import('./feature/contacts/Contacts').then(m => ({ default: m.Contacts })))
-const Automations = lazy(() => import('./feature/automations/Automations').then(m => ({ default: m.Automations })))
+const Analytics = lazy(() =>
+  import('./feature/analytics/Analytics').then(m => ({ default: m.Analytics }))
+)
 const Deploy = lazy(() => import('./feature/deploy/Deploy').then(m => ({ default: m.Deploy })))
-const Bookings = lazy(() => import('./feature/bookings/Bookings').then(m => ({ default: m.Bookings })))
-const AccountSettings = lazy(() => import('./feature/account/AccountSettings').then(m => ({ default: m.AccountSettings })))
-const Billing = lazy(() => import('./feature/billing/Billing').then(m => ({ default: m.Billing })))
+const Bookings = lazy(() =>
+  import('./feature/bookings/Bookings').then(m => ({ default: m.Bookings }))
+)
+const AccountSettings = lazy(() =>
+  import('./feature/account/AccountSettings').then(m => ({ default: m.AccountSettings }))
+)
 
 const theme = createTheme({
   colors: {
@@ -171,7 +190,6 @@ function AppRoutes() {
           <Route path="/landing" element={<Navigate to="/chatbot/landing" replace />} />
           <Route path="/chatbot/landing" element={<Landing />} />
           <Route path="/account" element={<AccountSettings />} />
-          <Route path="/billing" element={<Billing />} />
           <Route path="/chatbot/new" element={<ChatbotBasicSetup />} />
           <Route
             path="/chatbot/:chatbotId/setup-knowledgebase"
@@ -186,8 +204,6 @@ function AppRoutes() {
             <Route path="chats" element={<Chats />} />
             <Route path="bookings" element={<Bookings />} />
             <Route path="analytics" element={<Analytics />} />
-            <Route path="contacts" element={<Contacts />} />
-            <Route path="automations" element={<Automations />} />
             <Route path="deploy" element={<Deploy />} />
           </Route>
         </Route>
