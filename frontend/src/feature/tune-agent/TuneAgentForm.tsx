@@ -121,6 +121,13 @@ export const TuneAgentForm: React.FC<TuneAgentFormProps> = ({
   const formScrollRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const generateTimerRef = useRef<number | null>(null)
+  // Tracks the saved prompt we last seeded the box from, and the current stage,
+  // so the seeding effect can fire on genuine prop changes without re-running
+  // every time `stage` changes (which would clobber a "Start Over" reset before
+  // the async save of customInstruction=null propagates back as the prop).
+  const seededRef = useRef<string | null>(null)
+  const stageRef = useRef<Stage>(stage)
+  stageRef.current = stage
 
   const clearGenerateTimer = () => {
     if (generateTimerRef.current !== null) {
@@ -156,14 +163,19 @@ export const TuneAgentForm: React.FC<TuneAgentFormProps> = ({
       setEditingIdx(null)
       setPrompt('')
       setStage('asking')
+      seededRef.current = null
       return
     }
-    if (stage === 'generating') return
-    if (savedCustomInstruction) {
+    if (stageRef.current === 'generating') return
+    // Only seed when the saved prompt genuinely changes — not on every `stage`
+    // transition. This lets "Start Over" reset to the question flow without the
+    // effect re-seeding from a stale, not-yet-cleared `savedCustomInstruction`.
+    if (savedCustomInstruction && savedCustomInstruction !== seededRef.current) {
+      seededRef.current = savedCustomInstruction
       setPrompt(savedCustomInstruction)
       setStage('done')
     }
-  }, [instructionType, savedCustomInstruction, stage])
+  }, [instructionType, savedCustomInstruction])
 
   // Autosize the textarea to its content within bounds.
   useEffect(() => {
@@ -243,6 +255,9 @@ export const TuneAgentForm: React.FC<TuneAgentFormProps> = ({
     setEditingIdx(null)
     setPrompt('')
     setStage('asking')
+    // Mark the current saved value as already-seeded so the seeding effect won't
+    // re-seed the box before the async customInstruction=null save propagates.
+    seededRef.current = savedCustomInstruction
     // Clear the saved custom prompt on the chatbot.
     onCustomInstructionChange(null)
   }
