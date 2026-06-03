@@ -45,7 +45,7 @@ A full-stack SaaS platform for creating, training, and deploying custom AI chatb
 | Storage | Cloudflare R2 (S3-compatible) |
 | Auth | Google OAuth |
 | Scraping | Playwright |
-| Email | Nodemailer (booking notifications) |
+| Email | Resend (booking notifications) |
 | Docs | pdf-parse, Mammoth, PDFKit |
 
 ## Project Structure
@@ -99,7 +99,7 @@ ai-chatbot/
 ## Prerequisites
 
 - **Node.js** v20 LTS or higher
-- **PostgreSQL** v14+ with **pgvector** extension
+- **PostgreSQL** v14+ with **pgvector** extension — either local (see below) or a managed provider with pgvector built in (e.g. [Neon](https://neon.tech), Supabase). Neon is what this project deploys against.
 - **npm**
 
 ## Setup
@@ -140,14 +140,28 @@ npm install
 npx playwright install          # downloads Chromium for website crawling
 ```
 
-Create `backend/.env`:
+**Environment files.** The backend splits env vars across files so you can switch between a local DB and a cloud DB (Neon) with a *script*, not by editing files. `dotenv-cli` loads the right combination per npm script. Copy `backend/.env.example` as a reference, then create:
+
+| File | Contents | Git |
+|---|---|---|
+| `.env` | Shared secrets (everything **except** the DB URLs) | ignored |
+| `.env.local` | `DATABASE_URL` + `DIRECT_URL` for **local** Postgres | ignored |
+| `.env.development` | `DATABASE_URL` + `DIRECT_URL` for **Neon** | ignored |
+| `.env.example` | Placeholder template (committed) | tracked |
+
+The DB URLs live **only** in the per-env files and shared secrets **only** in `.env` — no key overlap, so there is no way to accidentally run the app against one DB while migrating another.
+
+`backend/.env` (shared secrets):
 
 ```env
 PORT=3001
-DATABASE_URL="postgresql://<user>:<password>@localhost:5432/chatbot?schema=public"
 
-# Google OAuth (same client ID used in frontend)
+# Google OAuth (same client ID used in frontend) + Calendar
 GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+GOOGLE_CALENDAR_REDIRECT_URI=http://localhost:3001/api/chatbot/calendar/google/callback
+OAUTH_STATE_SECRET=any-long-random-string
+FRONTEND_URL=http://localhost:5173
 
 # Cloudflare R2
 R2_ACCOUNT_ID=your-account-id
@@ -165,19 +179,36 @@ OPENROUTER_API_KEY=sk-or-your_key
 OPENROUTER_SITE_URL=https://yourapp.com
 OPENROUTER_SITE_NAME=AI Chatbot Builder
 
-# Email notifications (booking confirmations)
-SMTP_HOST=smtp.example.com
-SMTP_PORT=587
-SMTP_USER=your-smtp-user
-SMTP_PASS=your-smtp-pass
-SMTP_FROM="Chatbot <noreply@example.com>"
+# Email notifications (booking confirmations) — Resend
+RESEND_API_KEY=re_your_key
+BOOKING_EMAIL_FROM="Chatbot <noreply@yourdomain.com>"
 ```
 
-Run migrations and start:
+`backend/.env.local` (local Postgres — no pooler, so both URLs are identical):
+
+```env
+DATABASE_URL="postgresql://<user>:<password>@localhost:5432/chatbot?schema=public"
+DIRECT_URL="postgresql://<user>:<password>@localhost:5432/chatbot?schema=public"
+```
+
+`backend/.env.development` (Neon — pooled URL for runtime, direct/unpooled for migrations):
+
+```env
+DATABASE_URL="postgresql://<user>:<pass>@<host>-pooler.<region>.aws.neon.tech/<db>?sslmode=require&channel_binding=require"
+DIRECT_URL="postgresql://<user>:<pass>@<host>.<region>.aws.neon.tech/<db>?sslmode=require"
+```
+
+Run migrations and start (pick the target via the script suffix):
 
 ```bash
-npx prisma migrate dev          # applies migrations + generates Prisma client
-npm run dev                     # runs on port 3001
+npm run migrate:dev             # migrate local DB (creates pgvector, runs migrations + generates client)
+npm run dev                     # run against local DB on port 3001
+
+# …or target Neon:
+npm run migrate:deploy:neon     # apply migrations to Neon
+npm run dev:neon                # run against Neon
+
+npm run studio                  # browse local DB  (studio:neon for Neon)
 ```
 
 ### 3. Frontend
@@ -208,7 +239,7 @@ npm run dev                     # runs on port 5173
 | Cloudflare R2 | File/document storage | Cloudflare dashboard → R2 |
 | HuggingFace | Text embeddings (BGE-small-en) | [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens) |
 | OpenRouter | Chat completions — OpenAI, Anthropic, Google, Meta, DeepSeek, etc. | [openrouter.ai/keys](https://openrouter.ai/keys) |
-| SMTP | Booking confirmation emails | Any SMTP provider (SendGrid, Mailgun, Gmail SMTP, etc.) |
+| Resend | Booking confirmation emails | [resend.com/api-keys](https://resend.com/api-keys) |
 
 ## API Endpoints
 
@@ -307,4 +338,20 @@ npm run dev                     # runs on port 5173
 - The backend uses **ESM** (`"type": "module"` in package.json).
 - **LLM provider** — all chat completions (streaming responses + the booking-flow classifier) go through OpenRouter via `@openrouter/sdk`. The model used per request comes from `Chatbot.selectedModel`; the curated catalog lives in `backend/src/constants/models.ts` and is exposed via `GET /api/models`. Unknown / null ids fall back to `DEFAULT_MODEL_ID`. Embeddings always use HuggingFace.
 - **Action tokens** — the LLM emits sentinel tokens (e.g. `__ACTION:BOOKING__`) that the chat controller intercepts to drive structured flows like appointment booking. Tokens are buffered server-side so they never leak to the client.
-- **SMTP** is required only if you want booking confirmation emails sent on appointment creation.
+- **Resend** (`RESEND_API_KEY` + `BOOKING_EMAIL_FROM`) is required only if you want booking confirmation emails sent on appointment creation.
+- **Environment files** — the backend keeps DB URLs out of the base `.env`; `.env.local` (local) and `.env.development` (Neon) each hold `DATABASE_URL` (pooled) + `DIRECT_URL` (direct, for migrations). Switch targets with the `dev` / `dev:neon` (and `migrate:dev` / `migrate:deploy:neon`) scripts rather than editing files. Use `prisma migrate dev`, not `db push`, to keep migration history in sync.
+
+## Deployment
+
+The three apps stay in **one repository** — each deploys from its own subdirectory (no need to split into separate repos; Vercel and Railway both support a per-service "Root Directory"). Recommended setup, all on free/low-cost tiers:
+
+| App | Host | Notes |
+|---|---|---|
+| Database | **Neon** | Serverless Postgres with **pgvector** built in. Pooled URL → `DATABASE_URL`, direct URL → `DIRECT_URL`. Kept off Railway so an always-on Postgres doesn't drain the Railway credit. |
+| `backend` | **Railway** | Root Directory `backend`. Start command: `npx prisma migrate deploy && node dist/app.js` (build `npm run build`). Set all shared secrets + the two Neon URLs as dashboard env vars (no `.env` files in prod). |
+| `frontend` | **Vercel** | Root Directory `frontend` (Vite). Set `VITE_API_URL` to the Railway backend URL at build time. |
+| `embed` | **Vercel / CDN** | Root Directory `embed`. Static build outputs the IIFE `embed.js` (the `<script>` tag) + the iframe page; served over the platform CDN. |
+
+**Deploy order:** DB → backend → frontend → embed (each depends on the previous; the frontend needs the live backend URL, and the embed widget calls the backend's public `/api/embed/...` routes).
+
+In production, env vars come from the platform dashboard — `dotenv.config()` simply no-ops when no `.env` file is present.

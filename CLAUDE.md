@@ -11,6 +11,7 @@ Full-stack SaaS for training and embedding custom RAG chatbots. See `README.md` 
 - **Action tokens**: the LLM emits sentinels like `__ACTION:BOOKING__` mid-stream. The chat controller buffers and intercepts them server-side so they never reach the client. New LLM-driven flows go in `backend/src/actions/`.
 - **Embed routes** (`/api/embed/:embedKey/...`) are public — they use `embedKey` + domain whitelisting instead of user auth.
 - pgvector extension must exist before migrations run (they create `vector(384)` columns).
+- **Backend env / DB switching**: DB URLs are **not** in the base `.env` (that holds shared secrets only). `.env.local` (local Postgres) and `.env.development` (Neon) each hold `DATABASE_URL` (pooled, runtime) + `DIRECT_URL` (direct, migrations). Switch target by **script** via `dotenv-cli` — `npm run dev` (local) vs `npm run dev:neon` (Neon) — never by hand-editing files. No key overlap between files = no local/remote mismatch. The Prisma datasource uses `directUrl` for migrations; production (Railway) injects env vars from the dashboard instead of files. Use `prisma migrate dev`, **not** `db push`, to avoid migration drift.
 - **API error notifications**: the axios interceptor in `frontend/src/api/index.ts` only toasts for *infra-level* failures — network unreachable, `401` (auto-logout via `useStore.logout()`), and `5xx` ("Server is unavailable"). All 4xx statuses reject silently; the calling component must show a contextual message via `showNotification` from `@/utils/notifications`. Do NOT add 4xx toasts to the interceptor.
 
 ## Where things live
@@ -36,5 +37,9 @@ Vitest + React Testing Library + jsdom. Config is in `frontend/vite.config.ts` (
 
 ## Commands
 
-Backend: `npm run dev` (port 3001) · `npx prisma migrate dev`
+Backend (port 3001): `npm run dev` (local DB) · `npm run dev:neon` (Neon) · `npm run migrate:dev` (local) · `npm run migrate:deploy:neon` (Neon) · `npm run studio` / `studio:neon`
 Frontend: `npm run dev` (port 5173) · `npm run build` · `npm run lint` · `npm test` (watch) · `npm run test:run` (one-shot)
+
+## Deployment
+
+Monorepo stays one repo; each app deploys from its subdirectory. **Neon** (managed Postgres + pgvector, free) for the DB · **Railway** (Root Directory `backend`, start `npx prisma migrate deploy && node dist/app.js`) for the API · **Vercel** for `frontend` and `embed` (static). Deploy order: DB → backend → frontend → embed. See README "Deployment" for details.
