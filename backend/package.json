@@ -5,9 +5,14 @@
   "main": "dist/app.js",
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/app.ts",
+    "dev": "dotenv -e .env.local -e .env -- tsx watch src/app.ts",
+    "dev:neon": "dotenv -e .env.development -e .env -- tsx watch src/app.ts",
     "build": "tsc",
     "start": "node dist/app.js",
+    "migrate:dev": "dotenv -e .env.local -e .env -- prisma migrate dev",
+    "migrate:deploy:neon": "dotenv -e .env.development -e .env -- prisma migrate deploy",
+    "studio": "dotenv -e .env.local -e .env -- prisma studio",
+    "studio:neon": "dotenv -e .env.development -e .env -- prisma studio",
     "test": "echo \"Error: no test specified\" && exit 1",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
@@ -44,6 +49,7 @@
     "@types/node": "^24.5.2",
     "@types/pdfkit": "^0.17.4",
     "@types/word-extractor": "^1.0.6",
+    "dotenv-cli": "^11.0.0",
     "nodemon": "^3.1.10",
     "prettier": "^3.6.2",
     "prisma": "^6.17.0",
