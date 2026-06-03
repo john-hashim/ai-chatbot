@@ -36,6 +36,16 @@ const navItems = [
     path: 'knowledge-base',
   },
   {
+    icon: Wand2,
+    label: 'Agent Tuning',
+    path: 'agent-tuning',
+  },
+  {
+    icon: Users,
+    label: 'Leads',
+    path: 'leads',
+  },
+  {
     icon: MessageSquareText,
     label: 'Chats',
     path: 'chats',
@@ -46,30 +56,20 @@ const navItems = [
     path: 'bookings',
   },
   {
-    icon: Users,
-    label: 'Leads',
-    path: 'leads',
-  },
-  {
-    icon: Wand2,
-    label: 'Agent Tuning',
-    path: 'agent-tuning',
-  },
-  {
     icon: ChartLine,
     label: 'Analytics',
     path: 'analytics',
+  },
+  {
+    icon: Rocket,
+    label: 'Deploy',
+    path: 'deploy',
   },
   // {
   //   icon: Zap,
   //   label: 'Automations',
   //   path: 'automations',
   // },
-  {
-    icon: Rocket,
-    label: 'Deploy',
-    path: 'deploy',
-  },
 ]
 
 const ITEM_HEIGHT = 36.3

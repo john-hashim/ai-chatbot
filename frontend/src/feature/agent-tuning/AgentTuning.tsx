@@ -54,13 +54,22 @@ export const AgentTuning: React.FC<AgentTuningProps> = ({ embedded = false }) =>
 
   const handleModelChange = async (id: string | null) => {
     setModelOverride(id)
-    await runSave({ selectedModel: id }, 'Could not update model. Please try again.')
+    const label = models.find(m => m.id === id)?.label ?? 'model'
+    await runSave(
+      { selectedModel: id },
+      'Could not update model. Please try again.',
+      `Model changed to ${label}`
+    )
     setModelOverride(null)
   }
 
   const handleInstructionTypeChange = async (type: InstructionType) => {
     setInstructionOverride(type)
-    await runSave({ instructionType: type }, 'Could not update instruction type.')
+    await runSave(
+      { instructionType: type },
+      'Could not update instruction type.',
+      'Instructions updated successfully'
+    )
     setInstructionOverride(null)
   }
 
