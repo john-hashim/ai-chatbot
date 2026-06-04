@@ -21,6 +21,9 @@ const sampleMessages: ChatMessage[] = [
     sources: [],
     feedback: null,
     confidenceScore: null,
+    isAction: false,
+    actionType: null,
+    actionMeta: null,
   },
 ]
 
