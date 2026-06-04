@@ -249,7 +249,7 @@ export const Landing: React.FC = () => {
                 onClick={() => navigate('/chatbot/new')}
                 leftSection={<Plus size={18} />}
               >
-                New AI Chatbot
+                New AI Agent
               </Button>
             </section>
           </div>
