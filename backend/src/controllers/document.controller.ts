@@ -282,7 +282,7 @@ export const uploadDocument = async (req: Request, res: Response, next: NextFunc
         return {
           name: file.originalname,
           type: 'document',
-          subtype: subtypeMap[file.mimetype],
+          subtype: subtypeMap[file.mimetype] ?? null,
           size: file.size,
           content: textContent,
           chatbotId: chatbotId,
