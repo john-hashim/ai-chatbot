@@ -53,9 +53,7 @@ app.get('/health', (req, res) => {
 
 app.use(errorHandler)
 
-// Bind to 0.0.0.0 so Railway's proxy can reach the container (the Node default
-// can bind IPv6-only on some hosts, which causes a 502 on Railway's public URL).
-app.listen(Number(PORT), '0.0.0.0', () => {
+app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`)
 })
 

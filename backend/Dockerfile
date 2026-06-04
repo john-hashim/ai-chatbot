@@ -17,7 +17,8 @@ RUN npx prisma generate && npm run build
 # Keep devDependencies installed: the `prisma` CLI (a devDependency) is used at
 # container startup for `prisma migrate deploy`. NODE_ENV is set for runtime only.
 ENV NODE_ENV=production
-EXPOSE 3001
+# Must match the PORT the app listens on (Railway can route to the EXPOSEd port).
+EXPOSE 8080
 
 # Apply pending migrations against Neon, then start the compiled server.
 # DIRECT_URL is used for migrate deploy; DATABASE_URL (pooled) for runtime.
