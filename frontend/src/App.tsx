@@ -13,6 +13,7 @@ import {
   MantineProvider,
   Button,
   TextInput,
+  PasswordInput,
   ColorInput,
   Tooltip,
   Checkbox,
@@ -34,6 +35,7 @@ import { MainLayout } from '@/components/layout/MainLayout'
 import { useUserStore } from '@/store'
 
 const Login = lazy(() => import('@/feature/auth/Login'))
+const Signup = lazy(() => import('@/feature/auth/Signup'))
 const Landing = lazy(() => import('@/feature/Landing/Landing').then(m => ({ default: m.Landing })))
 const ChatbotBasicSetup = lazy(() =>
   import('./feature/create-chatbot/ChatbotBasicSetup').then(m => ({ default: m.ChatbotBasicSetup }))
@@ -113,6 +115,11 @@ const theme = createTheme({
         input: classes.input,
       },
     }),
+    PasswordInput: PasswordInput.extend({
+      classNames: {
+        input: classes.input,
+      },
+    }),
     NumberInput: NumberInput.extend({
       classNames: {
         input: classes.input,
@@ -183,6 +190,10 @@ function AppRoutes() {
         <Route
           path="/login"
           element={token ? <Navigate to="/chatbot/landing" replace /> : <Login />}
+        />
+        <Route
+          path="/signup"
+          element={token ? <Navigate to="/chatbot/landing" replace /> : <Signup />}
         />
         <Route
           element={

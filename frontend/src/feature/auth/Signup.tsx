@@ -8,13 +8,14 @@ import { showNotification } from '@/utils/notifications'
 import { AuthShell } from './AuthShell'
 import { GoogleButton } from './GoogleButton'
 
-interface LoginFormData {
+interface SignupFormData {
+  name: string
   email: string
   password: string
 }
 
-const Login: React.FC = () => {
-  usePageTitle('Login')
+const Signup: React.FC = () => {
+  usePageTitle('Sign up')
   const navigate = useNavigate()
   const { googleSignIn, loading } = useUserStore()
 
@@ -22,8 +23,8 @@ const Login: React.FC = () => {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<LoginFormData>({
-    defaultValues: { email: '', password: '' },
+  } = useForm<SignupFormData>({
+    defaultValues: { name: '', email: '', password: '' },
   })
 
   const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
@@ -34,40 +35,54 @@ const Login: React.FC = () => {
     try {
       await googleSignIn({ credential: credentialResponse.credential })
     } catch (err) {
-      console.error('Google login failed:', err)
+      console.error('Google sign-up failed:', err)
     }
   }
 
   const handleGoogleError = () => {
-    showNotification('error', 'Google sign-in failed. Please try again.')
+    showNotification('error', 'Google sign-up failed. Please try again.')
   }
 
-  const onSubmit = async (data: LoginFormData) => {
+  const onSubmit = async (data: SignupFormData) => {
     // TODO: email/password auth has no backend yet — wire to authService once available.
-    console.log('email/password login submitted', data.email)
-    showNotification('error', 'Email and password login is coming soon. Please use Google sign-in.')
+    console.log('email/password signup submitted', data.email)
+    showNotification('error', 'Email and password sign-up is coming soon. Please use Google.')
   }
 
   return (
     <AuthShell>
       <form onSubmit={handleSubmit(onSubmit)} className="w-full">
-        <p className="text-3xl font-semibold text-center sm:text-left mb-2">Welcome back</p>
+        <p className="text-3xl font-semibold text-center sm:text-left mb-2">Create your account</p>
         <p className="text-[13px] font-light text-gray-500 text-center sm:text-left">
-          Log in to access your Chatvio account
+          Sign up to get started with Chatvio
         </p>
 
-        <div className="mt-10">
+        <div className="mt-6">
           <GoogleButton
-            label="Continue with Google"
+            label="Sign up with Google"
             loading={loading}
             onSuccess={handleGoogleSuccess}
             onError={handleGoogleError}
           />
         </div>
 
-        <Divider label="or" labelPosition="center" my="xl" />
+        <Divider label="or" labelPosition="center" my="md" />
 
         <div>
+          <p className="text-text-secondary text-sm">Full name</p>
+          <TextInput
+            {...register('name', {
+              required: 'Please enter your name',
+              maxLength: { value: 60, message: 'Name must be less than 60 characters' },
+            })}
+            className="mt-1"
+            type="text"
+            placeholder="Jane Doe"
+            error={errors.name?.message}
+          />
+        </div>
+
+        <div className="mt-4">
           <p className="text-text-secondary text-sm">Email</p>
           <TextInput
             {...register('email', {
@@ -84,34 +99,26 @@ const Login: React.FC = () => {
           />
         </div>
 
-        <div className="mt-6">
-          <div className="flex justify-between items-center">
-            <p className="text-text-secondary text-sm">Password</p>
-            <button
-              type="button"
-              className="text-[11px]! text-text-weak hover:text-icon-hover border-0 bg-transparent p-0 cursor-pointer"
-              onClick={() => navigate('/forgot-password')}
-            >
-              Forgot password?
-            </button>
-          </div>
+        <div className="mt-4">
+          <p className="text-text-secondary text-sm">Password</p>
           <PasswordInput
             {...register('password', {
-              required: 'Please enter your password',
+              required: 'Please enter a password',
+              minLength: { value: 8, message: 'Password must be at least 8 characters' },
             })}
             className="mt-1"
-            placeholder="Enter your password"
+            placeholder="Create a password"
             error={errors.password?.message}
           />
         </div>
 
-        <div className="mt-10">
+        <div className="mt-6">
           <Button type="submit" variant="default" fullWidth disabled={isSubmitting}>
-            {isSubmitting ? 'Signing in...' : 'Sign in'}
+            {isSubmitting ? 'Creating account...' : 'Create account'}
           </Button>
         </div>
 
-        <p className="text-gray-500 text-[12px] text-center mt-6">
+        <p className="text-gray-500 text-[12px] text-center mt-4">
           By continuing, you agree to our{' '}
           <button
             type="button"
@@ -131,14 +138,14 @@ const Login: React.FC = () => {
           .
         </p>
 
-        <p className="text-sm text-center mt-4 text-gray-500">
-          Don't have an account?{' '}
+        <p className="text-sm text-center mt-3 text-gray-500">
+          Already have an account?{' '}
           <button
             type="button"
             className="text-gray-700 font-bold underline border-0 bg-transparent p-0 cursor-pointer"
-            onClick={() => navigate('/signup')}
+            onClick={() => navigate('/login')}
           >
-            Sign up
+            Login
           </button>
         </p>
       </form>
@@ -146,4 +153,4 @@ const Login: React.FC = () => {
   )
 }
 
-export default Login
+export default Signup

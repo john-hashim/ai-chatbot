@@ -131,7 +131,8 @@
   border: 1px solid var(--color-border-strong) !important;
 }
 
-.input:focus {
+.input:focus,
+.input:focus-within {
   border: 1px solid var(--color-border-strong) !important;
 }
 
