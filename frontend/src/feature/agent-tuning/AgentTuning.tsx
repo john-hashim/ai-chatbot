@@ -65,11 +65,7 @@ export const AgentTuning: React.FC<AgentTuningProps> = ({ embedded = false }) =>
 
   const handleInstructionTypeChange = async (type: InstructionType) => {
     setInstructionOverride(type)
-    await runSave(
-      { instructionType: type },
-      'Could not update instruction type.',
-      'Instructions updated successfully'
-    )
+    await runSave({ instructionType: type }, 'Could not update instruction type.')
     setInstructionOverride(null)
   }
 
@@ -94,7 +90,6 @@ export const AgentTuning: React.FC<AgentTuningProps> = ({ embedded = false }) =>
       modelLabel={modelLabel}
       hideContinue
       hideHeader={embedded}
-      hideReset={embedded}
       compact={embedded}
     />
   )

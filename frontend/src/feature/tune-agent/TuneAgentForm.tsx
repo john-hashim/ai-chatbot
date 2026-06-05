@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Button, CheckIcon, HoverCard, Select, Tooltip } from '@mantine/core'
-import { ArrowRight, ChevronRight, Info, Pencil, RotateCcw } from 'lucide-react'
+import { ArrowRight, ChevronRight, Info } from 'lucide-react'
 import { Tick } from '@/components/common/Tick'
 import type { ModelGroup } from '@/store/slices/modelsSlice'
 import type { ChatModel } from '@/types/chatbot'
@@ -53,7 +53,6 @@ interface TuneAgentFormProps {
   onContinue?: () => void
   hideContinue?: boolean
   hideHeader?: boolean
-  hideReset?: boolean
   compact?: boolean
 }
 
@@ -87,7 +86,6 @@ export const TuneAgentForm: React.FC<TuneAgentFormProps> = ({
   onContinue,
   hideContinue,
   hideHeader,
-  hideReset,
   compact,
 }) => {
   const navigate = useNavigate()
@@ -381,30 +379,51 @@ export const TuneAgentForm: React.FC<TuneAgentFormProps> = ({
               <label className="text-[12.5px] font-medium text-text-secondary">Agent Prompt</label>
               {/* 6. Edit + Reset only for the custom flow */}
               {isManual && (
-                <div className="flex items-center gap-1.5">
-                  <Tooltip label="Open editor to refine the full prompt" withArrow>
+                <div className="flex items-center gap-2">
+                  <Tooltip label="Open editor to refine the full prompt" withArrow openDelay={300}>
                     <Button
                       variant="light"
                       size="compact-xs"
+                      radius="md"
                       onClick={() => setEditOpen(true)}
-                      leftSection={<Pencil size={12} />}
+                      styles={{
+                        root: {
+                          height: 27,
+                          paddingInline: 14,
+                          fontSize: 11.5,
+                          fontWeight: 500,
+                          letterSpacing: '-0.005em',
+                        },
+                      }}
                     >
                       Edit Prompt
                     </Button>
                   </Tooltip>
-                  {!hideReset && (
-                    <Tooltip label="Discard and start the question flow over" withArrow>
-                      <Button
-                        variant="subtle"
-                        color="gray"
-                        size="compact-xs"
-                        onClick={resetAll}
-                        leftSection={<RotateCcw size={12} />}
-                      >
-                        Start Over
-                      </Button>
-                    </Tooltip>
-                  )}
+
+                  <Tooltip
+                    label="Discard and start the question flow over"
+                    withArrow
+                    openDelay={300}
+                  >
+                    <Button
+                      variant="subtle"
+                      color="gray"
+                      size="compact-xs"
+                      radius="md"
+                      onClick={resetAll}
+                      styles={{
+                        root: {
+                          height: 27,
+                          paddingInline: 14,
+                          fontSize: 11.5,
+                          fontWeight: 500,
+                          letterSpacing: '-0.005em',
+                        },
+                      }}
+                    >
+                      Start Over
+                    </Button>
+                  </Tooltip>
                 </div>
               )}
             </div>
