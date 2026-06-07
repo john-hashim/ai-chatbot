@@ -20,6 +20,11 @@ export interface SignupRequest {
   password: string
 }
 
+export interface LoginRequest {
+  email: string
+  password: string
+}
+
 export interface VerifyEmailRequest {
   token: string
 }

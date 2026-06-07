@@ -178,6 +178,70 @@ export const verifyEmail = async (req: Request, res: Response, next: NextFunctio
   }
 }
 
+export const login = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { email, password } = req.body
+
+    if (!email || typeof email !== 'string' || !password || typeof password !== 'string') {
+      res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'Email and password are required',
+      } satisfies ApiResponse)
+      return
+    }
+
+    const normalizedEmail = email.trim().toLowerCase()
+    const user = await prisma.user.findUnique({ where: { email: normalizedEmail } })
+
+    // Google-only accounts have no password — steer them to the right button.
+    if (user && !user.password && user.googleId) {
+      res.status(401).json({
+        status: ApiStatus.FAILURE,
+        message: 'This account uses Google sign-in. Please continue with Google.',
+      } satisfies ApiResponse)
+      return
+    }
+
+    // Generic message for unknown email / wrong password so we don't reveal
+    // which emails have accounts.
+    if (!user || !user.password || !(await bcrypt.compare(password, user.password))) {
+      res.status(401).json({
+        status: ApiStatus.FAILURE,
+        message: 'Invalid email or password',
+      } satisfies ApiResponse)
+      return
+    }
+
+    if (!user.emailVerified) {
+      res.status(403).json({
+        status: ApiStatus.FAILURE,
+        message: 'Please verify your email before logging in. Check your inbox for the link.',
+      } satisfies ApiResponse)
+      return
+    }
+
+    const session = await createSession(user.id)
+
+    res.status(200).json({
+      status: ApiStatus.SUCCESS,
+      message: 'Login successful',
+      data: {
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          avatar: user.avatar,
+        },
+        token: session.token,
+        isNewUser: false,
+      },
+    } satisfies ApiResponse)
+  } catch (error) {
+    console.error('Login error:', error)
+    next(error)
+  }
+}
+
 export const logout = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const session = req.session
@@ -253,14 +317,19 @@ export const googleSignIn = async (req: Request, res: Response, next: NextFuncti
           email: payload.email,
           name: payload.name ?? '',
           avatar: payload.picture ?? '',
+          // Google has already verified ownership of this email — no link flow.
+          emailVerified: true,
         },
       })
     } else if (!user.googleId) {
+      // Linking Google to an existing (possibly unverified) email/password
+      // account — Google's verification confirms ownership, so mark it verified.
       user = await prisma.user.update({
         where: { id: user.id },
         data: {
           googleId: payload.sub,
           avatar: user.avatar || payload.picture || '',
+          emailVerified: true,
         },
       })
     }

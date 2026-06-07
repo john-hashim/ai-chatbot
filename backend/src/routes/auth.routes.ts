@@ -6,6 +6,7 @@ import * as authMiddleware from '../middleware/auth.middleware.js'
 const router = express.Router()
 
 router.post('/signup', authController.signup)
+router.post('/login', authController.login)
 router.post('/verify-email', authController.verifyEmail)
 router.post('/google/signin', authController.googleSignIn)
 router.post('/logout', authMiddleware.authenticateToken, authController.logout)

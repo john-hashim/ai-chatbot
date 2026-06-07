@@ -5,6 +5,7 @@ import { ENDPOINTS } from '../endpoints'
 import type {
   AuthResponseData,
   GoogleSignInRequest,
+  LoginRequest,
   SignupRequest,
   VerifyEmailRequest,
   User,
@@ -18,6 +19,13 @@ export const authService = {
    */
   signup: (data: SignupRequest): Promise<AxiosResponse<ApiResponse>> => {
     return apiClient.post(ENDPOINTS.AUTH.SIGNUP, data)
+  },
+
+  /**
+   * Log in with email + password. Returns user + session token on success.
+   */
+  login: (data: LoginRequest): Promise<AxiosResponse<ApiResponse<AuthResponseData>>> => {
+    return apiClient.post(ENDPOINTS.AUTH.LOGIN, data)
   },
 
   /**

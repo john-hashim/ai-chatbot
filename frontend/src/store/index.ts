@@ -40,6 +40,7 @@ export const useUserStore = () =>
       loading: state.loading,
       error: state.error,
       googleSignIn: state.googleSignIn,
+      login: state.login,
       signup: state.signup,
       verifyEmail: state.verifyEmail,
       logout: state.logout,

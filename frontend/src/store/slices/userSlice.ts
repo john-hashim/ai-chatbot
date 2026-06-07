@@ -1,4 +1,4 @@
-import type { User, GoogleSignInRequest, SignupRequest } from '@/types/auth'
+import type { User, GoogleSignInRequest, SignupRequest, LoginRequest } from '@/types/auth'
 import type { StateCreator } from 'zustand'
 import { authService } from '@/api/services/auth'
 
@@ -11,6 +11,7 @@ export interface UserSlice {
   error: string | null
 
   googleSignIn: (data: GoogleSignInRequest) => Promise<void>
+  login: (data: LoginRequest) => Promise<void>
   signup: (data: SignupRequest) => Promise<void>
   verifyEmail: (token: string) => Promise<void>
   logout: () => void
@@ -51,6 +52,31 @@ export const createUserSlice: StateCreator<UserSlice> = set => ({
       throw error
     }
   },
+  login: async (data: LoginRequest) => {
+    set({ loading: true, error: null })
+    try {
+      const response = await authService.login(data)
+
+      if (!response.data.data) {
+        throw new Error('No data received from server')
+      }
+
+      const { user, token } = response.data.data
+
+      set({
+        user,
+        token,
+        isAuthenticated: true,
+        loading: false,
+        error: null,
+      })
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Login failed'
+      set({ loading: false, error: errorMessage })
+      throw error
+    }
+  },
+
   signup: async (data: SignupRequest) => {
     set({ loading: true, error: null })
     try {
