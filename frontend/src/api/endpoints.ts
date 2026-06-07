@@ -1,6 +1,9 @@
 // src/api/endpoints.ts
 export const ENDPOINTS = {
   AUTH: {
+    SIGNUP: '/auth/signup',
+    LOGIN: '/auth/login',
+    VERIFY_EMAIL: '/auth/verify-email',
     GET_ME: '/auth/me',
     LOGOUT: '/auth/logout',
     UPDATE_AVATAR: '/auth/me/avatar',

@@ -11,10 +11,12 @@ dayjs.extend(customParseFormat)
 const resend = new Resend(process.env.RESEND_API_KEY)
 
 // Resend's shared `onboarding@resend.dev` only delivers to the Resend account
-// owner — every other recipient is silently dropped. Set BOOKING_EMAIL_FROM
-// (e.g. "Pulsechat <notifications@yourdomain.com>") once a domain is verified
-// in Resend → Domains so invitees actually receive booking confirmations.
-const FROM_ADDRESS = process.env.BOOKING_EMAIL_FROM || 'Pulsechat <onboarding@resend.dev>'
+// owner — every other recipient is silently dropped. Set EMAIL_FROM
+// (e.g. "Chatvio <noreply@mail.chatvio.io>") once a domain is verified in
+// Resend → Domains so all recipients (booking + signup verification) receive mail.
+// Falls back to the legacy BOOKING_EMAIL_FROM name for backward compatibility.
+const FROM_ADDRESS =
+  process.env.EMAIL_FROM || process.env.BOOKING_EMAIL_FROM || 'Pulsechat <onboarding@resend.dev>'
 const USING_SANDBOX_SENDER = FROM_ADDRESS.includes('onboarding@resend.dev')
 
 // Inline SVG matches the frontend logo (frontend/public/favicon.svg). Gmail
@@ -133,6 +135,65 @@ function buildEmail(opts: {
   </table>
 </body>
 </html>`
+}
+
+function buildVerificationEmail(verifyUrl: string): string {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Chatvio</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f3f4f6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#111827;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f3f4f6;padding:32px 16px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;background-color:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+          <tr>
+            <td style="padding:24px 32px;border-bottom:1px solid #f3f4f6;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td style="vertical-align:middle;padding-right:8px;">${LOGO_SVG}</td>
+                  <td style="vertical-align:middle;font-size:18px;font-weight:600;color:#111827;letter-spacing:-0.01em;">Chatvio</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:32px;">
+              <p style="margin:0 0 8px 0;font-size:20px;font-weight:600;color:#111827;">You're in. Let's build something brilliant.</p>
+              <p style="margin:0 0 16px 0;font-size:15px;color:#374151;line-height:1.6;">
+                Thanks for joining Chatvio, your new favorite way to build, train, and deploy powerful AI Agents. You're just one step away from going live.
+              </p>
+              <p style="margin:0 0 24px 0;font-size:15px;color:#374151;line-height:1.6;">
+                Click below to confirm your email and unlock your workspace.
+              </p>
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td style="border-radius:8px;background-color:#000000;">
+                    <a href="${verifyUrl}" style="display:inline-block;padding:12px 28px;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:8px;">Confirm Sign Up</a>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin:28px 0 0 0;font-size:15px;color:#374151;">Thank you,<br>Chatvio Team</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`
+}
+
+export async function sendVerificationEmail(to: string, verifyUrl: string) {
+  await resend.emails.send({
+    from: FROM_ADDRESS,
+    to,
+    subject: 'Confirm your email for Chatvio',
+    html: buildVerificationEmail(verifyUrl),
+  })
 }
 
 export async function sendBookingConfirmationToUser(opts: BookingEmailFields) {

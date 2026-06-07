@@ -1,6 +1,7 @@
 import { Button, Divider, PasswordInput, TextInput } from '@mantine/core'
 import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
+import axios from 'axios'
 import { useUserStore } from '@/store'
 import { type CredentialResponse } from '@react-oauth/google'
 import { usePageTitle } from '@/hooks/usePageTitle'
@@ -16,7 +17,7 @@ interface LoginFormData {
 const Login: React.FC = () => {
   usePageTitle('Login')
   const navigate = useNavigate()
-  const { googleSignIn, loading } = useUserStore()
+  const { googleSignIn, login, loading } = useUserStore()
 
   const {
     register,
@@ -43,9 +44,17 @@ const Login: React.FC = () => {
   }
 
   const onSubmit = async (data: LoginFormData) => {
-    // TODO: email/password auth has no backend yet — wire to authService once available.
-    console.log('email/password login submitted', data.email)
-    showNotification('error', 'Email and password login is coming soon. Please use Google sign-in.')
+    try {
+      // On success the token guard in App.tsx redirects to the landing page.
+      await login({ email: data.email, password: data.password })
+    } catch (err) {
+      // The interceptor already toasts for 5xx / network errors; only surface a
+      // contextual message for 4xx (which it rejects silently).
+      const status = axios.isAxiosError(err) ? err.response?.status : undefined
+      if (status && status >= 500) return
+      const message = axios.isAxiosError(err) ? err.response?.data?.message : undefined
+      showNotification('error', message || 'Could not log you in. Please try again.')
+    }
   }
 
   return (

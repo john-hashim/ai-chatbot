@@ -1,6 +1,8 @@
-import { Button, Divider, PasswordInput, TextInput } from '@mantine/core'
+import { Button, Checkbox, Divider, PasswordInput, Progress, TextInput } from '@mantine/core'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
+import axios from 'axios'
 import { useUserStore } from '@/store'
 import { type CredentialResponse } from '@react-oauth/google'
 import { usePageTitle } from '@/hooks/usePageTitle'
@@ -9,23 +11,49 @@ import { AuthShell } from './AuthShell'
 import { GoogleButton } from './GoogleButton'
 
 interface SignupFormData {
-  name: string
   email: string
   password: string
+  confirmPassword: string
+}
+
+const requirements = [
+  { label: '8 characters or more', test: (v: string) => v.length >= 8 },
+  { label: '1 uppercase letter', test: (v: string) => /[A-Z]/.test(v) },
+  { label: '1 lowercase letter', test: (v: string) => /[a-z]/.test(v) },
+  { label: '1 number', test: (v: string) => /[0-9]/.test(v) },
+  { label: '1 special character', test: (v: string) => /[^A-Za-z0-9]/.test(v) },
+]
+
+// At least 3 passing requirements ("fair") is enough to submit.
+const MIN_STRENGTH = 3
+
+const getStrength = (passed: number, hasInput: boolean) => {
+  if (!hasInput) return { label: 'Type a password', color: 'gray', value: 0 }
+  if (passed >= 5) return { label: 'Strong', color: 'green', value: 100 }
+  if (passed >= MIN_STRENGTH) return { label: 'Fair', color: 'yellow', value: 66 }
+  return { label: 'Weak', color: 'red', value: 33 }
 }
 
 const Signup: React.FC = () => {
   usePageTitle('Sign up')
   const navigate = useNavigate()
-  const { googleSignIn, loading } = useUserStore()
+  const { googleSignIn, signup, loading } = useUserStore()
+  const [sentTo, setSentTo] = useState<string | null>(null)
 
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    getValues,
+    formState: { errors, isSubmitting, isSubmitted, isValid },
   } = useForm<SignupFormData>({
-    defaultValues: { name: '', email: '', password: '' },
+    defaultValues: { email: '', password: '', confirmPassword: '' },
   })
+
+  const [password, setPassword] = useState('')
+  const checks = requirements.map(r => r.test(password))
+  const passed = checks.filter(Boolean).length
+  const strength = getStrength(passed, password.length > 0)
+  const isStrongEnough = passed === requirements.length
 
   const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
     if (!credentialResponse.credential) {
@@ -44,14 +72,36 @@ const Signup: React.FC = () => {
   }
 
   const onSubmit = async (data: SignupFormData) => {
-    // TODO: email/password auth has no backend yet — wire to authService once available.
-    console.log('email/password signup submitted', data.email)
-    showNotification('error', 'Email and password sign-up is coming soon. Please use Google.')
+    try {
+      await signup({ email: data.email, password: data.password })
+      setSentTo(data.email)
+    } catch (err) {
+      // The interceptor already toasts for 5xx / network errors; only surface a
+      // contextual message for 4xx (which it rejects silently).
+      const status = axios.isAxiosError(err) ? err.response?.status : undefined
+      if (status && status >= 500) return
+      const message = axios.isAxiosError(err) ? err.response?.data?.message : undefined
+      showNotification('error', message || 'Could not create your account. Please try again.')
+    }
   }
 
   return (
     <AuthShell>
       <form onSubmit={handleSubmit(onSubmit)} className="w-full">
+        <div
+          className={`grid transition-all duration-500 ease-out ${
+            sentTo ? 'grid-rows-[1fr] opacity-100 mb-6' : 'grid-rows-[0fr] opacity-0 mb-0'
+          }`}
+        >
+          <div className="overflow-hidden">
+            <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-[13px] leading-relaxed text-green-700">
+              We sent a verification link to{' '}
+              <span className="font-semibold">{sentTo}</span>. Open it to confirm your email and
+              finish setting up your account.
+            </div>
+          </div>
+        </div>
+
         <p className="text-3xl font-semibold text-center sm:text-left mb-2">Create your account</p>
         <p className="text-[13px] font-light text-gray-500 text-center sm:text-left">
           Sign up to get started with Chatvio
@@ -69,20 +119,6 @@ const Signup: React.FC = () => {
         <Divider label="or" labelPosition="center" my="md" />
 
         <div>
-          <p className="text-text-secondary text-sm">Full name</p>
-          <TextInput
-            {...register('name', {
-              required: 'Please enter your name',
-              maxLength: { value: 60, message: 'Name must be less than 60 characters' },
-            })}
-            className="mt-1"
-            type="text"
-            placeholder="Jane Doe"
-            error={errors.name?.message}
-          />
-        </div>
-
-        <div className="mt-4">
           <p className="text-text-secondary text-sm">Email</p>
           <TextInput
             {...register('email', {
@@ -104,16 +140,69 @@ const Signup: React.FC = () => {
           <PasswordInput
             {...register('password', {
               required: 'Please enter a password',
-              minLength: { value: 8, message: 'Password must be at least 8 characters' },
+              onChange: e => setPassword(e.currentTarget.value),
+              validate: () => isStrongEnough || 'Password does not meet all requirements',
             })}
             className="mt-1"
             placeholder="Create a password"
             error={errors.password?.message}
           />
+          <div className="flex items-center gap-3 mt-2">
+            <Progress
+              className="w-1/2"
+              value={strength.value}
+              color={strength.color}
+              size="xs"
+              radius="xl"
+              transitionDuration={700}
+            />
+            <span
+              className="w-1/2 text-[11px] font-medium transition-colors duration-700"
+              style={{ color: `var(--mantine-color-${strength.color}-6)` }}
+            >
+              {strength.label}
+            </span>
+          </div>
+        </div>
+
+        <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2">
+          {requirements.map((r, i) => (
+            <Checkbox
+              key={r.label}
+              checked={checks[i]}
+              readOnly
+              tabIndex={-1}
+              size="xs"
+              color="green"
+              label={r.label}
+              styles={{
+                root: { pointerEvents: 'none' },
+                label: { fontSize: 12, color: checks[i] ? '#16a34a' : '#6b7280' },
+              }}
+            />
+          ))}
+        </div>
+
+        <div className="mt-4">
+          <p className="text-text-secondary text-sm">Confirm password</p>
+          <PasswordInput
+            {...register('confirmPassword', {
+              required: 'Please confirm your password',
+              validate: value => value === getValues('password') || 'Passwords do not match',
+            })}
+            className="mt-1"
+            placeholder="Re-enter your password"
+            error={errors.confirmPassword?.message}
+          />
         </div>
 
         <div className="mt-6">
-          <Button type="submit" variant="default" fullWidth disabled={isSubmitting}>
+          <Button
+            type="submit"
+            variant="default"
+            fullWidth
+            disabled={isSubmitting || (isSubmitted && !isValid)}
+          >
             {isSubmitting ? 'Creating account...' : 'Create account'}
           </Button>
         </div>

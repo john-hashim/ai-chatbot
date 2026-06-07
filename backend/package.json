@@ -44,6 +44,7 @@
     "word-extractor": "^1.0.4"
   },
   "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
     "@types/cors": "^2.8.19",
     "@types/dotenv": "^6.1.1",
     "@types/node": "^24.5.2",
