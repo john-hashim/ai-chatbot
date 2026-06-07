@@ -192,7 +192,7 @@ export const Header: React.FC = () => {
         <Popover.Target>
           <Avatar
             src={user?.avatar}
-            alt={user?.name}
+            alt={user?.name ?? undefined}
             size={24}
             radius="xl"
             className="cursor-pointer"
