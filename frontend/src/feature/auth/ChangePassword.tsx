@@ -1,7 +1,10 @@
 import { Button, Checkbox, PasswordInput, Progress } from '@mantine/core'
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import axios from 'axios'
 import { usePageTitle } from '@/hooks/usePageTitle'
+import { authService } from '@/api/services/auth'
+import { showNotification } from '@/utils/notifications'
 import { AuthShell } from './AuthShell'
 
 const requirements = [
@@ -25,6 +28,8 @@ const getStrength = (passed: number, hasInput: boolean) => {
 const ChangePassword: React.FC = () => {
   usePageTitle('Change password')
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const token = searchParams.get('token')
 
   const [password, setPassword] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -38,13 +43,28 @@ const ChangePassword: React.FC = () => {
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!isStrongEnough || submitting || success) return
-    // TODO: password reset has no backend yet — wire to authService once available.
+
+    if (!token) {
+      showNotification('error', 'This password reset link is invalid or has expired.')
+      navigate('/forgot-password', { replace: true })
+      return
+    }
+
     setSubmitting(true)
-    console.log('password update submitted', password.length)
-    // Simulate the request latency so the button loader is visible.
-    await new Promise(resolve => setTimeout(resolve, 800))
-    setSubmitting(false)
-    setSuccess(true)
+    try {
+      await authService.resetPassword({ token, password })
+      setSuccess(true)
+    } catch (err) {
+      // The interceptor toasts 5xx / network; surface a contextual message only
+      // for 4xx (which it rejects silently) — typically an expired/used token.
+      const status = axios.isAxiosError(err) ? err.response?.status : undefined
+      if (!status || status < 500) {
+        const message = axios.isAxiosError(err) ? err.response?.data?.message : undefined
+        showNotification('error', message || 'Could not reset your password. Please try again.')
+      }
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (

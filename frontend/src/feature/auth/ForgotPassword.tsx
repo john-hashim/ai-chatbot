@@ -2,7 +2,10 @@ import { Button, TextInput } from '@mantine/core'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
+import axios from 'axios'
 import { usePageTitle } from '@/hooks/usePageTitle'
+import { authService } from '@/api/services/auth'
+import { showNotification } from '@/utils/notifications'
 import { AuthShell } from './AuthShell'
 
 interface ForgotPasswordFormData {
@@ -24,9 +27,19 @@ const ForgotPassword: React.FC = () => {
   })
 
   const onSubmit = async (data: ForgotPasswordFormData) => {
-    // TODO: password reset has no backend yet — wire to authService once available.
-    console.log('password reset requested for', data.email)
-    setSubmitted(true)
+    try {
+      // The server always replies with a generic success (no account enumeration),
+      // so a resolved request just means "email accepted".
+      await authService.forgotPassword({ email: data.email })
+      setSubmitted(true)
+    } catch (err) {
+      // The interceptor toasts 5xx / network; surface a contextual message only
+      // for 4xx (which it rejects silently).
+      const status = axios.isAxiosError(err) ? err.response?.status : undefined
+      if (status && status >= 500) return
+      const message = axios.isAxiosError(err) ? err.response?.data?.message : undefined
+      showNotification('error', message || 'Could not send the reset email. Please try again.')
+    }
   }
 
   return (
@@ -62,8 +75,8 @@ const ForgotPassword: React.FC = () => {
           <div className="overflow-hidden">
             <div className="rounded-lg border border-border-week bg-gray-50 px-4 py-3 text-[13px] leading-relaxed text-gray-600">
               If an account with that email exists, a password reset link will be sent to your
-              email. Please note that the link expires in 15 minutes, and you must reset your
-              password using the same device and browser you used to request the reset link.
+              email. Please note that the link expires in 15 minutes. If you don't see it, check
+              your spam folder.
             </div>
           </div>
         </div>

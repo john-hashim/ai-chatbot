@@ -5,7 +5,7 @@ import { prisma } from '../prisma/client.js'
 import { OAuth2Client } from 'google-auth-library'
 import { ApiStatus, type ApiResponse } from '../types/api.js'
 import * as r2Service from '../services/r2.service.js'
-import { sendVerificationEmail } from '../services/email.service.js'
+import { sendVerificationEmail, sendPasswordResetEmail } from '../services/email.service.js'
 
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173'
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -174,6 +174,122 @@ export const verifyEmail = async (req: Request, res: Response, next: NextFunctio
     } satisfies ApiResponse)
   } catch (error) {
     console.error('Email verification error:', error)
+    next(error)
+  }
+}
+
+export const forgotPassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  // Generic success response — never reveal whether an account exists for the
+  // supplied email (account enumeration).
+  const genericResponse = () =>
+    res.status(200).json({
+      status: ApiStatus.SUCCESS,
+      message: 'If an account with that email exists, a password reset link has been sent.',
+    } satisfies ApiResponse)
+
+  try {
+    const { email } = req.body
+
+    if (!email || typeof email !== 'string' || !EMAIL_REGEX.test(email.trim())) {
+      res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'A valid email is required',
+      } satisfies ApiResponse)
+      return
+    }
+
+    const normalizedEmail = email.trim().toLowerCase()
+    const user = await prisma.user.findUnique({ where: { email: normalizedEmail } })
+
+    // Only email/password accounts can reset a password. Google-only accounts
+    // (no password) and unknown emails fall through to the same generic reply.
+    if (!user || !user.password) {
+      genericResponse()
+      return
+    }
+
+    const resetToken = generateToken()
+    const resetTokenExpiry = new Date(Date.now() + 15 * 60 * 1000) // 15 min
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { resetToken, resetTokenExpiry },
+    })
+
+    const resetUrl = `${FRONTEND_URL}/reset-password?token=${resetToken}`
+    await sendPasswordResetEmail(normalizedEmail, resetUrl)
+
+    genericResponse()
+  } catch (error) {
+    console.error('Forgot password error:', error)
+    next(error)
+  }
+}
+
+export const resetPassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { token, password } = req.body
+
+    if (!token || typeof token !== 'string') {
+      res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'Reset token is required',
+      } satisfies ApiResponse)
+      return
+    }
+
+    if (!password || typeof password !== 'string' || password.length < 8) {
+      res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'Password must be at least 8 characters',
+      } satisfies ApiResponse)
+      return
+    }
+
+    const user = await prisma.user.findUnique({ where: { resetToken: token } })
+
+    if (!user || !user.resetTokenExpiry || new Date() > user.resetTokenExpiry) {
+      res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'This password reset link is invalid or has expired',
+      } satisfies ApiResponse)
+      return
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10)
+
+    // Consume the token atomically: the `resetToken: token` guard means only ONE
+    // of two concurrent requests (double-submit) wins; the loser matches 0 rows.
+    const claim = await prisma.user.updateMany({
+      where: { id: user.id, resetToken: token },
+      data: {
+        password: passwordHash,
+        resetToken: null,
+        resetTokenExpiry: null,
+        // A successful reset proves email ownership — verify the account too so
+        // a never-verified user isn't locked out of login afterwards.
+        emailVerified: true,
+      },
+    })
+
+    if (claim.count === 0) {
+      res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'This password reset link is invalid or has expired',
+      } satisfies ApiResponse)
+      return
+    }
+
+    // Invalidate every existing session — force a fresh login with the new
+    // password everywhere (and lock out anyone who had the old one).
+    await prisma.session.deleteMany({ where: { userId: user.id } })
+
+    res.status(200).json({
+      status: ApiStatus.SUCCESS,
+      message: 'Password reset successfully. You can now log in with your new password.',
+    } satisfies ApiResponse)
+  } catch (error) {
+    console.error('Reset password error:', error)
     next(error)
   }
 }

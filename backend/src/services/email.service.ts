@@ -187,12 +187,71 @@ function buildVerificationEmail(verifyUrl: string): string {
 </html>`
 }
 
+function buildPasswordResetEmail(resetUrl: string): string {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Chatvio</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f3f4f6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#111827;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f3f4f6;padding:32px 16px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;background-color:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+          <tr>
+            <td style="padding:24px 32px;border-bottom:1px solid #f3f4f6;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td style="vertical-align:middle;padding-right:8px;">${LOGO_SVG}</td>
+                  <td style="vertical-align:middle;font-size:18px;font-weight:600;color:#111827;letter-spacing:-0.01em;">Chatvio</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:32px;">
+              <p style="margin:0 0 8px 0;font-size:20px;font-weight:600;color:#111827;">Reset your password</p>
+              <p style="margin:0 0 16px 0;font-size:15px;color:#374151;line-height:1.6;">
+                We received a request to reset the password for your Chatvio account. Click the button below to choose a new password.
+              </p>
+              <p style="margin:0 0 24px 0;font-size:15px;color:#374151;line-height:1.6;">
+                This link expires in 15 minutes. If you didn't request a password reset, you can safely ignore this email — your password won't change.
+              </p>
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td style="border-radius:8px;background-color:#000000;">
+                    <a href="${resetUrl}" style="display:inline-block;padding:12px 28px;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:8px;">Reset Password</a>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin:28px 0 0 0;font-size:15px;color:#374151;">Thank you,<br>Chatvio Team</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`
+}
+
 export async function sendVerificationEmail(to: string, verifyUrl: string) {
   await resend.emails.send({
     from: FROM_ADDRESS,
     to,
     subject: 'Confirm your email for Chatvio',
     html: buildVerificationEmail(verifyUrl),
+  })
+}
+
+export async function sendPasswordResetEmail(to: string, resetUrl: string) {
+  await resend.emails.send({
+    from: FROM_ADDRESS,
+    to,
+    subject: 'Reset your Chatvio password',
+    html: buildPasswordResetEmail(resetUrl),
   })
 }
 
