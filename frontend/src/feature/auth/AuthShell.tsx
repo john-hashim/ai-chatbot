@@ -10,20 +10,20 @@ export const AuthShell: React.FC<{ children: React.ReactNode; single?: boolean }
   children,
   single = false,
 }) => (
-  <div className="flex flex-col h-screen min-h-0 bg-gray-50">
+  <div className="flex flex-col min-h-screen bg-gray-50">
     <header className="px-5 py-2 flex items-center justify-center shrink-0">
       <Logo height={40} width={28} fontSize={25} logoIcon={false} />
     </header>
-    <div className="lg:px-32 px-6 flex-1 pt-1 pb-15 flex min-h-0 justify-center">
+    <div className="lg:px-32 px-6 flex-1 pt-1 pb-15 flex justify-center">
       {single ? (
-        <div className="border w-full max-w-xl border-border-week lg:mt-0 rounded-2xl flex overflow-hidden min-h-0 bg-white">
-          <div className="w-full lg:p-16 px-8 py-10 flex items-center justify-center overflow-y-auto">
+        <div className="border w-full max-w-xl border-border-week lg:mt-0 rounded-2xl flex overflow-hidden bg-white">
+          <div className="w-full lg:p-16 px-8 py-10 flex items-center justify-center">
             <div className="w-full">{children}</div>
           </div>
         </div>
       ) : (
-        <div className="border flex-1 border-border-week lg:mt-0 rounded-2xl flex overflow-hidden min-h-0 bg-white">
-          <div className="lg:w-1/2 w-full border-r border-border-week lg:p-16 px-8 py-10 flex items-center justify-center overflow-y-auto">
+        <div className="border flex-1 border-border-week lg:mt-0 rounded-2xl flex overflow-hidden bg-white">
+          <div className="lg:w-1/2 w-full border-r border-border-week lg:p-16 px-8 py-10 flex items-center justify-center">
             <div className="w-full">{children}</div>
           </div>
           <div className="w-1/2 hidden lg:block bg-[radial-gradient(circle,#ebebeb_2px,#fafafa_0)] bg-size-[30px_30px]" />
