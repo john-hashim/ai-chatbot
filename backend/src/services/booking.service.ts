@@ -206,7 +206,7 @@ async function notifyBookingConfirmed(
   const event = start.isValid()
     ? await createCalendarEvent(chatbotId, {
         summary: `${eventType} with ${name}`,
-        description: `Booking via Pulsechat.\nInvitee: ${name} (${email})`,
+        description: `Booking via Chatvio.\nInvitee: ${name} (${email})`,
         startDateTime: start.format('YYYY-MM-DDTHH:mm:ss'),
         endDateTime: end.format('YYYY-MM-DDTHH:mm:ss'),
         timeZone: tz,

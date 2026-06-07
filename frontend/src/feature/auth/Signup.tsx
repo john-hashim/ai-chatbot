@@ -54,6 +54,7 @@ const Signup: React.FC = () => {
   const passed = checks.filter(Boolean).length
   const strength = getStrength(passed, password.length > 0)
   const isStrongEnough = passed === requirements.length
+  const isSent = sentTo !== null
 
   const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
     if (!credentialResponse.credential) {
@@ -131,6 +132,7 @@ const Signup: React.FC = () => {
             className="mt-1"
             type="email"
             placeholder="you@example.com"
+            disabled={isSent}
             error={errors.email?.message}
           />
         </div>
@@ -145,6 +147,7 @@ const Signup: React.FC = () => {
             })}
             className="mt-1"
             placeholder="Create a password"
+            disabled={isSent}
             error={errors.password?.message}
           />
           <div className="flex items-center gap-3 mt-2">
@@ -192,6 +195,7 @@ const Signup: React.FC = () => {
             })}
             className="mt-1"
             placeholder="Re-enter your password"
+            disabled={isSent}
             error={errors.confirmPassword?.message}
           />
         </div>
@@ -201,7 +205,7 @@ const Signup: React.FC = () => {
             type="submit"
             variant="default"
             fullWidth
-            disabled={isSubmitting || (isSubmitted && !isValid)}
+            disabled={isSent || isSubmitting || (isSubmitted && !isValid)}
           >
             {isSubmitting ? 'Creating account...' : 'Create account'}
           </Button>

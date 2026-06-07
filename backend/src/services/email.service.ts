@@ -16,11 +16,11 @@ const resend = new Resend(process.env.RESEND_API_KEY)
 // Resend → Domains so all recipients (booking + signup verification) receive mail.
 // Falls back to the legacy BOOKING_EMAIL_FROM name for backward compatibility.
 const FROM_ADDRESS =
-  process.env.EMAIL_FROM || process.env.BOOKING_EMAIL_FROM || 'Pulsechat <onboarding@resend.dev>'
+  process.env.EMAIL_FROM || process.env.BOOKING_EMAIL_FROM || 'Chatvio <onboarding@resend.dev>'
 const USING_SANDBOX_SENDER = FROM_ADDRESS.includes('onboarding@resend.dev')
 
 // Inline SVG matches the frontend logo (frontend/public/favicon.svg). Gmail
-// strips inline <svg>; the "Pulsechat" wordmark beside it preserves the brand
+// strips inline <svg>; the "Chatvio" wordmark beside it preserves the brand
 // when the mark is removed.
 const LOGO_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="52 62 96 46" width="56" height="28" style="vertical-align:middle">
   <defs>
@@ -91,7 +91,7 @@ function buildEmail(opts: {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Pulsechat</title>
+  <title>Chatvio</title>
 </head>
 <body style="margin:0;padding:0;background-color:#f3f4f6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#111827;">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f3f4f6;padding:32px 16px;">
@@ -103,7 +103,7 @@ function buildEmail(opts: {
               <table role="presentation" cellpadding="0" cellspacing="0" border="0">
                 <tr>
                   <td style="vertical-align:middle;padding-right:8px;">${LOGO_SVG}</td>
-                  <td style="vertical-align:middle;font-size:18px;font-weight:600;color:#111827;letter-spacing:-0.01em;">Pulsechat</td>
+                  <td style="vertical-align:middle;font-size:18px;font-weight:600;color:#111827;letter-spacing:-0.01em;">Chatvio</td>
                 </tr>
               </table>
             </td>
@@ -125,7 +125,7 @@ function buildEmail(opts: {
           <tr>
             <td style="padding:20px 32px;background-color:#f9fafb;border-top:1px solid #f3f4f6;">
               <p style="margin:0;font-size:12px;color:#9ca3af;line-height:1.5;">
-                This is an automated message from Pulsechat. If you need to cancel or reschedule, please contact the host.
+                This is an automated message from Chatvio. If you need to cancel or reschedule, please contact the host.
               </p>
             </td>
           </tr>

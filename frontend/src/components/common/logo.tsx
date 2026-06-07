@@ -74,7 +74,7 @@ export const Logo: React.FC<LogoProps> = ({
         </svg>
       </div>
       <span className="font-semibold" style={{ fontSize: `${fontSize}px` }}>
-        Pulsechat
+        Chatvio
       </span>
     </div>
   )

@@ -39,7 +39,14 @@ const VerifyEmail: React.FC = () => {
       })
   }, [searchParams, verifyEmail, navigate])
 
-  return <LoadingOverlay visible zIndex={1000} overlayProps={{ blur: 2 }} />
+  return (
+    <LoadingOverlay
+      visible
+      zIndex={1000}
+      overlayProps={{ blur: 2 }}
+      loaderProps={{ size: 'sm' }}
+    />
+  )
 }
 
 export default VerifyEmail

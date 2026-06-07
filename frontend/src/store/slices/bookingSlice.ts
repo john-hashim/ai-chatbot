@@ -322,7 +322,7 @@ export const createBookingSlice: StateCreator<BookingSlice, [['zustand/devtools'
     const top = window.screenY + (window.outerHeight - h) / 2
     const popup = window.open(
       'about:blank',
-      'pulsechat-calendar-connect',
+      'chatvio-calendar-connect',
       `width=${w},height=${h},left=${left},top=${top},popup=yes`
     )
     if (!popup) throw new Error('popup_blocked')
