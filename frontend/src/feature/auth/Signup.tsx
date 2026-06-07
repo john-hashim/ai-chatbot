@@ -2,6 +2,7 @@ import { Button, Checkbox, Divider, PasswordInput, Progress, TextInput } from '@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
+import axios from 'axios'
 import { useUserStore } from '@/store'
 import { type CredentialResponse } from '@react-oauth/google'
 import { usePageTitle } from '@/hooks/usePageTitle'
@@ -36,7 +37,8 @@ const getStrength = (passed: number, hasInput: boolean) => {
 const Signup: React.FC = () => {
   usePageTitle('Sign up')
   const navigate = useNavigate()
-  const { googleSignIn, loading } = useUserStore()
+  const { googleSignIn, signup, loading } = useUserStore()
+  const [sentTo, setSentTo] = useState<string | null>(null)
 
   const {
     register,
@@ -70,14 +72,36 @@ const Signup: React.FC = () => {
   }
 
   const onSubmit = async (data: SignupFormData) => {
-    // TODO: email/password auth has no backend yet — wire to authService once available.
-    console.log('email/password signup submitted', data.email)
-    showNotification('error', 'Email and password sign-up is coming soon. Please use Google.')
+    try {
+      await signup({ email: data.email, password: data.password })
+      setSentTo(data.email)
+    } catch (err) {
+      // The interceptor already toasts for 5xx / network errors; only surface a
+      // contextual message for 4xx (which it rejects silently).
+      const status = axios.isAxiosError(err) ? err.response?.status : undefined
+      if (status && status >= 500) return
+      const message = axios.isAxiosError(err) ? err.response?.data?.message : undefined
+      showNotification('error', message || 'Could not create your account. Please try again.')
+    }
   }
 
   return (
     <AuthShell>
       <form onSubmit={handleSubmit(onSubmit)} className="w-full">
+        <div
+          className={`grid transition-all duration-500 ease-out ${
+            sentTo ? 'grid-rows-[1fr] opacity-100 mb-6' : 'grid-rows-[0fr] opacity-0 mb-0'
+          }`}
+        >
+          <div className="overflow-hidden">
+            <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-[13px] leading-relaxed text-green-700">
+              We sent a verification link to{' '}
+              <span className="font-semibold">{sentTo}</span>. Open it to confirm your email and
+              finish setting up your account.
+            </div>
+          </div>
+        </div>
+
         <p className="text-3xl font-semibold text-center sm:text-left mb-2">Create your account</p>
         <p className="text-[13px] font-light text-gray-500 text-center sm:text-left">
           Sign up to get started with Chatvio

@@ -20,8 +20,12 @@ model User {
   id        String    @id @default(cuid())
   email     String    @unique
   name      String?
-  googleId  String    @unique
+  googleId  String?   @unique
+  password  String?   // bcrypt hash; null for Google-only accounts
   avatar    String?
+  emailVerified           Boolean   @default(false)
+  verificationToken       String?   @unique
+  verificationTokenExpiry DateTime?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   sessions  Session[]

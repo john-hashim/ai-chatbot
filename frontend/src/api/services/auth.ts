@@ -2,10 +2,31 @@
 import { type AxiosResponse } from 'axios'
 import apiClient from '../index'
 import { ENDPOINTS } from '../endpoints'
-import type { AuthResponseData, GoogleSignInRequest, User } from '@/types/auth'
+import type {
+  AuthResponseData,
+  GoogleSignInRequest,
+  SignupRequest,
+  VerifyEmailRequest,
+  User,
+} from '@/types/auth'
 import type { ApiResponse } from '@/types/api'
 
 export const authService = {
+  /**
+   * Register a new account with email + password. Sends a verification email;
+   * no session is returned until the user verifies via the emailed link.
+   */
+  signup: (data: SignupRequest): Promise<AxiosResponse<ApiResponse>> => {
+    return apiClient.post(ENDPOINTS.AUTH.SIGNUP, data)
+  },
+
+  /**
+   * Complete signup by verifying the emailed token. Returns user + session token.
+   */
+  verifyEmail: (data: VerifyEmailRequest): Promise<AxiosResponse<ApiResponse<AuthResponseData>>> => {
+    return apiClient.post(ENDPOINTS.AUTH.VERIFY_EMAIL, data)
+  },
+
   /**
    * Get current user profile
    * @returns Promise with user data

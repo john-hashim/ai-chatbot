@@ -1,4 +1,4 @@
-import type { User, GoogleSignInRequest } from '@/types/auth'
+import type { User, GoogleSignInRequest, SignupRequest } from '@/types/auth'
 import type { StateCreator } from 'zustand'
 import { authService } from '@/api/services/auth'
 
@@ -11,6 +11,8 @@ export interface UserSlice {
   error: string | null
 
   googleSignIn: (data: GoogleSignInRequest) => Promise<void>
+  signup: (data: SignupRequest) => Promise<void>
+  verifyEmail: (token: string) => Promise<void>
   logout: () => void
   updateUser: (updates: Partial<User>) => void
 }
@@ -49,6 +51,43 @@ export const createUserSlice: StateCreator<UserSlice> = set => ({
       throw error
     }
   },
+  signup: async (data: SignupRequest) => {
+    set({ loading: true, error: null })
+    try {
+      await authService.signup(data)
+      set({ loading: false, error: null })
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Signup failed'
+      set({ loading: false, error: errorMessage })
+      throw error
+    }
+  },
+
+  verifyEmail: async (token: string) => {
+    set({ loading: true, error: null })
+    try {
+      const response = await authService.verifyEmail({ token })
+
+      if (!response.data.data) {
+        throw new Error('No data received from server')
+      }
+
+      const { user, token: sessionToken } = response.data.data
+
+      set({
+        user,
+        token: sessionToken,
+        isAuthenticated: true,
+        loading: false,
+        error: null,
+      })
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Email verification failed'
+      set({ loading: false, error: errorMessage })
+      throw error
+    }
+  },
+
   logout: () => set({ user: null, token: null, isAuthenticated: false, error: null }),
   updateUser: (updates: Partial<User>) =>
     set(state => ({ user: state.user ? { ...state.user, ...updates } : state.user })),

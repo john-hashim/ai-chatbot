@@ -1,7 +1,7 @@
 export interface User {
   id: string
   email: string
-  name: string
+  name: string | null
   avatar?: string
 }
 
@@ -13,4 +13,13 @@ export interface AuthResponseData {
 
 export interface GoogleSignInRequest {
   credential: string
+}
+
+export interface SignupRequest {
+  email: string
+  password: string
+}
+
+export interface VerifyEmailRequest {
+  token: string
 }

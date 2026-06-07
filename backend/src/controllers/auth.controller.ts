@@ -1,14 +1,28 @@
 import type { Request, Response, NextFunction } from 'express'
 import crypto from 'crypto'
+import bcrypt from 'bcrypt'
 import { prisma } from '../prisma/client.js'
 import { OAuth2Client } from 'google-auth-library'
 import { ApiStatus, type ApiResponse } from '../types/api.js'
 import * as r2Service from '../services/r2.service.js'
+import { sendVerificationEmail } from '../services/email.service.js'
+
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173'
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID)
 
 const generateToken = (): string => {
   return crypto.randomBytes(32).toString('hex')
+}
+
+// Email/password signups have no name yet. Derive a sensible first name from the
+// email local part (e.g. "john.doe@x.com" -> "John") until onboarding collects it.
+const deriveNameFromEmail = (email: string): string | null => {
+  const local = email.split('@')[0] ?? ''
+  const first = local.split(/[._-]+/).filter(Boolean)[0]
+  if (!first) return null
+  return first.charAt(0).toUpperCase() + first.slice(1).toLowerCase()
 }
 
 const createSession = async (userId: string) => {
@@ -23,6 +37,145 @@ const createSession = async (userId: string) => {
     },
   })
   return session
+}
+
+export const signup = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { email, password } = req.body
+
+    if (!email || typeof email !== 'string' || !EMAIL_REGEX.test(email.trim())) {
+      res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'A valid email is required',
+      } satisfies ApiResponse)
+      return
+    }
+
+    if (!password || typeof password !== 'string' || password.length < 8) {
+      res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'Password must be at least 8 characters',
+      } satisfies ApiResponse)
+      return
+    }
+
+    const normalizedEmail = email.trim().toLowerCase()
+    const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } })
+
+    if (existing) {
+      // Don't reveal whether the email belongs to a verified account; if it's an
+      // unverified signup we let them re-trigger the email below instead.
+      if (existing.emailVerified || existing.googleId) {
+        res.status(409).json({
+          status: ApiStatus.FAILURE,
+          message: 'An account with this email already exists',
+        } satisfies ApiResponse)
+        return
+      }
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10)
+    const verificationToken = generateToken()
+    const verificationTokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24h
+
+    if (existing) {
+      await prisma.user.update({
+        where: { id: existing.id },
+        data: { password: passwordHash, verificationToken, verificationTokenExpiry },
+      })
+    } else {
+      await prisma.user.create({
+        data: {
+          email: normalizedEmail,
+          name: deriveNameFromEmail(normalizedEmail),
+          password: passwordHash,
+          verificationToken,
+          verificationTokenExpiry,
+        },
+      })
+    }
+
+    const verifyUrl = `${FRONTEND_URL}/verify-email?token=${verificationToken}`
+    await sendVerificationEmail(normalizedEmail, verifyUrl)
+
+    res.status(201).json({
+      status: ApiStatus.SUCCESS,
+      message: 'Verification email sent. Please check your inbox to complete signup.',
+    } satisfies ApiResponse)
+  } catch (error) {
+    // Two concurrent signups for the same new email race past the existence check
+    // above; the second loses the `email` unique constraint. Treat as "exists".
+    if (error instanceof Error && (error as { code?: string }).code === 'P2002') {
+      res.status(409).json({
+        status: ApiStatus.FAILURE,
+        message: 'An account with this email already exists',
+      } satisfies ApiResponse)
+      return
+    }
+    console.error('Signup error:', error)
+    next(error)
+  }
+}
+
+export const verifyEmail = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { token } = req.body
+
+    if (!token || typeof token !== 'string') {
+      res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'Verification token is required',
+      } satisfies ApiResponse)
+      return
+    }
+
+    const user = await prisma.user.findUnique({ where: { verificationToken: token } })
+
+    if (!user || !user.verificationTokenExpiry || new Date() > user.verificationTokenExpiry) {
+      res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'This verification link is invalid or has expired',
+      } satisfies ApiResponse)
+      return
+    }
+
+    // Consume the token atomically: the `verificationToken: token` guard means
+    // only ONE of two concurrent requests (double-click / multi-device) wins —
+    // the loser matches 0 rows and won't get a duplicate session.
+    const claim = await prisma.user.updateMany({
+      where: { id: user.id, verificationToken: token },
+      data: { emailVerified: true, verificationToken: null, verificationTokenExpiry: null },
+    })
+
+    if (claim.count === 0) {
+      res.status(400).json({
+        status: ApiStatus.FAILURE,
+        message: 'This verification link is invalid or has expired',
+      } satisfies ApiResponse)
+      return
+    }
+
+    const verifiedUser = user
+    const session = await createSession(verifiedUser.id)
+
+    res.status(200).json({
+      status: ApiStatus.SUCCESS,
+      message: 'Email verified successfully',
+      data: {
+        user: {
+          id: verifiedUser.id,
+          email: verifiedUser.email,
+          name: verifiedUser.name,
+          avatar: verifiedUser.avatar,
+        },
+        token: session.token,
+        isNewUser: true,
+      },
+    } satisfies ApiResponse)
+  } catch (error) {
+    console.error('Email verification error:', error)
+    next(error)
+  }
 }
 
 export const logout = async (req: Request, res: Response, next: NextFunction): Promise<void> => {

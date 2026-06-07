@@ -43,7 +43,7 @@ export const Landing: React.FC = () => {
     })
   }, [clearChatbotState, clearAvailabilities, clearAppointments, clearModels, getChatbots])
 
-  const firstName = user?.name.split(' ')[0]
+  const firstName = user?.name?.split(' ')[0]
   const formattedFirstName = firstName
     ? firstName.charAt(0).toUpperCase() + firstName.slice(1).toLowerCase()
     : ''

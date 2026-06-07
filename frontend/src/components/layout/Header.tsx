@@ -98,9 +98,14 @@ export const Header: React.FC = () => {
   return (
     <div className="px-5 py-2 bg-nav-topbar flex items-center border-b border-b-border-week">
       <div className="flex items-center ml-3 min-w-0">
-        <div className="hidden md:block shrink-0">
+        <button
+          type="button"
+          onClick={() => handleNav('/landing')}
+          aria-label="Go to dashboard"
+          className="hidden md:block shrink-0 border-0 bg-transparent p-0 cursor-pointer"
+        >
           <Logo height={25} width={30} logoIcon={true} />
-        </div>
+        </button>
         {user?.name && (
           <div className="flex items-center text-sm min-w-0">
             <span className="hidden md:block text-gray-300 text-md font-semibold mx-4">/</span>
