@@ -36,6 +36,8 @@ import { useUserStore } from '@/store'
 
 const Login = lazy(() => import('@/feature/auth/Login'))
 const Signup = lazy(() => import('@/feature/auth/Signup'))
+const ForgotPassword = lazy(() => import('@/feature/auth/ForgotPassword'))
+const ChangePassword = lazy(() => import('@/feature/auth/ChangePassword'))
 const Landing = lazy(() => import('@/feature/Landing/Landing').then(m => ({ default: m.Landing })))
 const ChatbotBasicSetup = lazy(() =>
   import('./feature/create-chatbot/ChatbotBasicSetup').then(m => ({ default: m.ChatbotBasicSetup }))
@@ -194,6 +196,14 @@ function AppRoutes() {
         <Route
           path="/signup"
           element={token ? <Navigate to="/chatbot/landing" replace /> : <Signup />}
+        />
+        <Route
+          path="/forgot-password"
+          element={token ? <Navigate to="/chatbot/landing" replace /> : <ForgotPassword />}
+        />
+        <Route
+          path="/reset-password"
+          element={token ? <Navigate to="/chatbot/landing" replace /> : <ChangePassword />}
         />
         <Route
           element={
