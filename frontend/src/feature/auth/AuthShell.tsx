@@ -1,4 +1,6 @@
 import { Logo } from '@/components/common/logo'
+import { Lottie } from '@/components/common/lottie'
+import searchAnimation from '@/assets/lottie/Search.json?url'
 
 /**
  * Shared layout for the auth pages (login / signup): centered logo header and a
@@ -26,7 +28,9 @@ export const AuthShell: React.FC<{ children: React.ReactNode; single?: boolean }
           <div className="lg:w-1/2 w-full border-r border-border-week lg:p-16 px-8 py-10 flex items-center justify-center">
             <div className="w-full">{children}</div>
           </div>
-          <div className="w-1/2 hidden lg:block bg-[radial-gradient(circle,#ebebeb_2px,#fafafa_0)] bg-size-[30px_30px]" />
+          <div className="w-1/2 hidden lg:flex items-center justify-center bg-[radial-gradient(circle,#ebebeb_2px,#fafafa_0)] bg-size-[30px_30px]">
+            <Lottie src={searchAnimation} className="w-2/3 max-w-md" />
+          </div>
         </div>
       )}
     </div>
