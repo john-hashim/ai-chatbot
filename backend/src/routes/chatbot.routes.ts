@@ -1,6 +1,7 @@
 import express from 'express'
 import * as authMiddleware from '../middleware/auth.middleware.js'
 import * as chatbotController from '../controllers/chatbot.controller.js'
+import * as tuneAgentController from '../controllers/tune-agent.controller.js'
 
 const router = express.Router()
 
@@ -20,6 +21,16 @@ router.patch(
   '/:chatbotId/embed',
   authMiddleware.authenticateToken,
   chatbotController.updateEmbedConfig
+)
+router.post(
+  '/:chatbotId/tune/next-question',
+  authMiddleware.authenticateToken,
+  tuneAgentController.nextQuestion
+)
+router.post(
+  '/:chatbotId/tune/generate-instruction',
+  authMiddleware.authenticateToken,
+  tuneAgentController.generateInstruction
 )
 router.get('/:chatbotId', authMiddleware.authenticateToken, chatbotController.getChatbot)
 router.patch('/:chatbotId', authMiddleware.authenticateToken, chatbotController.updateChatbot)

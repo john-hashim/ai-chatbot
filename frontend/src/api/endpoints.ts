@@ -69,6 +69,10 @@ export const ENDPOINTS = {
   MODELS: {
     GET_ALL: 'models',
   },
+  TUNE_AGENT: {
+    NEXT_QUESTION: 'chatbot/:chatbotId/tune/next-question',
+    GENERATE_INSTRUCTION: 'chatbot/:chatbotId/tune/generate-instruction',
+  },
   CALENDAR: {
     GET_STATUS: 'chatbot/:chatbotId/calendar',
     AUTHORIZE_GOOGLE: 'chatbot/:chatbotId/calendar/google/authorize',

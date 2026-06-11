@@ -36,11 +36,16 @@ export const TuneAgent: React.FC = () => {
     if (initial) setModel(initial)
   }, [currentChatbot?.selectedModel, defaultModelId, model])
 
-  // Seed the instruction type from the chatbot's saved value once it loads.
+  // Seed the instruction type once the chatbot loads. Land on the recommended
+  // Custom flow when the chatbot is still untouched (server default 'base'
+  // with no generated custom instruction) — the selection is only persisted
+  // when the user interacts or completes the question flow.
   useEffect(() => {
-    if (instructionType) return
-    setInstructionType((currentChatbot?.instructionType as InstructionType) ?? 'manual')
-  }, [currentChatbot?.instructionType, instructionType])
+    if (instructionType || !currentChatbot) return
+    const saved = currentChatbot.instructionType as InstructionType
+    const untouched = saved === 'base' && !currentChatbot.customInstruction
+    setInstructionType(untouched ? 'manual' : saved)
+  }, [currentChatbot, instructionType])
 
   const modelLabel = useMemo(
     () => models.find(m => m.id === model)?.label ?? 'your model',

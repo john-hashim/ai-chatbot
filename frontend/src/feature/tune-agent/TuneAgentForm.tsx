@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Button, CheckIcon, HoverCard, Select, Tooltip } from '@mantine/core'
-import { ArrowRight, ChevronRight, Info } from 'lucide-react'
+import { Badge, Button, CheckIcon, HoverCard, Select, Tooltip } from '@mantine/core'
+import { ArrowRight, ChevronRight, Info, Target } from 'lucide-react'
 import { Tick } from '@/components/common/Tick'
 import type { ModelGroup } from '@/store/slices/modelsSlice'
 import type { ChatModel } from '@/types/chatbot'
@@ -15,10 +15,18 @@ import {
   getInstructionByType,
   type InstructionType,
 } from '@/constants/instructions'
+import { tuneAgentService } from '@/api/services/tuneAgent'
 import { AnimatedQuestion } from './AnimatedQuestion'
 import { AnsweredQuestion } from './AnsweredQuestion'
 import { EditPromptDrawer } from './EditPromptDrawer'
-import { TUNE_QUESTIONS, buildPrompt, type TuneAnswer } from './constants'
+import {
+  FIRST_TUNE_QUESTION,
+  MAX_TUNE_QUESTIONS,
+  TUNE_QUESTIONS,
+  buildPrompt,
+  type TuneAnswer,
+  type TuneQuestion,
+} from './constants'
 
 type Stage = 'asking' | 'generating' | 'done'
 
@@ -106,6 +114,10 @@ export const TuneAgentForm: React.FC<TuneAgentFormProps> = ({
   const [stage, setStage] = useState<Stage>('asking')
   const [prompt, setPrompt] = useState('')
   const [editOpen, setEditOpen] = useState(false)
+  // The interview is AI-driven: questions come from the backend one at a time,
+  // each tailored to the answers so far. The first question is fixed.
+  const [currentQ, setCurrentQ] = useState<TuneQuestion>(FIRST_TUNE_QUESTION)
+  const [isLoadingQuestion, setIsLoadingQuestion] = useState(false)
 
   const selectedInstruction = getInstructionByType(instructionType)
   const isManual = instructionType === 'manual'
@@ -118,7 +130,6 @@ export const TuneAgentForm: React.FC<TuneAgentFormProps> = ({
 
   const formScrollRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
-  const generateTimerRef = useRef<number | null>(null)
   // Tracks the saved prompt we last seeded the box from, and the current stage,
   // so the seeding effect can fire on genuine prop changes without re-running
   // every time `stage` changes (which would clobber a "Start Over" reset before
@@ -126,26 +137,9 @@ export const TuneAgentForm: React.FC<TuneAgentFormProps> = ({
   const seededRef = useRef<string | null>(null)
   const stageRef = useRef<Stage>(stage)
   stageRef.current = stage
-
-  const clearGenerateTimer = () => {
-    if (generateTimerRef.current !== null) {
-      window.clearTimeout(generateTimerRef.current)
-      generateTimerRef.current = null
-    }
-  }
-
-  // Cancel the pending "generating" timer if the component unmounts mid-flow.
-  useEffect(() => clearGenerateTimer, [])
-
-  const stepIndex = answers.length
-  const currentQ =
-    stepIndex < TUNE_QUESTIONS.length
-      ? TUNE_QUESTIONS[stepIndex]
-      : {
-          q: 'Anything else worth telling your agent?',
-          placeholder:
-            'Add another constraint, capability, example, or context detail — or skip to finalize.',
-        }
+  // Bumped on reset / instruction-type switch so an in-flight question or
+  // instruction request from the old flow can't clobber the fresh state.
+  const flowIdRef = useRef(0)
 
   // While in manual mode, show the saved custom prompt if one exists. Switching
   // to a preset clears only the local question-flow UI — the saved prompt is
@@ -154,13 +148,15 @@ export const TuneAgentForm: React.FC<TuneAgentFormProps> = ({
   // pre-empt the spinner.
   useEffect(() => {
     if (instructionType !== 'manual') {
-      clearGenerateTimer()
+      flowIdRef.current += 1
       setAnswers([])
       setDraft('')
       setExpandedIdx(null)
       setEditingIdx(null)
       setPrompt('')
       setStage('asking')
+      setCurrentQ(FIRST_TUNE_QUESTION)
+      setIsLoadingQuestion(false)
       seededRef.current = null
       return
     }
@@ -198,9 +194,71 @@ export const TuneAgentForm: React.FC<TuneAgentFormProps> = ({
     return () => cancelAnimationFrame(id)
   }, [answers.length, stage])
 
+  /**
+   * Ask the backend agent for the next interview question. Falls back to the
+   * seeded question list (and finally straight to generation) if the API
+   * fails, so the flow never blocks.
+   */
+  async function advance(next: TuneAnswer[]) {
+    const flowId = flowIdRef.current
+    if (next.length >= MAX_TUNE_QUESTIONS) return finalize(next)
+    if (!chatbotId) return advanceWithFallback(next)
+    setIsLoadingQuestion(true)
+    try {
+      const { data } = await tuneAgentService.nextQuestion(chatbotId, next)
+      if (flowIdRef.current !== flowId) return
+      const result = data.data
+      if (!result || result.done) return finalize(next)
+      setCurrentQ({ q: result.question, placeholder: result.placeholder })
+    } catch {
+      if (flowIdRef.current !== flowId) return
+      advanceWithFallback(next)
+    } finally {
+      if (flowIdRef.current === flowId) setIsLoadingQuestion(false)
+    }
+  }
+
+  function advanceWithFallback(next: TuneAnswer[]) {
+    const fallback = TUNE_QUESTIONS[next.length]
+    if (!fallback) {
+      void finalize(next)
+      return
+    }
+    setCurrentQ(fallback)
+  }
+
+  /**
+   * Compile the interview into the custom instruction via the backend agent.
+   * If that fails, assemble a local prompt from the answers so the user still
+   * gets a usable instruction.
+   */
+  async function finalize(allAnswers: TuneAnswer[]) {
+    const flowId = flowIdRef.current
+    setStage('generating')
+    let generated: string | null = null
+    if (chatbotId && allAnswers.length > 0) {
+      try {
+        const { data } = await tuneAgentService.generateInstruction(chatbotId, allAnswers)
+        generated = data.data?.instruction ?? null
+      } catch {
+        generated = null
+      }
+    }
+    if (flowIdRef.current !== flowId) return
+    if (!generated) {
+      // Local fallback: base instruction plus the user's tailored sections.
+      const base = getInstructionByType('base')?.instruction ?? ''
+      const custom = buildPrompt(allAnswers, modelLabel).join('\n')
+      generated = [base, '', custom].join('\n')
+    }
+    setPrompt(generated)
+    onCustomInstructionChange(generated)
+    setStage('done')
+  }
+
   function submit() {
     const val = draft.trim()
-    if (!val) return
+    if (!val || isLoadingQuestion) return
     if (editingIdx !== null) {
       setAnswers(prev => prev.map((row, i) => (i === editingIdx ? { ...row, a: val } : row)))
       setEditingIdx(null)
@@ -210,24 +268,14 @@ export const TuneAgentForm: React.FC<TuneAgentFormProps> = ({
     const next = [...answers, { q: currentQ.q, a: val }]
     setAnswers(next)
     setDraft('')
-    if (next.length >= TUNE_QUESTIONS.length) {
-      setStage('generating')
-      // The custom prompt is the base instruction plus the user's tailored sections.
-      const base = getInstructionByType('base')?.instruction ?? ''
-      const custom = buildPrompt(next, modelLabel).join('\n')
-      const generated = [base, '', custom].join('\n')
-      setPrompt(generated)
-      onCustomInstructionChange(generated)
-      clearGenerateTimer()
-      generateTimerRef.current = window.setTimeout(() => {
-        generateTimerRef.current = null
-        setStage('done')
-      }, 1800)
-    }
+    void advance(next)
   }
 
   function skipQuestion() {
-    setAnswers(prev => [...prev, { q: currentQ.q, a: '(skipped)' }])
+    if (isLoadingQuestion) return
+    const next = [...answers, { q: currentQ.q, a: '(skipped)' }]
+    setAnswers(next)
+    void advance(next)
   }
 
   function startEdit(idx: number) {
@@ -246,13 +294,15 @@ export const TuneAgentForm: React.FC<TuneAgentFormProps> = ({
   }
 
   function resetAll() {
-    clearGenerateTimer()
+    flowIdRef.current += 1
     setAnswers([])
     setDraft('')
     setExpandedIdx(null)
     setEditingIdx(null)
     setPrompt('')
     setStage('asking')
+    setCurrentQ(FIRST_TUNE_QUESTION)
+    setIsLoadingQuestion(false)
     // Mark the current saved value as already-seeded so the seeding effect won't
     // re-seed the box before the async customInstruction=null save propagates.
     seededRef.current = savedCustomInstruction
@@ -364,12 +414,36 @@ export const TuneAgentForm: React.FC<TuneAgentFormProps> = ({
             onChange={val => onInstructionTypeChange((val as InstructionType) ?? 'manual')}
             allowDeselect={false}
             checkIconPosition="right"
+            renderOption={({ option, checked }) => (
+              <div className="flex w-full items-center gap-2">
+                <span className="truncate">{option.label}</span>
+                {option.value === 'manual' && (
+                  <Badge size="xs" variant="light" radius="sm">
+                    Recommended
+                  </Badge>
+                )}
+                <span className="flex-1" />
+                {checked && <CheckIcon size={12} />}
+              </div>
+            )}
           />
           {selectedInstruction && (
             <p className="m-0 text-[12px] leading-normal text-text-weak">
               {selectedInstruction.description}
             </p>
           )}
+          {/* Why custom matters — lead capture only works with a tailored instruction. */}
+          <div className="mt-1 flex items-start gap-2.5 rounded-lg border border-border-week bg-background-dark-week px-3.5 py-3">
+            <Target size={15} strokeWidth={2} className="mt-0.5 shrink-0 text-text-secondary" />
+            <p className="m-0 text-[12px] leading-[1.55] text-text-secondary">
+              <span className="font-medium text-text">
+                Custom instruction is how your agent captures leads.
+              </span>{' '}
+              Presets only answer questions. A generated custom instruction teaches your agent to
+              ask the right qualifying questions for your business and sort every lead into your
+              pipeline — so high-priority leads never slip through.
+            </p>
+          </div>
         </div>
 
         {/* 3. Prompt box (presets + generated custom prompt) / question flow */}
@@ -512,14 +586,29 @@ export const TuneAgentForm: React.FC<TuneAgentFormProps> = ({
                 compact ? 'px-6' : 'px-8 lg:px-11'
               }`}
             >
-              <AnimatedQuestion text={currentQ.q} />
+              {isLoadingQuestion ? (
+                <p className="m-0 py-1 text-[13.5px] font-medium tracking-[-0.005em] text-text">
+                  Preparing your next question
+                  <span className="tune-dots" />
+                </p>
+              ) : (
+                <AnimatedQuestion text={currentQ.q} />
+              )}
               <textarea
                 ref={textareaRef}
                 dir="ltr"
                 value={draft}
                 onChange={e => setDraft(e.target.value)}
                 onKeyDown={handleKey}
-                placeholder={editingIdx !== null ? 'Editing answer…' : currentQ.placeholder}
+                disabled={isLoadingQuestion}
+                placeholder={
+                  // Hide the previous question's example while the next one loads.
+                  isLoadingQuestion
+                    ? '...'
+                    : editingIdx !== null
+                      ? 'Editing answer…'
+                      : currentQ.placeholder
+                }
                 className="max-h-[200px] min-h-20 w-full resize-none border-0 bg-transparent py-2 text-left text-sm leading-[1.6] text-text outline-none placeholder:font-normal placeholder:text-text-weak/70"
               />
               <div className="flex items-center justify-end gap-2">
@@ -537,6 +626,7 @@ export const TuneAgentForm: React.FC<TuneAgentFormProps> = ({
                   <Button
                     variant="secondary"
                     onClick={skipQuestion}
+                    disabled={isLoadingQuestion}
                     rightSection={<ChevronRight size={14} />}
                   >
                     Skip
@@ -544,7 +634,7 @@ export const TuneAgentForm: React.FC<TuneAgentFormProps> = ({
                 )}
                 <Button
                   onClick={submit}
-                  disabled={!draft.trim()}
+                  disabled={!draft.trim() || isLoadingQuestion}
                   rightSection={<ArrowRight size={14} />}
                 >
                   {editingIdx !== null ? 'Save' : 'Submit'}
