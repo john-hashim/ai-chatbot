@@ -4,6 +4,7 @@ import { prisma } from '../prisma/client.js'
 import { ApiStatus, type ApiResponse } from '../types/api.js'
 import * as r2Service from '../services/r2.service.js'
 import { isValidModelId } from '../constants/models.js'
+import { replaceAutomatedColumns } from '../services/kanban.service.js'
 import crypto from 'crypto'
 
 export const createChatbot = async (req: Request, res: Response, next: NextFunction) => {
@@ -137,6 +138,18 @@ export const updateChatbot = async (req: Request, res: Response, next: NextFunct
       where: { id: chatbotId },
       data: updateData,
     })
+
+    // The automated kanban pipeline only exists alongside a generated custom
+    // instruction. If this update reset/changed the instruction away from a
+    // custom one, drop the pipeline columns (leads stay, losing their stage).
+    const instructionTouched =
+      updateData.instructionType !== undefined || updateData.customInstruction !== undefined
+    if (
+      instructionTouched &&
+      (chatbot.instructionType !== 'manual' || !chatbot.customInstruction)
+    ) {
+      await replaceAutomatedColumns(chatbot.id, [])
+    }
 
     res.status(200).json({
       status: ApiStatus.SUCCESS,

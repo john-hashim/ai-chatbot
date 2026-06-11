@@ -8,9 +8,12 @@
  * 2. generateCustomInstruction — compile the full interview into a system
  *    instruction that makes the chatbot capture AND qualify leads through a
  *    custom pipeline built from the client's answers.
+ * 3. generatePipelineStages — derive the automated kanban's pipeline stage
+ *    names from the same interview; persisted as the AUTOMATED board columns.
  */
 
 import { chatCompletion } from './chat.service.js'
+import { MAX_PIPELINE_STAGES } from './kanban.service.js'
 
 export interface TuneAnswer {
   q: string
@@ -85,6 +88,22 @@ Rules:
 - Write in second person ("You are…"), addressed to the agent.
 - Output ONLY the instruction text in markdown. No preamble, no code fences, no commentary.`
 
+/** Floor for generated stages; the cap is kanban.service's MAX_PIPELINE_STAGES. */
+export const MIN_PIPELINE_STAGES = 3
+
+/** Used when stage generation fails — instruction creation must not block on it. */
+export const FALLBACK_PIPELINE_STAGES = ['New Inquiry', 'Qualifying', 'Hot Lead', 'Cold Lead']
+
+const PIPELINE_WRITER_SYSTEM_PROMPT = `You design lead pipelines for business chatbots. You will receive an onboarding interview (questions and the business owner's answers) describing how the owner wants leads captured and qualified.
+
+Produce the ordered stages of a kanban pipeline that the owner's leads will move through, derived from THEIR qualification criteria — what details are collected, and what separates a hot lead from a cold one for this business.
+
+Rules:
+- Between ${MIN_PIPELINE_STAGES} and ${MAX_PIPELINE_STAGES} stages, ordered from first contact to final outcome.
+- Stage names must be short (1-4 words), specific to this business where possible (e.g. "Demo Requested", "Budget Confirmed", "Hot — Ready to Enroll"), and unique.
+- Ground stages in the owner's actual answers; ignore "(skipped)" answers.
+- Respond with ONLY a JSON object: {"stages": string[]}. No prose, no code fences.`
+
 /** Strip optional markdown code fences the model may wrap output in. */
 function stripFences(text: string): string {
   return text
@@ -130,7 +149,9 @@ export async function generateNextQuestion(
 
   return {
     question: done ? '' : (parsed.question as string).trim(),
-    placeholder: done ? '' : (typeof parsed.placeholder === 'string' ? parsed.placeholder : '').trim(),
+    placeholder: done
+      ? ''
+      : (typeof parsed.placeholder === 'string' ? parsed.placeholder : '').trim(),
     done,
   }
 }
@@ -153,4 +174,44 @@ export async function generateCustomInstruction(
   const instruction = stripFences(raw)
   if (!instruction) throw new Error('Instruction writer returned empty output')
   return instruction
+}
+
+/**
+ * Derive the automated kanban's pipeline stages from the interview. Falls
+ * back to a generic pipeline on any failure so instruction generation never
+ * blocks on this step.
+ */
+export async function generatePipelineStages(
+  chatbotName: string,
+  modelId: string | null,
+  answers: TuneAnswer[]
+): Promise<string[]> {
+  try {
+    const raw = await chatCompletion({
+      modelId,
+      messages: [
+        { role: 'system', content: PIPELINE_WRITER_SYSTEM_PROMPT },
+        { role: 'user', content: formatTranscript(chatbotName, answers) },
+      ],
+      maxTokens: 300,
+      temperature: 0.4,
+      jsonMode: true,
+    })
+
+    const parsed = JSON.parse(stripFences(raw)) as { stages?: unknown }
+    const stages = Array.isArray(parsed.stages)
+      ? [
+          ...new Set(
+            parsed.stages
+              .filter((s): s is string => typeof s === 'string' && Boolean(s.trim()))
+              .map(s => s.trim())
+          ),
+        ].slice(0, MAX_PIPELINE_STAGES)
+      : []
+
+    return stages.length >= MIN_PIPELINE_STAGES ? stages : FALLBACK_PIPELINE_STAGES
+  } catch (err) {
+    console.error('Pipeline stage generation failed, using fallback:', err)
+    return FALLBACK_PIPELINE_STAGES
+  }
 }

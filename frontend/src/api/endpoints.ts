@@ -73,6 +73,18 @@ export const ENDPOINTS = {
     NEXT_QUESTION: 'chatbot/:chatbotId/tune/next-question',
     GENERATE_INSTRUCTION: 'chatbot/:chatbotId/tune/generate-instruction',
   },
+  LEADS: {
+    GET_BOARDS: 'chatbot/:chatbotId/kanban',
+    CREATE_COLUMN: 'chatbot/:chatbotId/kanban/columns',
+    REORDER_COLUMNS: 'chatbot/:chatbotId/kanban/columns/reorder',
+    RENAME_COLUMN: 'chatbot/:chatbotId/kanban/columns/:columnId',
+    DELETE_COLUMN: 'chatbot/:chatbotId/kanban/columns/:columnId',
+    GET_LEADS: 'chatbot/:chatbotId/leads',
+    CREATE_LEAD: 'chatbot/:chatbotId/leads',
+    MOVE_LEAD: 'chatbot/:chatbotId/leads/:leadId/move',
+    UPDATE_LEAD: 'chatbot/:chatbotId/leads/:leadId',
+    DELETE_LEAD: 'chatbot/:chatbotId/leads/:leadId',
+  },
   CALENDAR: {
     GET_STATUS: 'chatbot/:chatbotId/calendar',
     AUTHORIZE_GOOGLE: 'chatbot/:chatbotId/calendar/google/authorize',

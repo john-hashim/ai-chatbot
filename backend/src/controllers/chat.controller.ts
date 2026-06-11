@@ -10,6 +10,7 @@ import { resolveCountry } from '../services/geolocation.service.js'
 import { resolveEndUser } from '../services/end-user.service.js'
 import type { NestedSort } from '../types/common.js'
 import { actionHandlers } from '../actions/registry.js'
+import { maybeCaptureAutomatedLead } from '../services/lead-flow.service.js'
 import {
   BookingState,
   type BookingDraft,
@@ -371,6 +372,17 @@ export const chatController = async (req: Request, res: Response, next: NextFunc
         })
         sendSSE({ type: 'done', message: assistantMessage })
         res.end()
+
+        // Automated lead capture — only for Tune Agent (manual) instructions,
+        // fire-and-forget so it never delays the visitor's stream. Internally
+        // gated to skip chatbots without an automated pipeline / early turns.
+        if (chatbot.instructionType === 'manual') {
+          maybeCaptureAutomatedLead({
+            chatbotId,
+            sessionId,
+            modelId: activeModelId,
+          }).catch(err => console.error('Automated lead capture failed:', err))
+        }
       },
       onError: async (error: Error) => {
         console.error('LLM streaming error:', error)
@@ -491,11 +503,7 @@ export const getChatSessions = async (req: Request, res: Response, next: NextFun
   }
 }
 
-export const getChatSessionsByEndUser = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+export const getChatSessionsByEndUser = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { chatbotId } = req.params
     const { identifier } = (req.body ?? {}) as { identifier?: unknown }

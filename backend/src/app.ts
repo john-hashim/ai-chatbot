@@ -12,6 +12,7 @@ import embedRoutes from './routes/embed.routes.js'
 import bookingsRoutes from './routes/bookings.routes.js'
 import calendarRoutes from './routes/calendar.routes.js'
 import modelsRoutes from './routes/models.routes.js'
+import leadsRoutes from './routes/leads.routes.js'
 import { errorHandler } from './middleware/error.middleware.js'
 
 dotenv.config()
@@ -28,6 +29,10 @@ app.use('/api/chatbot', chatbotRoutes)
 app.use('/api/chatbot', documentRoutes)
 app.use('/api/chatbot', bookingsRoutes)
 app.use('/api/chatbot', calendarRoutes)
+// leadsRoutes must be mounted before chatRoutes: chat exposes the catch-all
+// GET /:chatbotId/:sessionId which would otherwise swallow /:chatbotId/kanban
+// and /:chatbotId/leads.
+app.use('/api/chatbot', leadsRoutes)
 app.use('/api/chatbot', chatRoutes)
 app.use('/api/models', modelsRoutes)
 app.use('/api/embed', embedRoutes)

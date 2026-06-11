@@ -85,6 +85,8 @@ model Chatbot {
   appointments             Appointment[]
   calendarIntegration      CalendarIntegration?
   endUsers                 EndUser[]
+  kanbanColumns            KanbanColumn[]
+  leads                    Lead[]
 
   @@unique([name, userId])
   @@index([userId])
@@ -120,6 +122,7 @@ model ChatSession {
   chatbot      Chatbot       @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
   endUser      EndUser?      @relation(fields: [endUserId], references: [id], onDelete: SetNull)
   messages     ChatMessage[]
+  leads        Lead[]
 
   @@index([chatbotId])
   @@index([endUserId])
@@ -308,6 +311,83 @@ enum AppointmentStatus {
   UPCOMING
   PAST
   CANCELLED
+}
+
+// Two kanban boards per chatbot, discriminated by `board`:
+//  - MANUAL: user-managed columns (defaults seeded lazily from
+//    DEFAULT_MANUAL_COLUMNS in kanban.service). New leads always land in the
+//    first column.
+//  - AUTOMATED: pipeline stages generated from the Tune Agent interview;
+//    regenerated (replaced) whenever the custom instruction is regenerated.
+enum KanbanBoardType {
+  MANUAL
+  AUTOMATED
+}
+
+model KanbanColumn {
+  id        String          @id @default(cuid())
+  chatbotId String
+  board     KanbanBoardType
+  name      String
+  position  Int
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  chatbot   Chatbot         @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
+
+  manualLeads    Lead[] @relation("LeadManualColumn")
+  automatedLeads Lead[] @relation("LeadAutomatedColumn")
+
+  @@index([chatbotId, board])
+  @@map("kanban_columns")
+}
+
+// How a lead entered the system:
+//  - BOOKING: confirmed an appointment through the booking flow.
+//  - AUTOMATED: matched a qualification condition from the custom instruction
+//    (detected by the lead classifier); `trigger` holds the matched stage.
+//  - MANUAL: added by the owner from the dashboard.
+enum LeadType {
+  BOOKING
+  AUTOMATED
+  MANUAL
+}
+
+model Lead {
+  id        String   @id @default(cuid())
+  chatbotId String
+  sessionId String?
+  name      String?
+  email     String?
+  phone     String?
+  // Channel the lead came through — copied from ChatSession.source at capture
+  // time ('widget', 'iframe', 'whatsapp', 'instagram', 'playground', ...).
+  source    String   @default("playground")
+  type      LeadType
+  // BOOKING → 'booking'; AUTOMATED → the matched pipeline stage/condition name.
+  trigger   String?
+  // Free-form capture context: qualification answers, appointment details, etc.
+  meta      Json?
+
+  // One position per board so every lead shows on both kanbans. The manual
+  // column is required (leads always land in the manual board's first column);
+  // the automated column is null until/unless a pipeline stage applies.
+  manualColumnId    String
+  automatedColumnId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  chatbot         Chatbot       @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
+  session         ChatSession?  @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  manualColumn    KanbanColumn  @relation("LeadManualColumn", fields: [manualColumnId], references: [id])
+  automatedColumn KanbanColumn? @relation("LeadAutomatedColumn", fields: [automatedColumnId], references: [id], onDelete: SetNull)
+
+  // One lead of each type per session — repeat captures update the row.
+  @@unique([sessionId, type])
+  @@index([chatbotId])
+  @@index([manualColumnId])
+  @@index([automatedColumnId])
+  @@map("leads")
 }
 
 model CalendarIntegration {

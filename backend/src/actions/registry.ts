@@ -7,6 +7,8 @@ import {
 } from '../services/booking.service.js'
 import type { BookingDraft } from '../services/booking-flow.service.js'
 import { prisma } from '../prisma/client.js'
+import { LeadType } from '@prisma/client'
+import { captureLead } from '../services/lead.service.js'
 
 dayjs.extend(advancedFormat)
 
@@ -108,6 +110,18 @@ export const actionHandlers: Record<string, ActionHandler> = {
         message: `Sorry, the slot ${timeslot} on ${date} is no longer available. Please choose a different time.`,
       }
     }
+
+    // Every confirmed booking is a captured lead — record it on the kanbans.
+    // Fire-and-forget: lead bookkeeping must never fail the booking reply.
+    captureLead({
+      chatbotId,
+      sessionId,
+      type: LeadType.BOOKING,
+      trigger: 'booking',
+      name,
+      email,
+      meta: { appointmentId: result.appointment.id, date, timeslot },
+    }).catch(err => console.error('Booking lead capture failed:', err))
 
     const prettyDate = dayjs(date).format('Do MMM YYYY, dddd')
     const prettyTime = dayjs(timeslot, 'HH:mm').format('hh:mm A')
