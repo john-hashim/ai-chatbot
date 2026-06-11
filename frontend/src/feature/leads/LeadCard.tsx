@@ -66,7 +66,7 @@ export const LeadCard: React.FC<LeadCardProps> = memo(({ lead, index, onDelete }
           {...provided.dragHandleProps}
           className={`group bg-white rounded-lg border p-3 mb-2 select-none transition-shadow duration-150 ${
             snapshot.isDragging
-              ? 'shadow-xl border-color-primary rotate-2'
+              ? 'shadow-md border-color-primary'
               : 'border-border-week shadow-sm hover:shadow-md hover:border-border-strong'
           }`}
           style={provided.draggableProps.style}

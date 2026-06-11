@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { DragDropContext, type DropResult } from '@hello-pangea/dnd'
-import { SegmentedControl, Tooltip, Loader, TextInput, Button } from '@mantine/core'
+import { SegmentedControl, Tooltip, Loader, TextInput, Button, Text } from '@mantine/core'
 import { modals } from '@mantine/modals'
-import { Plus } from 'lucide-react'
+import { AlertTriangle, Plus } from 'lucide-react'
 import { isAxiosError } from 'axios'
 import { leadsService } from '@/api/services/leads'
 import { useChatbotStore } from '@/store'
@@ -195,23 +195,60 @@ export const Leads: React.FC = () => {
   const handleDeleteLead = useCallback(
     (lead: Lead) => {
       if (!chatbotId) return
+      const leadName = lead.name || lead.email || 'this lead'
+      const modalId = `delete-lead-${lead.id}`
       modals.openConfirmModal({
-        title: 'Delete lead',
-        children: (
-          <p className="text-sm text-text-weak">
-            Delete <b>{lead.name || lead.email || 'this lead'}</b>? This cannot be undone.
-          </p>
+        modalId,
+        title: (
+          <span
+            className="flex items-center gap-2 text-xl font-semibold"
+            style={{ color: 'var(--color-notification-red)' }}
+          >
+            <AlertTriangle size={22} strokeWidth={2.5} aria-hidden />
+            Delete lead {leadName} ?
+          </span>
         ),
-        labels: { confirm: 'Delete', cancel: 'Cancel' },
-        confirmProps: { color: 'red' },
-        onConfirm: () => {
-          setLeads(current => current.filter(l => l.id !== lead.id))
-          leadsService.deleteLead(chatbotId, lead.id).catch(err => {
-            setLeads(current => [lead, ...current])
+        centered: true,
+        closeOnConfirm: false,
+        withCloseButton: false,
+        padding: 'xl',
+        styles: {
+          header: { paddingBottom: 16 },
+          body: { paddingTop: 0 },
+        },
+        children: (
+          <Text size="sm" mb="xl" style={{ color: 'var(--color-text-weak)' }}>
+            Are you sure you want to delete "{leadName}"? This action will permanently delete the
+            lead. This cannot be undone.
+          </Text>
+        ),
+        labels: { confirm: 'Delete Lead', cancel: 'Cancel' },
+        confirmProps: { color: 'var(--color-notification-red)', variant: 'filled' },
+        cancelProps: { variant: 'secondary' },
+        groupProps: { gap: 'sm' },
+        onConfirm: async () => {
+          modals.updateModal({
+            modalId,
+            confirmProps: {
+              color: 'var(--color-notification-red)',
+              variant: 'filled',
+              loading: true,
+            },
+            cancelProps: { variant: 'secondary', disabled: true },
+            closeOnClickOutside: false,
+            closeOnEscape: false,
+            withCloseButton: false,
+          })
+          try {
+            await leadsService.deleteLead(chatbotId, lead.id)
+            setLeads(current => current.filter(l => l.id !== lead.id))
+          } catch (err) {
             if (isAxiosError(err) && err.response && err.response.status < 500) {
               showNotification('error', 'Could not delete the lead. Please try again.')
             }
-          })
+          } finally {
+            modals.close(modalId)
+          }
         },
       })
     },
@@ -236,12 +273,12 @@ export const Leads: React.FC = () => {
             value={board}
             onChange={value => setBoard(value as KanbanBoardType)}
             data={[
-              { label: 'My board', value: 'MANUAL' },
-              { label: 'Pipeline', value: 'AUTOMATED', disabled: !hasAutomatedBoard },
+              { label: 'Manual', value: 'MANUAL' },
+              { label: 'Automated', value: 'AUTOMATED', disabled: !hasAutomatedBoard },
             ]}
             size="sm"
             radius="md"
-            color="brand"
+            color="dark"
             styles={{ root: { backgroundColor: 'var(--color-background-dark-week)' } }}
           />
         </Tooltip>
@@ -268,7 +305,7 @@ export const Leads: React.FC = () => {
               ))}
 
               {board === 'MANUAL' && (
-                <div className="w-[284px] shrink-0 pt-7">
+                <div className="w-[284px] shrink-0">
                   {addingColumn ? (
                     <TextInput
                       size="sm"
@@ -294,6 +331,12 @@ export const Leads: React.FC = () => {
                       onClick={() => setAddingColumn(true)}
                       fullWidth
                       justify="flex-start"
+                      styles={{
+                        root: {
+                          backgroundColor: 'var(--color-background-dark-week)',
+                          borderRadius: '0.75rem',
+                        },
+                      }}
                     >
                       Add section
                     </Button>

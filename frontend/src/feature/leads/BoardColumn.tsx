@@ -29,10 +29,23 @@ export const BoardColumn: React.FC<BoardColumnProps> = memo(
 
     return (
       <div className="w-[284px] shrink-0 flex flex-col max-h-full">
-        <div className="flex items-center gap-2 px-2 pb-2 group/column">
+        <div className="flex items-center gap-2 pl-1.5 pr-3 py-[3px] mb-2 rounded-xl bg-background-dark-week group/column">
           {renaming ? (
             <TextInput
               size="xs"
+              variant="unstyled"
+              styles={{
+                input: {
+                  height: '1.875rem',
+                  minHeight: 0,
+                  padding: '0.125rem 0.375rem',
+                  fontSize: '0.875rem',
+                  lineHeight: '1.25rem',
+                  fontWeight: 600,
+                  border: '1px solid var(--color-border-strong)',
+                  borderRadius: '0.375rem',
+                },
+              }}
               value={draftName}
               onChange={e => setDraftName(e.currentTarget.value)}
               onBlur={submitRename}
@@ -49,7 +62,7 @@ export const BoardColumn: React.FC<BoardColumnProps> = memo(
           ) : (
             <>
               <p
-                className="text-sm font-semibold text-text-primary truncate"
+                className="text-sm font-semibold text-text-primary truncate px-1.5 py-0.5 border border-transparent rounded-md"
                 onDoubleClick={() => editable && setRenaming(true)}
               >
                 {column.name}
@@ -90,11 +103,7 @@ export const BoardColumn: React.FC<BoardColumnProps> = memo(
             <div
               ref={provided.innerRef}
               {...provided.droppableProps}
-              className={`flex-1 min-h-[120px] rounded-xl p-2 overflow-y-auto transition-colors duration-150 ${
-                snapshot.isDraggingOver
-                  ? 'bg-[#fff0ee] outline-2 outline-dashed outline-[#ffb3ad]'
-                  : 'bg-background-dark-week'
-              }`}
+              className="flex-1 min-h-[120px] rounded-xl p-2 overflow-y-auto bg-background-dark-week"
             >
               {leads.map((lead, index) => (
                 <LeadCard key={lead.id} lead={lead} index={index} onDelete={onDeleteLead} />

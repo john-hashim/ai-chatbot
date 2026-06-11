@@ -101,7 +101,7 @@ describe('Leads', () => {
     renderLeads()
     await screen.findByText('In Talking')
 
-    await userEvent.click(screen.getByRole('radio', { name: 'Pipeline' }))
+    await userEvent.click(screen.getByRole('radio', { name: 'Automated' }))
 
     expect(await screen.findByText('New Inquiry')).toBeInTheDocument()
     expect(screen.getByText('Hot Lead')).toBeInTheDocument()
@@ -117,7 +117,7 @@ describe('Leads', () => {
     renderLeads()
     await screen.findByText('In Talking')
 
-    expect(screen.getByRole('radio', { name: 'Pipeline' })).toBeDisabled()
+    expect(screen.getByRole('radio', { name: 'Automated' })).toBeDisabled()
   })
 
   it('shows an error notification when loading fails with a 4xx', async () => {
