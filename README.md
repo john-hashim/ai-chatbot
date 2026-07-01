@@ -93,6 +93,19 @@ ai-chatbot/
 │       ├── schema.prisma       # Database schema
 │       └── migrations/         # Migration history
 │
+├── embed/                      # Standalone chat widget (Preact, no auth)
+│   ├── src/
+│   │   ├── components/         # Widget UI (ChatWidget, ChatMessages, ChatInput, ...)
+│   │   ├── services/           # Public embed API calls (config, chat, bookings)
+│   │   ├── embed.tsx           # Widget entry — injected via <script> tag, mounts into a shadow DOM
+│   │   ├── iframe.tsx          # Iframe entry point
+│   │   ├── identity.ts         # End-user identifier resolution
+│   │   └── widget.css          # Widget styles (inlined into the shadow DOM)
+│   ├── index.html              # Widget dev page
+│   └── iframe.html             # Iframe host page
+│
+├── docs/                       # Project docs (website content, etc.)
+├── LICENSE
 └── README.md
 ```
 
@@ -103,6 +116,15 @@ ai-chatbot/
 - **npm**
 
 ## Setup
+
+### 0. Clone the repository
+
+```bash
+git clone https://github.com/<your-username>/ai-chatbot.git
+cd ai-chatbot
+```
+
+The repo is a monorepo with three independent apps (`backend/`, `frontend/`, `embed/`) — each has its own `package.json` and is installed/run separately from its own directory. There is no root `package.json`.
 
 ### 1. PostgreSQL + pgvector
 
@@ -231,6 +253,25 @@ Start:
 npm run dev                     # runs on port 5173
 ```
 
+### 4. Embed widget (optional for local dev)
+
+The `embed/` app is the standalone chat widget that end users load on their own sites. It needs **no `.env` file** — the API base URL is derived at runtime from the origin the `embed.js` script is served from (falling back to `window.location.origin`), and the chatbot is selected via the `data-chatbot-key` attribute on the `<script>` tag.
+
+```bash
+cd embed
+npm install
+npm run dev                     # widget dev page (index.html) on the Vite dev server
+npm run build                   # outputs the iframe page + the IIFE embed.js bundle
+```
+
+Once built, a site embeds a chatbot with a single script tag:
+
+```html
+<script src="https://your-embed-domain.com/embed.js" data-chatbot-key="YOUR_EMBED_KEY"></script>
+```
+
+> **Note:** the widget calls `/api/embed/...` on the **same origin the `embed.js` script is served from**. That origin must therefore reach the backend — either serve `embed.js` from the backend itself, or put the widget behind a host/CDN that proxies `/api` to the backend.
+
 ## External Services
 
 | Service | Purpose | Where to Get |
@@ -355,3 +396,7 @@ The three apps stay in **one repository** — each deploys from its own subdirec
 **Deploy order:** DB → backend → frontend → embed (each depends on the previous; the frontend needs the live backend URL, and the embed widget calls the backend's public `/api/embed/...` routes).
 
 In production, env vars come from the platform dashboard — `dotenv.config()` simply no-ops when no `.env` file is present.
+
+## License
+
+This project is open source under the [MIT License](LICENSE).
